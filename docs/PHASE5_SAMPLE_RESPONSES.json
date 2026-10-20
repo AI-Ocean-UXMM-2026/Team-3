@@ -1,0 +1,414 @@
+[
+  {
+    "name": "generated_link",
+    "http_status": 201,
+    "response": {
+      "link_id": "ad4c0dc3-7b58-4e0d-9de8-633bc1645ada",
+      "confirmation_url": "/confirm/[REDACTED_CAPABILITY]",
+      "absolute_url": null,
+      "expires_at": "2026-10-23T18:14:20.303689Z"
+    }
+  },
+  {
+    "name": "minimal_public_card",
+    "http_status": 200,
+    "response": {
+      "order_reference": "f1770dbb-799c-4bed-93d5-d4b1e253ffc4",
+      "shop_display_name": null,
+      "delivery_status": "NEEDS_REVIEW",
+      "state": "VERIFICATION_REQUIRED",
+      "expires_at": "2026-10-23T18:14:20.303689Z"
+    }
+  },
+  {
+    "name": "unauthorized_pin",
+    "http_status": 401,
+    "response": {
+      "error": {
+        "code": "BUYER_AUTHORIZATION_REQUIRED",
+        "message": "Valid buyer authorization is required.",
+        "details": []
+      }
+    }
+  },
+  {
+    "name": "failed_verification",
+    "http_status": 403,
+    "response": {
+      "error": {
+        "code": "BUYER_VERIFICATION_FAILED",
+        "message": "Verification failed; contact the shop if needed.",
+        "details": []
+      }
+    }
+  },
+  {
+    "name": "verified_authorization",
+    "http_status": 200,
+    "response": {
+      "access_token": "[REDACTED_CAPABILITY]",
+      "token_type": "Bearer",
+      "expires_at": "2026-10-20T18:29:20.385070Z"
+    }
+  },
+  {
+    "name": "verified_details",
+    "http_status": 200,
+    "response": {
+      "order_reference": "f1770dbb-799c-4bed-93d5-d4b1e253ffc4",
+      "status": "NEEDS_REVIEW",
+      "township": "Hlaing",
+      "street": "ဗဟိုလမ်း",
+      "landmark": null,
+      "building_floor_unit": null,
+      "latitude": null,
+      "longitude": null,
+      "delivery_time_window": null,
+      "delivery_instructions": null,
+      "initial_pin_requires_review": true,
+      "policy": {
+        "automatic_adjustment_meters": 500,
+        "rescheduling_enabled": false,
+        "leave_with_security_enabled": false,
+        "cutoff_hour_yangon": 15,
+        "timezone": "Asia/Yangon",
+        "min_notice_minutes": 120,
+        "max_schedule_days": 7,
+        "cross_township_fee_mmk": null
+      }
+    }
+  },
+  {
+    "name": "initial_pin_review",
+    "http_status": 200,
+    "response": {
+      "request_id": "b943451c-6bdd-4da8-9c7c-5035412a8b84",
+      "decision": "REVIEW_REQUIRED",
+      "reason_codes": [
+        "INITIAL_PIN_REQUIRES_REVIEW"
+      ],
+      "order_status": "NEEDS_REVIEW",
+      "confidence_level": "AMBER",
+      "submitted_at": "2026-10-20T18:14:20.418861Z",
+      "confirmed_at": null,
+      "resolution": null
+    }
+  },
+  {
+    "name": "dispatcher_approval",
+    "http_status": 200,
+    "response": {
+      "request_id": "b943451c-6bdd-4da8-9c7c-5035412a8b84",
+      "resolution": "APPROVE",
+      "order_version": 4
+    }
+  },
+  {
+    "name": "buyer_availability",
+    "http_status": 200,
+    "response": {
+      "request_id": "d526876d-26c2-4584-8a24-f83f3db21eb2",
+      "decision": "APPLIED",
+      "reason_codes": [],
+      "order_status": "CONFIRMED",
+      "confidence_level": "AMBER",
+      "submitted_at": "2026-10-20T18:14:20.472922Z",
+      "confirmed_at": "2026-10-20T18:14:20.472922Z",
+      "resolution": null
+    }
+  },
+  {
+    "name": "protected_saved_order",
+    "http_status": 200,
+    "response": {
+      "id": "f1770dbb-799c-4bed-93d5-d4b1e253ffc4",
+      "merchant_id": "fb29747c-f185-4d23-a461-dab6e08578ce",
+      "customer_name": null,
+      "customer_phone": "09791234567",
+      "original_message": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀",
+      "normalized_message": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD 25000",
+      "township": "Hlaing",
+      "street": "ဗဟိုလမ်း",
+      "landmark": null,
+      "building": null,
+      "floor": null,
+      "unit": null,
+      "building_floor_unit": null,
+      "latitude": "16.8000000",
+      "longitude": "96.1000000",
+      "cod_amount": "25000",
+      "delivery_instructions": "Ring the gate bell",
+      "delivery_time_window": null,
+      "confidence_level": "AMBER",
+      "confidence_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "parsing_mode": "hybrid",
+      "ai_availability_status": "not_requested",
+      "field_sources": {
+        "unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_phone": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "longitude": {
+          "method": "buyer_confirmation",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "link_id": "ad4c0dc3-7b58-4e0d-9de8-633bc1645ada",
+          "confirmed_at": "2026-10-20T18:14:20.453771+00:00",
+          "approved_by": "9887d7be-1682-4ae0-be46-4beb11795545",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1",
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 39,
+              "end": 48
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_instructions": {
+          "method": "buyer_confirmation",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "link_id": "ad4c0dc3-7b58-4e0d-9de8-633bc1645ada",
+          "confirmed_at": "2026-10-20T18:14:20.472363+00:00",
+          "original_source": {
+            "method": "rule",
+            "status": "missing",
+            "rule": "label-or-bounded-delivery_instructions-v1",
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "latitude": {
+          "method": "buyer_confirmation",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "link_id": "ad4c0dc3-7b58-4e0d-9de8-633bc1645ada",
+          "confirmed_at": "2026-10-20T18:14:20.453748+00:00",
+          "approved_by": "9887d7be-1682-4ae0-be46-4beb11795545",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "floor": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        }
+      },
+      "parsing_metadata": {
+        "normalization": {
+          "encoding": "unicode_or_undetermined",
+          "zawgyi_converted": false,
+          "digits_normalized": true,
+          "warnings": []
+        },
+        "ai": {
+          "status": "not_requested",
+          "provider": null,
+          "is_mock": false,
+          "attempted": false,
+          "message": "No necessary allowlisted address fragment is available; no AI request made.",
+          "retry_after_seconds": null,
+          "applied_fields": [],
+          "suggested_fields": []
+        },
+        "location_verification": {
+          "status": "unverified",
+          "dataset": null,
+          "source_url": null
+        },
+        "buyer_confirmation": {
+          "request_id": "d526876d-26c2-4584-8a24-f83f3db21eb2",
+          "decision": "APPLIED",
+          "kind": "RESPONSE"
+        }
+      },
+      "manual_review_required": true,
+      "status": "CONFIRMED",
+      "version": 5,
+      "created_at": "2026-10-20T18:14:20.264562Z",
+      "updated_at": "2026-10-20T18:14:20.472684Z"
+    }
+  },
+  {
+    "name": "revoked_link_rejected",
+    "http_status": 404,
+    "response": {
+      "error": {
+        "code": "CONFIRMATION_UNAVAILABLE",
+        "message": "Confirmation link is unavailable.",
+        "details": []
+      }
+    }
+  }
+]

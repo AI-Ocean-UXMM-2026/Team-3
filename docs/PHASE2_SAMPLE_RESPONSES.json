@@ -1,0 +1,746 @@
+[
+  {
+    "name": "unicode_digits_cod",
+    "request": {
+      "raw_text": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀"
+    },
+    "http_status": 200,
+    "response": {
+      "is_mock": false,
+      "provider": "rules",
+      "notice": "Deterministic local extraction only. No AI call, saved order, geocoding, or delivery pin verification.",
+      "address": {
+        "customer_name": null,
+        "phone_number": "09791234567",
+        "township": "Hlaing",
+        "street": "ဗဟိုလမ်း",
+        "landmark": null,
+        "building_floor_unit": null,
+        "cod_amount": 25000,
+        "delivery_instructions": null,
+        "time_window": null
+      },
+      "confidence": "AMBER",
+      "validation_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "original_text": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀",
+      "normalized_text": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD 25000",
+      "normalization": {
+        "encoding": "unicode_or_undetermined",
+        "zawgyi_converted": false,
+        "digits_normalized": true,
+        "warnings": []
+      },
+      "field_sources": {
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "phone_number": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1"
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 39,
+              "end": 48
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        }
+      },
+      "location_verification": {
+        "status": "unverified",
+        "dataset": null,
+        "source_url": null
+      }
+    }
+  },
+  {
+    "name": "missing_phone",
+    "request": {
+      "raw_text": "လှိုင်မြို့နယ် ဗဟိုလမ်း အဆွေတော်နား"
+    },
+    "http_status": 200,
+    "response": {
+      "is_mock": false,
+      "provider": "rules",
+      "notice": "Deterministic local extraction only. No AI call, saved order, geocoding, or delivery pin verification.",
+      "address": {
+        "customer_name": null,
+        "phone_number": null,
+        "township": "Hlaing",
+        "street": "ဗဟိုလမ်း",
+        "landmark": "အဆွေတော်နား",
+        "building_floor_unit": null,
+        "cod_amount": null,
+        "delivery_instructions": null,
+        "time_window": null
+      },
+      "confidence": "RED",
+      "validation_reasons": [
+        {
+          "code": "MISSING_PHONE_NUMBER",
+          "message": "Phone number is missing; dispatcher confirmation is required."
+        }
+      ],
+      "original_text": "လှိုင်မြို့နယ် ဗဟိုလမ်း အဆွေတော်နား",
+      "normalized_text": "လှိုင်မြို့နယ် ဗဟိုလမ်း အဆွေတော်နား",
+      "normalization": {
+        "encoding": "unicode_or_undetermined",
+        "zawgyi_converted": false,
+        "digits_normalized": false,
+        "warnings": []
+      },
+      "field_sources": {
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "phone_number": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 0,
+              "end": 14
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1"
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 15,
+              "end": 23
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [
+            {
+              "value": "အဆွေတော်နား",
+              "matched_text": "အဆွေတော်နား",
+              "start": 24,
+              "end": 35
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        }
+      },
+      "location_verification": {
+        "status": "unverified",
+        "dataset": null,
+        "source_url": null
+      }
+    }
+  },
+  {
+    "name": "ambiguous_townships",
+    "request": {
+      "raw_text": "09791234567, Hlaing to Bahan, COD 25000"
+    },
+    "http_status": 200,
+    "response": {
+      "is_mock": false,
+      "provider": "rules",
+      "notice": "Deterministic local extraction only. No AI call, saved order, geocoding, or delivery pin verification.",
+      "address": {
+        "customer_name": null,
+        "phone_number": "09791234567",
+        "township": null,
+        "street": null,
+        "landmark": null,
+        "building_floor_unit": null,
+        "cod_amount": 25000,
+        "delivery_instructions": null,
+        "time_window": null
+      },
+      "confidence": "RED",
+      "validation_reasons": [
+        {
+          "code": "AMBIGUOUS_TOWNSHIP",
+          "message": "Township is ambiguous; dispatcher confirmation is required."
+        }
+      ],
+      "original_text": "09791234567, Hlaing to Bahan, COD 25000",
+      "normalized_text": "09791234567, Hlaing to Bahan, COD 25000",
+      "normalization": {
+        "encoding": "non_myanmar",
+        "zawgyi_converted": false,
+        "digits_normalized": false,
+        "warnings": []
+      },
+      "field_sources": {
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "phone_number": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "ambiguous",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "Hlaing",
+              "start": 13,
+              "end": 19
+            },
+            {
+              "value": "Bahan",
+              "matched_text": "Bahan",
+              "start": 23,
+              "end": 28
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1"
+        },
+        "street": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 30,
+              "end": 39
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        }
+      },
+      "location_verification": {
+        "status": "unverified",
+        "dataset": null,
+        "source_url": null
+      }
+    }
+  },
+  {
+    "name": "fixed_zawgyi",
+    "request": {
+      "raw_text": "၀၉၇၉၁၂၃၄၅၆၇၊ လႈိင္ၿမိဳ႕နယ္၊ ဗဟိုလမ္း၊ အေဆြေတာ္နား"
+    },
+    "http_status": 200,
+    "response": {
+      "is_mock": false,
+      "provider": "rules",
+      "notice": "Deterministic local extraction only. No AI call, saved order, geocoding, or delivery pin verification.",
+      "address": {
+        "customer_name": null,
+        "phone_number": "09791234567",
+        "township": "Hlaing",
+        "street": "ဗဟိုလမ်း",
+        "landmark": "အဆွေတော်နား",
+        "building_floor_unit": null,
+        "cod_amount": null,
+        "delivery_instructions": null,
+        "time_window": null
+      },
+      "confidence": "AMBER",
+      "validation_reasons": [
+        {
+          "code": "ZAWGYI_CONVERSION_REVIEW",
+          "message": "Zawgyi was converted locally; confirm the converted address spelling."
+        },
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "original_text": "၀၉၇၉၁၂၃၄၅၆၇၊ လႈိင္ၿမိဳ႕နယ္၊ ဗဟိုလမ္း၊ အေဆြေတာ္နား",
+      "normalized_text": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ အဆွေတော်နား",
+      "normalization": {
+        "encoding": "zawgyi",
+        "zawgyi_converted": true,
+        "digits_normalized": true,
+        "warnings": [
+          {
+            "code": "ZAWGYI_CONVERSION_REVIEW",
+            "message": "Zawgyi was converted locally; confirm the converted address spelling."
+          }
+        ]
+      },
+      "field_sources": {
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "phone_number": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1"
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [
+            {
+              "value": "အဆွေတော်နား",
+              "matched_text": "အဆွေတော်နား",
+              "start": 39,
+              "end": 50
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        }
+      },
+      "location_verification": {
+        "status": "unverified",
+        "dataset": null,
+        "source_url": null
+      }
+    }
+  },
+  {
+    "name": "time_is_not_cod",
+    "request": {
+      "raw_text": "09791234567, Kamaryut, 4th floor, room A3, 3 pm"
+    },
+    "http_status": 200,
+    "response": {
+      "is_mock": false,
+      "provider": "rules",
+      "notice": "Deterministic local extraction only. No AI call, saved order, geocoding, or delivery pin verification.",
+      "address": {
+        "customer_name": null,
+        "phone_number": "09791234567",
+        "township": "Kamaryut",
+        "street": null,
+        "landmark": null,
+        "building_floor_unit": "4th floor; room A3",
+        "cod_amount": null,
+        "delivery_instructions": null,
+        "time_window": "3 pm"
+      },
+      "confidence": "AMBER",
+      "validation_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "original_text": "09791234567, Kamaryut, 4th floor, room A3, 3 pm",
+      "normalized_text": "09791234567, Kamaryut, 4th floor, room A3, 3 pm",
+      "normalization": {
+        "encoding": "non_myanmar",
+        "zawgyi_converted": false,
+        "digits_normalized": false,
+        "warnings": []
+      },
+      "field_sources": {
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "phone_number": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Kamaryut",
+              "matched_text": "Kamaryut",
+              "start": 13,
+              "end": 21
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1"
+        },
+        "street": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "building_floor_unit": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-floor-unit-v1",
+          "evidence": [
+            {
+              "value": "4th floor",
+              "matched_text": "4th floor",
+              "start": 23,
+              "end": 32
+            },
+            {
+              "value": "room A3",
+              "matched_text": "room A3",
+              "start": 34,
+              "end": 41
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null
+        },
+        "time_window": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [
+            {
+              "value": "3 pm",
+              "matched_text": "3 pm",
+              "start": 43,
+              "end": 47
+            }
+          ],
+          "verified": false,
+          "dataset": null
+        }
+      },
+      "location_verification": {
+        "status": "unverified",
+        "dataset": null,
+        "source_url": null
+      }
+    }
+  }
+]

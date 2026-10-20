@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lannpya-backend"
+version = "0.7.0"
+description = "LannPya AI rules-first Burmese address parser"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1",
+  "pydantic>=2.10,<3",
+  "pydantic-settings>=2.7,<3",
+  "uvicorn>=0.34,<1",
+  "myanmartools>=1.2.1,<2",
+  "python-myanmar>=1.10,<2",
+  "phonenumberslite>=9,<10",
+  "SQLAlchemy>=2.0.36,<2.1",
+  "alembic>=1.14,<2",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "httpx2>=2.15,<3", "ruff>=0.11,<1"]
+postgres = ["psycopg[binary]>=3.2,<4"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.setuptools.package-data]
+app = ["data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

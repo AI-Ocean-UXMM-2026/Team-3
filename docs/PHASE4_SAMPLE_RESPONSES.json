@@ -1,0 +1,1201 @@
+[
+  {
+    "name": "unauthorized",
+    "http_status": 401,
+    "response": {
+      "error": {
+        "code": "DEV_ACCESS_REQUIRED",
+        "message": "A valid development access token is required.",
+        "details": []
+      }
+    }
+  },
+  {
+    "name": "created_raw",
+    "request": {
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "raw_text": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀၊ address: behind red gate"
+    },
+    "http_status": 201,
+    "response": {
+      "id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "customer_name": null,
+      "customer_phone": "09791234567",
+      "original_message": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀၊ address: behind red gate",
+      "normalized_message": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD 25000၊ address: behind red gate",
+      "township": "Hlaing",
+      "street": "ဗဟိုလမ်း",
+      "landmark": null,
+      "building": null,
+      "floor": null,
+      "unit": null,
+      "building_floor_unit": null,
+      "latitude": null,
+      "longitude": null,
+      "cod_amount": "25000",
+      "delivery_instructions": null,
+      "delivery_time_window": null,
+      "confidence_level": "AMBER",
+      "confidence_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "parsing_mode": "hybrid",
+      "ai_availability_status": "mock",
+      "field_sources": {
+        "unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_phone": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1",
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "floor": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 39,
+              "end": 48
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "longitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "landmark": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-landmark-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "latitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building_floor_unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        }
+      },
+      "parsing_metadata": {
+        "normalization": {
+          "encoding": "unicode_or_undetermined",
+          "zawgyi_converted": false,
+          "digits_normalized": true,
+          "warnings": []
+        },
+        "ai": {
+          "status": "mock",
+          "provider": "mock",
+          "is_mock": true,
+          "attempted": true,
+          "message": "Mock AI adapter: AI-derived fields are unavailable; no simulated values were merged.",
+          "retry_after_seconds": null,
+          "applied_fields": [],
+          "suggested_fields": []
+        },
+        "location_verification": {
+          "status": "unverified",
+          "dataset": null,
+          "source_url": null
+        }
+      },
+      "manual_review_required": true,
+      "status": "DRAFT",
+      "version": 1,
+      "created_at": "2026-10-20T18:14:23.525473Z",
+      "updated_at": "2026-10-20T18:14:23.525476Z"
+    }
+  },
+  {
+    "name": "corrected",
+    "request": {
+      "expected_version": 1,
+      "landmark": "red gate",
+      "floor": "4",
+      "unit": "A3"
+    },
+    "http_status": 200,
+    "response": {
+      "id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "customer_name": null,
+      "customer_phone": "09791234567",
+      "original_message": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀၊ address: behind red gate",
+      "normalized_message": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD 25000၊ address: behind red gate",
+      "township": "Hlaing",
+      "street": "ဗဟိုလမ်း",
+      "landmark": "red gate",
+      "building": null,
+      "floor": "4",
+      "unit": "A3",
+      "building_floor_unit": "floor: 4; unit: A3",
+      "latitude": null,
+      "longitude": null,
+      "cod_amount": "25000",
+      "delivery_instructions": null,
+      "delivery_time_window": null,
+      "confidence_level": "AMBER",
+      "confidence_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "parsing_mode": "hybrid",
+      "ai_availability_status": "mock",
+      "field_sources": {
+        "unit": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553368+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "customer_phone": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1",
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "floor": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553331+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 39,
+              "end": 48
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "longitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "landmark": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553354+00:00",
+          "original_source": {
+            "method": "rule",
+            "status": "missing",
+            "rule": "label-or-bounded-landmark-v1",
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          },
+          "dataset": null
+        },
+        "building": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "latitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building_floor_unit": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553462+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        }
+      },
+      "parsing_metadata": {
+        "normalization": {
+          "encoding": "unicode_or_undetermined",
+          "zawgyi_converted": false,
+          "digits_normalized": true,
+          "warnings": []
+        },
+        "ai": {
+          "status": "mock",
+          "provider": "mock",
+          "is_mock": true,
+          "attempted": true,
+          "message": "Mock AI adapter: AI-derived fields are unavailable; no simulated values were merged.",
+          "retry_after_seconds": null,
+          "applied_fields": [],
+          "suggested_fields": []
+        },
+        "location_verification": {
+          "status": "unverified",
+          "dataset": null,
+          "source_url": null
+        }
+      },
+      "manual_review_required": true,
+      "status": "DRAFT",
+      "version": 2,
+      "created_at": "2026-10-20T18:14:23.525473Z",
+      "updated_at": "2026-10-20T18:14:23.556133Z"
+    }
+  },
+  {
+    "name": "delivered",
+    "http_status": 200,
+    "response": {
+      "id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "customer_name": null,
+      "customer_phone": "09791234567",
+      "original_message": "၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀၊ address: behind red gate",
+      "normalized_message": "09791234567၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD 25000၊ address: behind red gate",
+      "township": "Hlaing",
+      "street": "ဗဟိုလမ်း",
+      "landmark": "red gate",
+      "building": null,
+      "floor": "4",
+      "unit": "A3",
+      "building_floor_unit": "floor: 4; unit: A3",
+      "latitude": null,
+      "longitude": null,
+      "cod_amount": "25000",
+      "delivery_instructions": null,
+      "delivery_time_window": null,
+      "confidence_level": "AMBER",
+      "confidence_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "parsing_mode": "hybrid",
+      "ai_availability_status": "mock",
+      "field_sources": {
+        "unit": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553368+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "customer_phone": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "mm-mobile-numbering-plan-v1",
+          "evidence": [
+            {
+              "value": "09791234567",
+              "matched_text": "09791234567",
+              "start": 0,
+              "end": 11
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "township": {
+          "method": "dictionary",
+          "status": "extracted",
+          "rule": "yangon-alias-longest-match-v1",
+          "evidence": [
+            {
+              "value": "Hlaing",
+              "matched_text": "လှိုင်မြို့နယ်",
+              "start": 13,
+              "end": 27
+            }
+          ],
+          "verified": false,
+          "dataset": "yangon-initial-v1",
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "floor": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553331+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        },
+        "cod_amount": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "explicit-cod-whole-mmk-v1",
+          "evidence": [
+            {
+              "value": 25000,
+              "matched_text": "COD 25000",
+              "start": 39,
+              "end": 48
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_time_window": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-time_window-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "longitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_instructions": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-delivery_instructions-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "street": {
+          "method": "rule",
+          "status": "extracted",
+          "rule": "label-or-bounded-street-v1",
+          "evidence": [
+            {
+              "value": "ဗဟိုလမ်း",
+              "matched_text": "ဗဟိုလမ်း",
+              "start": 29,
+              "end": 37
+            }
+          ],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "landmark": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553354+00:00",
+          "original_source": {
+            "method": "rule",
+            "status": "missing",
+            "rule": "label-or-bounded-landmark-v1",
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          },
+          "dataset": null
+        },
+        "building": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "latitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_name": {
+          "method": "rule",
+          "status": "missing",
+          "rule": "label-or-bounded-customer_name-v1",
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building_floor_unit": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.553462+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        }
+      },
+      "parsing_metadata": {
+        "normalization": {
+          "encoding": "unicode_or_undetermined",
+          "zawgyi_converted": false,
+          "digits_normalized": true,
+          "warnings": []
+        },
+        "ai": {
+          "status": "mock",
+          "provider": "mock",
+          "is_mock": true,
+          "attempted": true,
+          "message": "Mock AI adapter: AI-derived fields are unavailable; no simulated values were merged.",
+          "retry_after_seconds": null,
+          "applied_fields": [],
+          "suggested_fields": []
+        },
+        "location_verification": {
+          "status": "unverified",
+          "dataset": null,
+          "source_url": null
+        },
+        "delivery_completion": {
+          "cod_collected": true,
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "confirmed_at": "2026-10-20T18:14:23.638278+00:00"
+        }
+      },
+      "manual_review_required": true,
+      "status": "DELIVERED",
+      "version": 9,
+      "created_at": "2026-10-20T18:14:23.525473Z",
+      "updated_at": "2026-10-20T18:14:23.638719Z"
+    }
+  },
+  {
+    "name": "events",
+    "http_status": 200,
+    "response": {
+      "items": [
+        {
+          "id": "ff9b7645-20ac-4943-a640-1d1c81061047",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "ORDER_CREATED",
+          "previous_status": null,
+          "new_status": "DRAFT",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "parsing_mode": "hybrid"
+          },
+          "created_at": "2026-10-20T18:14:23.528357Z"
+        },
+        {
+          "id": "91285f94-614a-49c2-ab6e-bcfaccd35ee8",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "ORDER_CORRECTED",
+          "previous_status": "DRAFT",
+          "new_status": "DRAFT",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "changed_fields": [
+              "floor",
+              "landmark",
+              "unit"
+            ]
+          },
+          "created_at": "2026-10-20T18:14:23.554013Z"
+        },
+        {
+          "id": "e131c537-65e3-4f7d-b148-d25feaa4d433",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "DRAFT",
+          "new_status": "NEEDS_REVIEW",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.575521Z"
+        },
+        {
+          "id": "1618b56a-a9fd-4839-9fec-8c9724ee24dd",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "NEEDS_REVIEW",
+          "new_status": "AWAITING_CONFIRMATION",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.586693Z"
+        },
+        {
+          "id": "b3a9f913-9823-4487-801e-e4f6634aa404",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "AWAITING_CONFIRMATION",
+          "new_status": "CONFIRMED",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.599262Z"
+        },
+        {
+          "id": "cfabc28f-3dd6-4366-a6f0-d0f1fb8d8226",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "CONFIRMED",
+          "new_status": "READY_FOR_DISPATCH",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": true
+          },
+          "created_at": "2026-10-20T18:14:23.610342Z"
+        },
+        {
+          "id": "c3d59009-2fd6-4d42-a71e-88863d2672de",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "READY_FOR_DISPATCH",
+          "new_status": "ASSIGNED",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.620825Z"
+        },
+        {
+          "id": "8a9941aa-31fa-419d-8a54-91309e9c4bde",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "ASSIGNED",
+          "new_status": "OUT_FOR_DELIVERY",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": null,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.630522Z"
+        },
+        {
+          "id": "74bfa503-8324-4860-b9a6-3c2aae0aa13c",
+          "order_id": "1fb37f21-8cd0-46fb-80be-e6977d7b1e30",
+          "event_type": "STATUS_CHANGED",
+          "previous_status": "OUT_FOR_DELIVERY",
+          "new_status": "DELIVERED",
+          "metadata": {
+            "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+            "cod_collected": true,
+            "unverified_location_acknowledged": false
+          },
+          "created_at": "2026-10-20T18:14:23.641960Z"
+        }
+      ],
+      "total": 9,
+      "page": 1,
+      "page_size": 20
+    }
+  },
+  {
+    "name": "created_structured",
+    "request": {
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "structured": {
+        "customer_phone": "09951234567",
+        "township": "Bahan",
+        "cod_amount": "12000"
+      }
+    },
+    "http_status": 201,
+    "response": {
+      "id": "6e97b3d2-d806-4254-b29c-c4704202769e",
+      "merchant_id": "1f40a6d6-2fd0-47fe-94ec-20dd8fa3d567",
+      "customer_name": null,
+      "customer_phone": "09951234567",
+      "original_message": null,
+      "normalized_message": null,
+      "township": "Bahan",
+      "street": null,
+      "landmark": null,
+      "building": null,
+      "floor": null,
+      "unit": null,
+      "building_floor_unit": null,
+      "latitude": null,
+      "longitude": null,
+      "cod_amount": "12000",
+      "delivery_instructions": null,
+      "delivery_time_window": null,
+      "confidence_level": "AMBER",
+      "confidence_reasons": [
+        {
+          "code": "LOCATION_UNVERIFIED",
+          "message": "Phone format is valid and township matched, but location requires buyer or dispatcher confirmation. Extracted landmarks are not geospatial verification."
+        },
+        {
+          "code": "LOCATION_DATASET_UNAVAILABLE",
+          "message": "No trusted street/landmark catalog is configured; GREEN is disabled."
+        }
+      ],
+      "parsing_mode": "structured",
+      "ai_availability_status": "not_requested",
+      "field_sources": {
+        "unit": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_phone": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.659593+00:00",
+          "original_source": null
+        },
+        "township": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.659578+00:00",
+          "original_source": null
+        },
+        "floor": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "cod_amount": {
+          "method": "manual_correction",
+          "status": "extracted",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.659600+00:00",
+          "original_source": null
+        },
+        "delivery_time_window": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "longitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "delivery_instructions": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "street": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "landmark": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "latitude": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "customer_name": {
+          "method": "not_extracted",
+          "status": "missing",
+          "rule": null,
+          "evidence": [],
+          "verified": false,
+          "dataset": null,
+          "provider": null,
+          "requires_review": false,
+          "ai_suggestion": null
+        },
+        "building_floor_unit": {
+          "method": "manual_correction",
+          "status": "missing",
+          "verified": false,
+          "requires_review": false,
+          "evidence": [],
+          "actor_id": "e97b0f6c-cd31-4cb0-b57e-a9c3182a422a",
+          "corrected_at": "2026-10-20T18:14:23.659681+00:00",
+          "original_source": {
+            "method": "not_extracted",
+            "status": "missing",
+            "rule": null,
+            "evidence": [],
+            "verified": false,
+            "dataset": null,
+            "provider": null,
+            "requires_review": false,
+            "ai_suggestion": null
+          }
+        }
+      },
+      "parsing_metadata": {
+        "normalization": {
+          "encoding": "non_myanmar"
+        },
+        "location_verification": {
+          "status": "unverified",
+          "dataset": null,
+          "source_url": null
+        }
+      },
+      "manual_review_required": true,
+      "status": "DRAFT",
+      "version": 1,
+      "created_at": "2026-10-20T18:14:23.660166Z",
+      "updated_at": "2026-10-20T18:14:23.660167Z"
+    }
+  }
+]
