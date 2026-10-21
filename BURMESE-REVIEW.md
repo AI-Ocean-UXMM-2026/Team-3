@@ -71,3 +71,7 @@ Pay particular attention to: “Waiting on buyer” (waiting for their response,
 - Approval: explicitly given by the project owner in chat
 
 Any future Burmese wording changes need another review. Refresh source references if lines move and repeat rendering checks after UI changes.
+
+## Added 21 Oct 2026 (needs native review)
+- Page signs: ဝယ်သူ လင့်ခ်များ (Buyer links), ငွေစာရင်း ပိတ်ရန် (Hub close-out), စစ်ရန် အော်ဒါများ (Exceptions), အော်ဒါ တစ်ခု ထည့်ရန် (Add one order)
+- Rider undo: ပြန်ဖျက်မည် (Undo); rider toasts in the `MY` map in frontend/js/functional-app.js
