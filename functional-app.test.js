@@ -101,7 +101,7 @@ test('manual order → customer location and availability → admin approval →
  e.ctx.location.hash='#/order/'+order.id;await e.action('approve-location',order.id);await e.submit('dialog form',{reason:'Admin checked the delivery point'});assert.equal(e.store().order(order.id).state,'ready');
  e.ctx.location.hash='#/routes';await e.action('new-route');await e.submit('dialog form',{riderId:'rider-1',date:order.date});const route=e.store().snapshot().routes[0];
  e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{routeId:route.id});e.ctx.location.hash='#/routes';await e.action('dispatch-route',route.id);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
- e.ctx.location.hash='#/ride';assert.match(e.root.textContent,/Delivery stop · Test customer/);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
+ e.ctx.location.hash='#/ride';assert.match(e.root.textContent,/Delivery stop: Test customer/);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
  await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
  e.ctx.location.hash='#/track/'+order.link.token;assert.match(e.root.textContent,/Your parcel was delivered/);
 });

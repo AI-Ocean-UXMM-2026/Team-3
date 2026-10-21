@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-21T00:00:00Z",
+  "title": "Design System: LannPya Signboard",
+  "extensions": {
+    "shadows": [
+      {"name": "card-hover", "value": "0 1px 2px rgba(0,0,0,.05),0 6px 16px -10px rgba(0,0,0,.22)", "purpose": "Small lift on a board card."},
+      {"name": "dialog", "value": "0 24px 60px -20px rgba(0,0,0,.45)", "purpose": "Modal elevation above a dimmed page."}
+    ],
+    "motion": [
+      {"name": "count-flip", "value": "240ms cubic-bezier(.16,1,.3,1)", "purpose": "Only a changed lane count flips; disabled with reduced motion."}
+    ],
+    "breakpoints": [
+      {"name": "order-check", "value": "1100px"},
+      {"name": "form-stack", "value": "900px"},
+      {"name": "mobile", "value": "760px"},
+      {"name": "compact-nav", "value": "480px"}
+    ]
+  },
+  "components": [
+    {"name": "Primary button", "kind": "button", "refersTo": "button-primary", "description": "A deliberate dispatcher action.", "html": "<button class=\"ds-primary\">Create route</button>", "css": ".ds-primary{font:600 15px/1.2 var(--body,Manrope,sans-serif);min-height:44px;padding:8px 16px;background:var(--navy,#16263A);color:var(--cream,#FFF5E4);border:1px solid var(--navy,#16263A);border-radius:var(--r-sm,8px);cursor:pointer}.ds-primary:hover{background:var(--navy-2,#24384F)}.ds-primary:focus-visible{outline:3px solid var(--navy,#16263A);outline-offset:2px}.ds-primary:active{transform:translateY(1px)}"},
+    {"name": "Cash field", "kind": "input", "description": "Labelled exact whole-kyat amount.", "html": "<label class=\"ds-field\">Cash collected (Ks)<input type=\"number\" min=\"0\" step=\"1\" value=\"35000\"></label>", "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font:700 14px/1.55 var(--body,Manrope,sans-serif);color:var(--ink,#16263A)}.ds-field input{box-sizing:border-box;width:100%;min-height:48px;padding:9px 12px;font:500 16px/1.4 var(--body,Manrope,sans-serif);border:1px solid #CBBFA9;border-radius:var(--r-sm,8px);background:var(--paper,#FFFDF8);color:var(--ink,#16263A)}.ds-field input:focus{outline:2px solid var(--navy,#16263A)}"}
+  ],
+  "narrative": {
+    "northStar": "A sign you can read across the counter.",
+    "overview": "LannPya is a working delivery tool for a dispatcher at a shop counter, a buyer opening a chat link, and a rider checking a phone outdoors. Navy signs, cream lettering and an occasional saffron action make the next job visible without filling the workspace with decoration. The cream ground is an intentional, pinned brand choice, retained despite a generic-background detector warning.",
+    "keyCharacteristics": ["Bilingual signs with Burmese first where the buyer or rider acts.", "Calm working sheets with hairline edges and plain sentences.", "The original chat remains available beside the interpretation.", "A person decides every dispatch, hold, delivery and cash handover."],
+    "rules": [{"name":"The Your Move Rule", "body":"Saffron points to action or current position: Needs you, Delivered, active navigation and stop selection. Never use saffron text on a light ground. Saiq-ka Red is reserved for the brand mark and map pin; error text uses the separate darker `--bad` token.", "section":"colors"}],
+    "dos": ["Do preserve Navy, Saffron, Saiq-ka Red and Cream in their assigned roles.", "Do use plain status words with an icon and a next step.", "Do show original evidence beside parsed fields."],
+    "donts": ["Don't restore 2px card edges or replace the cream ground based solely on a detector warning.", "Don't claim Burmese has native approval until a named reviewer signs off."]
+  }
+}

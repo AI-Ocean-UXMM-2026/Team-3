@@ -33,3 +33,6 @@ dist/
 .next/
 .DS_Store
 Thumbs.db
+
+# Impeccable review captures
+.impeccable/review/
