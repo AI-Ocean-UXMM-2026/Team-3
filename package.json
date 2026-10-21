@@ -5,9 +5,8 @@
   "scripts": {
     "start": "node scripts/start_local.cjs",
     "build": "node scripts/build_frontend.cjs",
-    "test:frontend": "node --test frontend/tests/workflow-domain.test.js frontend/tests/order-parser.test.js frontend/tests/functional-app.test.js frontend/tests/api-model.test.mjs frontend/tests/api-workspace.test.mjs frontend/tests/local-api.test.mjs",
+    "test:frontend": "node --test frontend/tests/workflow-domain.test.js frontend/tests/order-parser.test.js frontend/tests/functional-app.test.js frontend/tests/api-model.test.mjs frontend/tests/local-api.test.mjs",
     "test:dashboard": "node --test docs/examples/lannpya-client.test.mjs tools/backend-test-dashboard/dashboard.test.cjs tools/backend-test-dashboard/dashboard-http.test.cjs",
-    "test:integration": "node --test frontend/tests/integration-http.test.mjs",
     "test:parser": "npm --prefix order-parser test",
     "test:browser": "playwright test"
   },

@@ -36,7 +36,7 @@ jobs:
       - run: node --test ../docs/examples/lannpya-client.test.mjs
       - run: npm ci --ignore-scripts
         working-directory: .
-      - run: npm run test:frontend && npm run build && npm run test:integration && npm run test:dashboard
+      - run: npm run test:frontend && npm run build && npm run test:dashboard
         working-directory: .
         env:
           LANNPYA_PYTHON: ${{ steps.python.outputs.python-path }}

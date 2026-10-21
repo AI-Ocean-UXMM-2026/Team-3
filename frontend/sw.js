@@ -9,7 +9,7 @@ self.addEventListener('fetch',event=>{
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin||!url.href.startsWith(self.registration.scope))return;
   // Never substitute the local prototype for a failed API/customer navigation.
-  if(['/','/index.html','/api.html'].includes(url.pathname)||url.pathname.startsWith('/dashboard/')||url.pathname.startsWith('/confirm/')||url.pathname.startsWith('/api/'))return;
+  if(['/','/index.html'].includes(url.pathname)||url.pathname.startsWith('/dashboard/')||url.pathname.startsWith('/confirm/')||url.pathname.startsWith('/api/'))return;
   if(event.request.mode==='navigate'&&url.pathname.endsWith('/prototype.html')){event.respondWith(fetch(event.request).catch(()=>caches.match(new URL('./prototype.html',self.registration.scope).href)));return;}
   if(allowed.has(url.href))event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request)));
 });

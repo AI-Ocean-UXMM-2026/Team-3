@@ -1,6 +1,6 @@
 import ipaddress
-import logging
 import json
+import logging
 import re
 import secrets
 import time
@@ -232,11 +232,6 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
     @app.get("/")
     def index(request: Request):
         return page(request, "index.html")
-
-    # The connected API workspace lives beside the LannPya UI and needs the same session cookie.
-    @app.get("/api.html")
-    def api_workspace(request: Request):
-        return page(request, "api.html" if frontend is not None else "index.html")
 
     def page(request: Request, name: str):
         key = request.cookies.get("lp_dashboard")
