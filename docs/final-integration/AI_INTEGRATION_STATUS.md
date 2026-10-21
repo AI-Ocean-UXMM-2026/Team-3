@@ -1,5 +1,20 @@
 # AI reconciliation
 
+## Phase 16 update (supersedes the historical notes below)
+
+Python now has prepared `gemini` REST and `json_http` normalized HTTPS adapters, in addition
+to mock/disabled. Provider, model, server-only key and custom endpoint are configurable.
+Both gateway and adapter reject external I/O by default; enabling it requires explicit
+server-side opt-in. No real model has been selected or called. The integrated sandbox
+remains pinned to mock; real UI activation requires a reviewed server-side configuration
+and indicator change. Environment variables alone do not change that sandbox policy.
+
+The existing sanitizer, strict evidence-backed response schema and deterministic merge
+remain authoritative. TypeScript contributed protocol/prompt concepts, not its schema,
+heuristic/recorded fallback, approximate geodata or confidence logic. Model quality and
+real provider access remain unverified. See [Phase 16](../PHASE16_MVP_COMPLETION.md) for
+activation, offline tests and limitations. Historical statements below describe Phase 14.
+
 The selected runtime remains Python deterministic extraction + provider-independent mock
 (or disabled) enrichment. Rules extract phone/COD and controlled townships; validated
 fields are protected from model overwrite. External providers remain blocked by the gateway.

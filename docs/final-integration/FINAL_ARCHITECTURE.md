@@ -25,3 +25,8 @@ There is one backend/, frontend/, docs/, scripts/, plus preserved order-parser/ 
 and tools/. Existing development dashboard and logistics lab remain. Live entry index.html
 and browser-only prototype.html are separately labeled. Their service worker never caches
 or substitutes live/API/dashboard navigation. The normal project database is untouched.
+
+Phase 16 adds a locally vendored Leaflet customer selector (no initial delivery pin), optional
+public street tiles after consent, and a protected persisted event timeline. Map changes still
+use the same buyer verification/review APIs; history uses paginated GET order events.
+Prepared Python HTTP AI adapters are disabled by default; the local sandbox remains mock-only.

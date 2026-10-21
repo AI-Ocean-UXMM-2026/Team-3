@@ -51,6 +51,50 @@ test('API admin connection and order form render without touching local prototyp
  e.ctx.location.hash='#/order/o1';await e.flush();assert.ok(e.find('#edit-api-form'));await e.action('link','o1');assert.match(e.find('[name="generated-link"]').value,/#\/track\//);assert.equal(e.calls.at(-1).opts.headers['X-Dev-Access-Token'],undefined);
 });
 
+test('a fresh parse clears stale extracted fields and resets prepaid selection',async t=>{
+ let count=0;
+ const e=setup(t,'#/admin',path=>path==='/api/orders/parse'?new Response(JSON.stringify({
+   address:count++?{cod_amount:5000}:{phone_number:'09790000000',township:'Hlaing',cod_amount:0},
+   confidence:count===1?'AMBER':'RED',ai:{status:'not_requested'},validation_reasons:[],
+ }),{headers:{'Content-Type':'application/json'}}):null);
+ await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});
+ await e.submit('#parse-form',{raw:'First fictional order'});
+ assert.equal(e.find('#create-form [name="customer_phone"]').value,'09790000000');
+ assert.equal(e.find('#create-form [name="payment"]').value,'prepaid');
+ await e.submit('#parse-form',{raw:'Second incomplete fictional order'});
+ assert.equal(e.find('#create-form [name="customer_phone"]').value,'');
+ assert.equal(e.find('#create-form [name="township"]').value,'');
+ assert.equal(e.find('#create-form [name="payment"]').value,'cod');
+});
+
+test('successful writes keep their confirmation notice after refreshed data renders',async t=>{
+ const e=setup(t);await e.ctx.ready;
+ await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});
+ await e.submit('#new-rider-form',{name:'Fictional QA rider'});
+ assert.match(e.find('#api-status').textContent,/Saved in the backend database/);
+ assert.equal(e.find('#api-status').hidden,false);
+});
+
+test('persisted history sorts chronologically and omits private event metadata',async t=>{
+ const e=setup(t,'#/admin',path=>path.endsWith('/events')?new Response(JSON.stringify({items:[
+  {id:'b',event_type:'DELIVERY_COMPLETED',previous_status:'OUT_FOR_DELIVERY',new_status:'DELIVERED',created_at:'2026-10-21T12:00:00Z',metadata:{phone:'09790000000',instructions:'private-note'}},
+  {id:'a',event_type:'DELIVERY_STARTED',previous_status:'ASSIGNED',new_status:'OUT_FOR_DELIVERY',created_at:'2026-10-21T11:00:00Z',metadata:{authorization:'private-token'}},
+ ],total:2}),{headers:{'Content-Type':'application/json'}}):null);
+ await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});
+ e.ctx.location.hash='#/order/o1';await e.flush();
+ const history=e.find('#delivery-history');assert.equal(history.querySelectorAll('li').length,2);
+ assert.match(history.querySelector('li').textContent,/DELIVERY STARTED/);
+ assert.doesNotMatch(history.textContent,/09790000000|private-note|private-token/);
+});
+
+test('history read failure is explicit while the saved order remains usable',async t=>{
+ const e=setup(t,'#/admin',path=>path.endsWith('/events')?new Response(JSON.stringify({error:{code:'UNAVAILABLE',message:'private-upstream-detail'}}),{status:503,headers:{'Content-Type':'application/json'}}):null);
+ await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});
+ e.ctx.location.hash='#/order/o1';await e.flush();
+ assert.ok(e.find('#edit-api-form'));assert.match(e.find('#delivery-history').textContent,/could not be loaded/);
+ assert.doesNotMatch(e.find('#delivery-history').textContent,/private-upstream-detail/);
+});
+
 test('API customer card verifies using only its own bearer and erases token from current URL',async t=>{
  const e=setup(t,'#/track/'+token);await e.ctx.ready;assert.ok(e.find('#verify-api-form'));assert.equal(e.replacedUrl,'/api.html#/customer');
  await e.submit('#verify-api-form',{digits:'4567'});assert.ok(e.find('#buyer-location-form'));assert.ok(e.find('#buyer-response-form'));assert.ok(e.calls.every(c=>!c.opts.headers?.['X-Dev-Access-Token']));assert.equal(e.calls.at(-1).opts.headers.Authorization,undefined);

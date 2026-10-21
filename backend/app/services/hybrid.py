@@ -89,7 +89,11 @@ class HybridOrderParsingService:
                 )
             )
             return parsed
-        result = await ExtractionGateway(self.provider, self.settings.ai_timeout_seconds).extract(
+        result = await ExtractionGateway(
+            self.provider,
+            self.settings.ai_timeout_seconds,
+            allow_external=self.settings.ai_external_requests_enabled,
+        ).extract(
             prepared.payload,
         )
         parsed.ai = result.availability

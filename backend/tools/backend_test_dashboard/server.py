@@ -181,7 +181,8 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 "X-Frame-Options": "DENY",
                 "Content-Security-Policy": (
                     "default-src 'self'; script-src 'self'; style-src 'self'; "
-                    "connect-src 'self'; img-src 'self' data:; frame-ancestors 'none'; "
+                    "connect-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
+                    "frame-ancestors 'none'; "
                     "base-uri 'none'; form-action 'self'"
                 ),
             }

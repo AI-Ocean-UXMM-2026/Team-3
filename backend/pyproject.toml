@@ -17,10 +17,11 @@ dependencies = [
   "phonenumberslite>=9,<10",
   "SQLAlchemy>=2.0.36,<2.1",
   "alembic>=1.14,<2",
+  "httpx2>=2.15,<3",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "httpx2>=2.15,<3", "ruff>=0.11,<1", "hypothesis>=6,<7"]
+dev = ["pytest>=8,<10", "ruff>=0.11,<1", "hypothesis>=6,<7"]
 postgres = ["psycopg[binary]>=3.2,<4"]
 
 [tool.setuptools.packages.find]
