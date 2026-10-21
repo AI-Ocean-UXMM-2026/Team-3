@@ -33,7 +33,7 @@ typography:
     fontFamily: "Manrope, Noto Sans Myanmar, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
-    lineHeight: 1.55
+    lineHeight: 1.65
   burmese:
     fontFamily: "Noto Sans Myanmar, Manrope, sans-serif"
     lineHeight: 1.8
@@ -98,7 +98,7 @@ Night mode is explicitly selected in the rider view. It sets a dark page ground,
 
 ## Typography
 
-Inter at optical size 32 carries headings, sign counts and cash. Manrope carries English body text. Noto Sans Myanmar carries Burmese; use `lang="my"` when authoring new Burmese text. Burmese defaults to 1.8 line height; compact signs use their established 1.4–1.5 values and must be checked for stacked marks and wrapping.
+Inter at optical size 32 carries headings, sign counts and cash. Manrope carries English body text. Noto Sans Myanmar carries Burmese; use `lang="my"` when authoring new Burmese text. Burmese defaults to 1.8 line height, including lane labels. Compact rider action labels use their established 1.4–1.5 values and must be checked for stacked marks and wrapping.
 
 Use sentence case, a clear heading scale and tabular numerals. Amounts display as `35,000 Ks`. Preserve exact amounts; do not round. Headings use -0.02em tracking; do not tighten Burmese text. Controls wrap rather than truncate essential actions. English remains visible beneath Burmese in rider dialogs because the Burmese is awaiting native review.
 
@@ -106,9 +106,9 @@ Fonts currently load from Google Fonts with system fallbacks. First-time offline
 
 ## Layout
 
-Dispatcher content is centred within 1440px, with 24px horizontal padding on desktop and 16px below 760px. The Navy header holds three main destinations, More and the daily status sign. The prototype role switcher scrolls horizontally without expanding the page.
+Dispatcher content is centred within 1440px, with 32px horizontal padding on desktop and 18px below 760px. The Navy header holds three main destinations, More and the daily status sign. The compact prototype bar keeps role switching and offline/storage warnings visible. Clock and storage diagnostics, Test scenarios and the API workspace live in the Demo tools disclosure.
 
-The board uses five lanes at a minimum of 200px each. At 760px and below, lanes stack. The labelled proportional strip wraps without hiding its text. At 480px and below, navigation uses shorter English labels and the search field spans the toolbar.
+The board uses five lanes at a minimum of 200px each. At 760px and below, lanes stack. Lanes have an 18px desktop gutter and 24px between stacked mobile lanes; original Navy/Saffron sign fills, Paper cards and hairline border colours remain unchanged. The labelled proportional strip wraps without hiding its text. At 480px and below, navigation uses shorter English labels and the search field spans the toolbar.
 
 Order checks and paste previews keep the original chat beside extracted fields, stacking at small sizes. The order check's third column moves below at 1100px. Manual entry and policy pages use a main form and a 260–320px save panel; below 900px, the save panel follows the fields in document order. Fields group by the decision the dispatcher is making.
 
@@ -126,7 +126,7 @@ Panels and signs use `--r: 10px`; buttons, inputs and board cards use `--r-sm: 8
 
 ### Signboards and counts
 
-Navy sign, Cream name, Burmese above English, count aligned to the far edge. Needs you uses Saffron with Navy text. Empty lanes use the secondary Cream ground. The only authored animation is the lane-count flip: 240ms, `cubic-bezier(.16,1,.3,1)`, transform and opacity only. Reduced motion disables it. No board or card entrance animations; navigation, disclosures and theme switching are immediate.
+Navy sign, Cream name, Burmese above English, count aligned to the far edge. Needs you uses Saffron with Navy text. Empty lanes use the secondary Cream ground. Lane descriptions stay available to assistive technology without repeating below every sign. Cards show the order ID and exact cash with Ks, omitting the repeated delivery date. Card padding is 16px on desktop and 18px on mobile; status copy uses a lighter 500 weight to separate it from names. The only authored animation is the lane-count flip: 240ms, `cubic-bezier(.16,1,.3,1)`, transform and opacity only. Reduced motion disables it. No board or card entrance animations; navigation, disclosures and theme switching are immediate.
 
 ### Buttons and navigation
 
@@ -138,7 +138,7 @@ Use a section heading, related fields or facts, and a specific next action. Rout
 
 ### Forms and chat comparison
 
-Every field has a visible label. Fields are at least 44px tall, at least 48px for buyers and riders, and use a 2px input focus outline. Original chats remain editable in paste previews; interpretation appears in a definition list with missing fields stated explicitly. Duplicate warnings require a deliberate import choice. Preserve all form IDs, field names and `data-action` values when styling.
+Every field has a visible label. Fields are at least 44px tall, at least 48px for buyers and riders, and use a 2px input focus outline. Original chats remain editable in paste previews; interpretation appears in a definition list with missing fields stated explicitly. Duplicate warnings require a deliberate import choice. The order check preserves its original three-column layout, field order and bordered action panels. Order ID, delivery date and time sit on a dedicated metadata line. Labels, status sentences and action copy use lighter weights and more line spacing; no form fields or action panels are hidden for this refinement. Preserve all form IDs, field names and `data-action` values when styling.
 
 ### Dialogs
 

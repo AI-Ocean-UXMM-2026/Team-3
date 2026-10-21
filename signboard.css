@@ -451,3 +451,121 @@ body.night .prototype-bar strong{color:var(--cream)}
   .stop-name h2{line-height:1.4;overflow-wrap:anywhere}
   .collect{margin-left:auto}
 }
+
+/* Breathing room within the original Signboard colours and hairline frames. */
+body{line-height:1.65}
+h1{line-height:1.25}
+h2,h3{line-height:1.35}
+.content{padding:28px 32px 40px}
+.page-head{margin-bottom:24px}
+.subhead{max-width:64ch;line-height:1.7;margin-top:8px}
+.btn,.customer-primary,.pin-toolbar button{font-weight:600}
+label{font-weight:600;line-height:1.6}
+.pill{font-weight:600;line-height:1.5}
+.board-head{margin-bottom:20px}
+.board-head h1{gap:8px 18px}
+.board-head h1 .my{font-size:.7em;font-weight:600;line-height:1.8}
+.board-strip{margin:0 0 18px;gap:6px}
+.board-strip .seg{font-weight:600;padding:6px 12px;font-size:.8rem}
+.board-tools{margin:0 0 24px;gap:12px 16px}
+.board-tools .filters summary{font-weight:600;min-height:44px}
+.lanes{gap:18px;min-width:0;overflow-x:auto}
+.lane{gap:12px;position:relative}
+.sign{padding:12px 14px;min-height:80px;align-items:center}
+.sign .my{font-size:1rem;line-height:1.8;font-weight:600}
+.sign .en{font-size:1rem;line-height:1.5;font-weight:650}
+.sign-count{font-size:2rem;line-height:1.2;font-weight:700}
+.card{padding:16px;gap:10px}
+.card-top{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px}
+.card-name{font-weight:650;line-height:1.5;letter-spacing:0}
+.card-cash{font-size:.8rem;line-height:1.9;font-weight:650;margin:0}
+.card .pill{font-weight:500;padding:4px 8px;line-height:1.6;align-items:flex-start}
+.card .pill .icon{margin-top:3px;width:13px;height:13px}
+.card-id{font-size:.75rem;line-height:1.6}
+.lane-empty{padding:16px;line-height:1.8}
+.board-note{margin-top:24px;line-height:1.8}
+.board-empty{gap:32px;padding:28px}
+.board-empty p{max-width:48ch;line-height:1.8}
+.board-empty .sample{padding:20px;line-height:1.9}
+.tab .my{font-size:.78rem;line-height:1.8;font-weight:500}
+.topbar{column-gap:28px;row-gap:12px;padding-block:12px}
+.tabs{gap:6px}
+.tab{padding:7px 14px;gap:2px;line-height:1.4;font-size:.9rem;font-weight:600;min-height:56px}
+.more summary{font-size:.9rem;font-weight:600;min-height:56px}
+.status-sign .msg{line-height:1.5;font-weight:650}
+.status-sign .msg span{line-height:1.6;font-weight:500}
+/* Keep role previews accessible, with diagnostics on demand. */
+.prototype-bar{position:relative;z-index:40;overflow:visible;white-space:normal;gap:4px 16px;padding:0 24px;min-height:36px}
+.workspace-state{display:flex;align-items:center;gap:7px;flex:1;font-size:.75rem;min-width:0}
+.workspace-state .icon{width:13px;height:13px}
+.connection-dot{height:5px;width:5px;border-radius:50%;background:var(--ok);flex:none}
+.preview-roles{display:flex;align-items:center;gap:4px}
+.preview-roles a{padding:6px 8px;font-size:.75rem;font-weight:500;min-height:32px;display:flex;align-items:center;color:var(--ink-2)}
+.preview-roles [aria-current="page"]{color:var(--ink);font-weight:700}
+.prototype-tools{position:relative;flex:none}
+.prototype-tools summary{font-size:.75rem;font-weight:500;min-height:32px}
+.prototype-menu{position:absolute;top:100%;right:0;min-width:260px;max-width:calc(100vw - 32px);padding:16px;background:var(--paper);border:var(--edge);border-radius:var(--r);box-shadow:var(--lift);display:flex;flex-direction:column;gap:6px}
+.prototype-menu p{font-size:.8rem;margin:0 0 6px;line-height:1.6}
+.prototype-menu a{font-weight:600;min-height:36px;display:flex;align-items:center}
+/* Preserve the three-column order check; separate metadata and ease reading. */
+.check-head{margin:16px 0 24px}
+.check-head .subhead{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;font-size:.85rem}
+.order-meta{display:flex;flex-wrap:wrap;gap:6px 16px;flex-basis:100%;padding-top:2px}
+.order-meta>span{white-space:normal}
+.check-grid{gap:24px}
+.chat-pane{padding:18px;position:static}
+.chat-pane h2{font-weight:600;margin-bottom:14px}
+.bubble{padding:16px;font-size:.9rem;line-height:1.9}
+.chat-pane .sheet-copy{margin-top:12px}
+.check-grid>.panel{padding:24px}
+.reasons{gap:10px;margin-bottom:20px}
+.reasons li{font-size:.9rem;font-weight:500;line-height:1.7}
+.right-stack .panel{padding:20px;margin-bottom:20px}
+.right-stack .panel h2,.right-stack summary{font-size:1rem;font-weight:650}
+.right-stack .action-row{gap:10px;margin:16px 0 0}
+.right-stack .btn{font-size:.85rem;line-height:1.5;padding:8px 12px}
+.right-stack .sheet-copy{font-size:.8rem;line-height:1.7;margin-top:12px}
+.right-stack p{font-size:.9rem}
+.form-grid{gap:16px;margin:18px 0}
+#edit-form>fieldset>label{margin:16px 0}
+#edit-form>fieldset>.btn{margin:4px 0 16px}
+.form-section{padding:28px 0}
+.save-check p{font-size:.9rem;line-height:1.75}
+.section-head{margin-bottom:22px}
+.facts dt,.facts dd{line-height:1.65}
+.rider-body{padding-top:22px;gap:18px}
+.landmark{padding:16px}
+.landmark .sub{font-weight:500;margin-top:8px}
+body.night .prototype-menu{background:var(--paper);color:var(--cream)}
+@media (max-width:1000px){.lanes{grid-template-columns:repeat(5,minmax(210px,1fr));overflow-x:auto}.content{min-width:0}}
+@media (max-width:760px){
+  .content{padding:22px 18px 32px}
+  .prototype-bar{padding:0 16px;gap:4px 6px;flex-wrap:wrap}
+  .workspace-state{font-size:.75rem;gap:4px}
+  .preview-roles{gap:0}
+  .preview-roles a{padding:6px 5px;font-size:.75rem}
+  .prototype-tools summary{font-size:.75rem;gap:4px}
+  .board-head{margin-bottom:18px}
+  .board-head h1{gap:4px 12px}
+  .board-head h1 .my{font-size:.75em}
+  .topbar{column-gap:12px;row-gap:8px;padding-block:8px}
+  .tabs{gap:0}
+  .tab{padding:6px;font-size:.85rem;min-height:44px}
+  .more summary{min-height:44px}
+  .board-tools{gap:10px 12px;margin-bottom:24px}
+  .board-tools .search{width:100%}
+  .board-tools>.btn{font-size:.85rem;padding:8px 12px}
+  .board-tools .filters summary{font-size:.85rem}
+  .board-tools .grow{display:none}
+  .board-strip{gap:6px;margin-bottom:16px}
+  .lanes{grid-template-columns:1fr;gap:24px;overflow:visible}
+  .sign{min-height:80px;padding:12px 16px}
+  .card{padding:18px}
+  .card-name{font-size:1rem}
+  .card-cash{font-size:.9rem}
+  .board-empty{gap:24px;padding:20px}
+  .check-grid{grid-template-columns:1fr;gap:24px}
+  .check-grid>.panel{padding:20px}
+  .form-grid{grid-template-columns:1fr}
+  .content.experience-content{padding:0}
+}
