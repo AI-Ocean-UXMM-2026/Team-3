@@ -919,3 +919,43 @@ body.sheet-open{overflow:hidden}
 .history-detail .closeout-sheet{box-shadow:none;margin:0}
 .history-remove{flex-shrink:0;min-width:44px;min-height:44px;justify-content:center}
 body.night .history-row,body.night .customer-secondary{background:var(--navy-2);color:var(--cream)}
+
+/* ---- 21 Oct, night: rider pages, matching card hover, order pop-up columns ---- */
+/* Rider bottom nav: real pages; the current one is marked, not the first link */
+.rider-bottom-nav a:first-child{color:var(--navy-ink);border-top-color:transparent}
+.rider-bottom-nav a{position:relative;min-height:64px;line-height:1.25;text-align:center}
+.rider-bottom-nav a[aria-current="page"]{color:var(--cream);border-top-color:var(--saffron)}
+.rider-bottom-nav .bi{display:flex;flex-direction:column}
+.rider-bottom-nav .bi .my{font-family:var(--my);font-weight:600;font-size:.72rem;line-height:1.5}
+.rider-bottom-nav .nav-count{position:absolute;top:6px;left:calc(50% + 8px);min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--saffron);color:var(--navy);font-size:.75rem;line-height:20px}
+/* Cash handover page */
+.handover-route{display:grid;gap:12px;margin-bottom:24px}
+.handover-route .closeout-sheet{margin:0}
+.handover-list-title{margin:4px 0 0;font-size:1rem;display:flex;gap:8px;align-items:baseline}
+.handover-orders{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.handover-orders li{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;background:var(--paper);border:var(--edge);border-radius:var(--r-sm)}
+.handover-orders li>span:first-child{display:grid;min-width:0}
+.handover-orders strong{overflow-wrap:anywhere}
+.handover-amount{flex-shrink:0;font-weight:800;font-size:1.05rem}
+.rider-history h2{margin:18px 0 8px;font-size:1rem}
+body.night .handover-orders li{background:var(--navy-2);color:var(--cream)}
+
+/* Board order cards and route boxes share one hover: the border turns navy */
+.card,.route-tile{transition:border-color 160ms ease,box-shadow 160ms ease,transform 160ms var(--ease-out,ease-out)}
+.card:has(.card-link:focus-visible){border-color:var(--navy);box-shadow:0 0 0 1px var(--navy),var(--lift)}
+@media (hover:hover) and (pointer:fine){
+  .card:hover,.route-tile:hover{border-color:var(--navy);box-shadow:0 0 0 1px var(--navy),var(--lift)}
+}
+.card:active,.route-tile:active{transform:scale(.99)}
+@media (prefers-reduced-motion:reduce){.card:active,.route-tile:active{transform:none}}
+
+/* Order pop-up: Delivery result and History fill the column under the buyer's chat */
+.left-stack{display:grid;gap:16px;align-content:start;min-width:0}
+.left-stack>.panel{padding:20px;margin:0}
+.left-stack>.panel h2,.left-stack>details summary{font-size:1rem;font-weight:650}
+.left-stack p{font-size:.9rem}
+@media (max-width:640px){
+  .left-stack{display:contents}
+  .check-grid>.left-stack>.chat-pane{order:0}
+  .check-grid>.left-stack>.panel{order:3}
+}
