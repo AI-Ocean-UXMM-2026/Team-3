@@ -582,3 +582,33 @@ body.night .prototype-menu{background:var(--paper);color:var(--cream)}
   .brand{min-height:48px}
   .brand-word{display:inline;white-space:nowrap;font-size:1.3rem}
 }
+
+/* Critique fixes, 21 Oct: one tone map, rider screen, night cues, lighter intake */
+.pill.move{background:#DCE3EC;color:var(--navy)}
+body.night .pill.move{background:#2C4260;color:var(--cream)}
+.board-strip i.needs{background:var(--saffron)}
+.board-strip .seg.needs{background:var(--saffron);color:var(--navy)}
+input::placeholder,textarea::placeholder{color:#5F6C7E}
+:lang(my) a,a:lang(my){text-decoration-skip-ink:auto;text-underline-offset:.35em}
+
+body:has(.rider-wrap) .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+.toast .my{display:block;font-family:var(--my);line-height:1.8;font-weight:700}
+.toast .my+span{display:block;font-weight:600;opacity:.9}
+.stop-actions,.rider-wrap .stop-actions{grid-template-columns:1fr 1fr}
+.stop-actions .btn.undo{flex-direction:column;gap:0;background:var(--paper);color:var(--navy);border:2px solid var(--navy)}
+.stop-actions .btn.undo .my{line-height:1.4}
+.undo-done{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:700;color:var(--ok)}
+.undo-done .icon{width:16px;height:16px}
+body.night .stop-actions .btn.undo{background:var(--paper);color:var(--cream);border-color:var(--cream)}
+body.night .undo-done{color:#8FD6AE}
+.rider-demo{margin-top:16px}
+.rider-demo[open] .action-row{margin-top:8px}
+.map-disclaimer{font-size:.8rem}
+
+body.night .landmark{background:#1C2F46;color:var(--cream);border:2px solid var(--saffron)}
+body.night .route-map .map-route,body.night .route-map .map-start{stroke:var(--cream)}
+body.night .route-map .map-start{fill:var(--cream)}
+
+.preview-record>.section-head{background:var(--paper);color:var(--ink);border-bottom:var(--edge)}
+.preview-original textarea,.intake-source textarea{field-sizing:content;height:auto;min-height:120px;max-height:60vh}
+.btn.quiet{padding-inline:0}
