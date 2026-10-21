@@ -4,7 +4,7 @@
 
 The secondary dispatcher pages, plain dialog copy, rider night-mode coverage and built-system documentation are implemented. Read `DESIGN.md` for current tokens, components and responsive rules; `.impeccable/design.json` is its companion. Cream remains the pinned brand ground. All motion except the 240ms lane-count flip is immediate, including buyer pin changes.
 
-`BURMESE-REVIEW.md` contains 49 distinct authored Burmese UI runs. The project owner volunteered as the native-language reviewer; approval is pending and the PR must remain draft until their review is recorded. This is not native-approved copy.
+`BURMESE-REVIEW.md` contains 49 distinct authored Burmese UI runs. The project owner approved the Burmese in chat on 21 October 2026; the approved source commit is recorded in that checklist. The owner also selected Inline navigation, with the full LannPya wordmark beside the mobile logo.
 
 Validation: all 93 root tests and syntax checks pass. The API test helper now accepts Windows CRLF line endings. Fresh browser evidence is stored outside the repo; the supplied branch has no `screens` directory. The isolated three-variant route study also lives outside production code. The original handoff below remains as a record of the starting point.
 

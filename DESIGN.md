@@ -100,7 +100,7 @@ Night mode is explicitly selected in the rider view. It sets a dark page ground,
 
 Inter at optical size 32 carries headings, sign counts and cash. Manrope carries English body text. Noto Sans Myanmar carries Burmese; use `lang="my"` when authoring new Burmese text. Burmese defaults to 1.8 line height, including lane labels. Compact rider action labels use their established 1.4–1.5 values and must be checked for stacked marks and wrapping.
 
-Use sentence case, a clear heading scale and tabular numerals. Amounts display as `35,000 Ks`. Preserve exact amounts; do not round. Headings use -0.02em tracking; do not tighten Burmese text. Controls wrap rather than truncate essential actions. English remains visible beneath Burmese in rider dialogs because the Burmese is awaiting native review.
+Use sentence case, a clear heading scale and tabular numerals. Amounts display as `35,000 Ks`. Preserve exact amounts; do not round. Headings use -0.02em tracking; do not tighten Burmese text. Controls wrap rather than truncate essential actions. English remains visible beneath Burmese in rider dialogs for bilingual use.
 
 Fonts currently load from Google Fonts with system fallbacks. First-time offline use can show fallback fonts; this is a prototype limitation, not proof of local font caching.
 
@@ -130,7 +130,7 @@ Navy sign, Cream name, Burmese above English, count aligned to the far edge. Nee
 
 ### Buttons and navigation
 
-Primary actions are Navy with Cream text; secondary actions use Paper with a strong hairline. Delivered uses Saffron. Hover changes the surface immediately; press moves a control by 1px without a transition. Keep visible focus and an explicit disabled state. Main navigation uses a Saffron underline for the current destination. Native details/summary supplies the More menu and optional sections.
+Primary actions are Navy with Cream text; secondary actions use Paper with a strong hairline. Delivered uses Saffron. Hover changes the surface immediately; press moves a control by 1px without a transition. Keep visible focus and an explicit disabled state. The selected Inline navigation keeps the logo, destination tabs and status together at desktop widths. On phones the full LannPya wordmark stays beside the existing mark in the top row; tabs and status wrap below. Main navigation uses a Saffron underline for the current destination. Native details/summary supplies the More menu and optional sections.
 
 ### Working sheets and facts
 
@@ -144,7 +144,7 @@ Every field has a visible label. Fields are at least 44px tall, at least 48px fo
 
 Use an action-specific title and save label. Rider title, key field labels and submit/cancel actions put Burmese above English. Native `<dialog>` provides modal focus containment; `aria-labelledby` points to its title. Cash dialogs ask for the amount physically counted; a differing amount requires a reason. Cancelling preserves workflow state. The existing two-second Delivered undo remains intact.
 
-Burmese strings are drafts, including the inherited board and buyer copy. `BURMESE-REVIEW.md` carries the complete UI inventory and review protocol. Native-speaker approval is still required; automated checks are not language approval.
+The project owner approved the current Burmese UI inventory on 21 October 2026, recorded against source commit `6b800c48741ec3973378253a1b0b92ae573167d6` in `BURMESE-REVIEW.md`. Future Burmese wording changes need a new review; automated checks are not language approval.
 
 ## Do's and Don'ts
 

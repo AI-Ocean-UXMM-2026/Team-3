@@ -569,3 +569,16 @@ body.night .prototype-menu{background:var(--paper);color:var(--cream)}
   .form-grid{grid-template-columns:1fr}
   .content.experience-content{padding:0}
 }
+
+/* Selected Inline prototype, with the complete brand lock-up on phones. */
+.topbar{gap:16px 32px;align-items:center}
+.tabs{gap:8px}
+.tab{padding-inline:16px}
+@media(max-width:1100px){.topbar{gap:12px 20px}.status-sign{margin-left:0}}
+@media(max-width:760px){
+  .tabs{gap:0}
+  .tab{padding-inline:6px}
+  .topbar{gap:8px 12px}
+  .brand{min-height:48px}
+  .brand-word{display:inline;white-space:nowrap;font-size:1.3rem}
+}
