@@ -1,0 +1,267 @@
+{"http_status": 201, "method": "POST", "operation": "rider_create", "reference": null, "response": {"version": 1}}
+{"http_status": 201, "method": "POST", "operation": "rider_create", "reference": null, "response": {"version": 1}}
+{"http_status": 201, "method": "POST", "operation": "rider_create", "reference": null, "response": {"version": 1}}
+{"http_status": 200, "method": "POST", "operation": "parse", "reference": "LAB-00001", "response": {"confidence": "AMBER"}}
+{"http_status": 201, "method": "POST", "operation": "order_create", "reference": "LAB-00001", "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "POST", "operation": "parse", "reference": "LAB-00002", "response": {"confidence": "AMBER"}}
+{"http_status": 201, "method": "POST", "operation": "order_create", "reference": "LAB-00002", "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "POST", "operation": "parse", "reference": "LAB-00003", "response": {"confidence": "AMBER"}}
+{"http_status": 201, "method": "POST", "operation": "order_create", "reference": "LAB-00003", "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "POST", "operation": "parse", "reference": "LAB-00004", "response": {"confidence": "AMBER"}}
+{"http_status": 201, "method": "POST", "operation": "order_create", "reference": "LAB-00004", "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "POST", "operation": "parse", "reference": "LAB-00005", "response": {"confidence": "RED"}}
+{"http_status": 201, "method": "POST", "operation": "order_create", "reference": "LAB-00005", "response": {"confidence_level": "RED", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00001", "response": {}}
+{"http_status": 201, "method": "POST", "operation": "link_replace", "reference": null, "response": {}}
+{"http_status": 404, "method": "GET", "operation": "revoked_link_rejection", "reference": null, "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00001", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00001", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00001", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_pin_proposal", "reference": "LAB-00001", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["INITIAL_PIN_REQUIRES_REVIEW"], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "buyer_request_history", "reference": null, "response": {"total": 1}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 4, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00001", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 5}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 5}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 6}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00001", "response": {"order_status": "ASSIGNED", "order_version": 7}}
+{"http_status": 409, "method": "POST", "operation": "duplicate_assignment_rejection", "reference": "LAB-00001", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00001", "response": {"order_version": 8, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 409, "method": "PATCH", "operation": "missing_cod_confirmation_rejection", "reference": "LAB-00001", "response": {}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00001", "response": {"order_version": 9, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00002", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00002", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00002", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00002", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_reschedule", "reference": "LAB-00002", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["COURIER_RESCHEDULING_REVIEW_REQUIRED"], "resolution": null}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_reschedule", "reference": "LAB-00002", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["COURIER_RESCHEDULING_REVIEW_REQUIRED", "PENDING_BUYER_REVIEW"], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "buyer_request_history", "reference": null, "response": {"total": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 4}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 5, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 5}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 6, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00002", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 7}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 7}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 8}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00002", "response": {"order_status": "ASSIGNED", "order_version": 9}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00002", "response": {"order_version": 10, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00002", "response": {"order_version": 11, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00003", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00003", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00003", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00003", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00003", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00003", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00003", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00003", "response": {"order_version": 7, "status": "FAILED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00004", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00004", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00004", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00004", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00004", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00004", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00007", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00007", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00007", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00007", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00007", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00007", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00007", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00007", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00008", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00008", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00008", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00008", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00008", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00008", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00008", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00008", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00009", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00009", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00009", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00009", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00009", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00009", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 2, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 2, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00009", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00009", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00011", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00011", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00011", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00011", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_pin_proposal", "reference": "LAB-00011", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["INITIAL_PIN_REQUIRES_REVIEW"], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "buyer_request_history", "reference": null, "response": {"total": 1}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 4, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00011", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 5}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 5}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 6}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00011", "response": {"order_status": "ASSIGNED", "order_version": 7}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00011", "response": {"order_version": 8, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00011", "response": {"order_version": 9, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00012", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00012", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00012", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00012", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_reschedule", "reference": "LAB-00012", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["COURIER_RESCHEDULING_REVIEW_REQUIRED"], "resolution": null}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_reschedule", "reference": "LAB-00012", "response": {"confidence_level": "AMBER", "decision": "REVIEW_REQUIRED", "order_status": "NEEDS_REVIEW", "reason_codes": ["COURIER_RESCHEDULING_REVIEW_REQUIRED", "PENDING_BUYER_REVIEW"], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "buyer_request_history", "reference": null, "response": {"total": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 4}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 5, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 5}}
+{"http_status": 200, "method": "PATCH", "operation": "dispatcher_review", "reference": null, "response": {"order_version": 6, "resolution": "APPROVE"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00012", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 7}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 7}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 8}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00012", "response": {"order_status": "ASSIGNED", "order_version": 9}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00012", "response": {"order_version": 10, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00012", "response": {"order_version": 11, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00013", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00013", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00013", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00013", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00013", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00013", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 2, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 2, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00013", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00013", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00014", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00014", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00014", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00017", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00017", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00017", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00017", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00017", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00017", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00017", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00017", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 201, "method": "POST", "operation": "link_create", "reference": "LAB-00018", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_card", "reference": "LAB-00018", "response": {}}
+{"http_status": 200, "method": "POST", "operation": "buyer_verify", "reference": "LAB-00018", "response": {}}
+{"http_status": 200, "method": "GET", "operation": "buyer_details", "reference": "LAB-00018", "response": {"status": "NEEDS_REVIEW"}}
+{"http_status": 200, "method": "PATCH", "operation": "buyer_available", "reference": "LAB-00018", "response": {"confidence_level": "AMBER", "decision": "APPLIED", "order_status": "CONFIRMED", "reason_codes": [], "resolution": null}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00018", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 2, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 2, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00018", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00018", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "DRAFT", "version": 1}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "NEEDS_REVIEW", "version": 2}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "GET", "operation": "order_detail", "reference": null, "response": {"confidence_level": "AMBER", "status": "CONFIRMED", "version": 3}}
+{"http_status": 200, "method": "PATCH", "operation": "status_update", "reference": null, "response": {"confidence_level": "AMBER", "status": "READY_FOR_DISPATCH", "version": 4}}
+{"http_status": 201, "method": "POST", "operation": "rider_assign", "reference": "LAB-00019", "response": {"order_status": "ASSIGNED", "order_version": 5}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 1, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 1, "unchanged": true}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_start", "reference": "LAB-00019", "response": {"order_version": 6, "status": "OUT_FOR_DELIVERY"}}
+{"http_status": 200, "method": "PATCH", "operation": "delivery_finish", "reference": "LAB-00019", "response": {"order_version": 7, "status": "DELIVERED"}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue", "reference": null, "response": {"total": 0, "unchanged": false}}
+{"http_status": 200, "method": "GET", "operation": "rider_queue_poll", "reference": null, "response": {"total": 0, "unchanged": true}}

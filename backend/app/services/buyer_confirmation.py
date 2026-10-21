@@ -4,7 +4,7 @@ import json
 import re
 import secrets
 from copy import deepcopy
-from datetime import UTC, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 
 from sqlalchemy import select, update
 
@@ -17,6 +17,16 @@ from app.services.order_management import OrderManagementService, recalculate
 
 PRE_DISPATCH = {OrderStatus.NEEDS_REVIEW, OrderStatus.AWAITING_CONFIRMATION, OrderStatus.CONFIRMED}
 YANGON = timezone(timedelta(hours=6, minutes=30))
+
+
+def sync_parcel_schedule(order, changes):
+    """Keep the new route delivery day aligned with an applied buyer window."""
+    window = changes.get("delivery_time_window")
+    if order.parsing_metadata.get("parcel") and window and "/" in window:
+        start = datetime.fromisoformat(window.split("/", 1)[0])
+        metadata = deepcopy(order.parsing_metadata)
+        metadata["parcel"]["delivery_day"] = start.astimezone(YANGON).date().isoformat()
+        order.parsing_metadata = metadata
 
 
 def digest(value):
@@ -386,6 +396,7 @@ class BuyerConfirmationService:
                 }
             order.field_sources = sources
             recalculate(order, self.catalog)
+            sync_parcel_schedule(order, changes)
         # Requests never silently become a confirmed dispatch plan.
         if reasons:
             order.status = OrderStatus.NEEDS_REVIEW
@@ -632,6 +643,7 @@ class BuyerConfirmationService:
                 }
             order.field_sources = sources
             recalculate(order, self.catalog)
+            sync_parcel_schedule(order, changes)
         row.resolution, row.resolution_reason = body.decision, body.reason
         row.resolved_at, row.resolved_by = utcnow(), actor.id
         previous = order.status

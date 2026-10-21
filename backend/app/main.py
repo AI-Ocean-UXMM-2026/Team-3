@@ -16,6 +16,7 @@ from app.api.buyer_confirmation import protected_router, public_router
 from app.api.order_management import router as order_router
 from app.api.riders import router as rider_router
 from app.api.routes import router
+from app.api.workflow import router as workflow_router
 from app.core.access_logging import install_access_filter
 from app.core.config import Settings
 from app.core.order_errors import OrderAPIError
@@ -93,7 +94,14 @@ def create_app(
             logger.error("Unhandled backend error: %s", type(exc).__name__)
             response = error_response(500, "INTERNAL_ERROR", "An unexpected server error occurred.")
         if request.url.path.startswith(
-            ("/api/orders", "/api/users", "/api/confirm", "/api/riders")
+            (
+                "/api/orders",
+                "/api/users",
+                "/api/confirm",
+                "/api/riders",
+                "/api/routes",
+                "/api/session",
+            )
         ):
             response.headers["Cache-Control"] = "no-store"
         if request.url.path.startswith("/api/confirm"):
@@ -174,6 +182,7 @@ def create_app(
     application.include_router(protected_router)
     application.include_router(public_router)
     application.include_router(rider_router)
+    application.include_router(workflow_router)
     return application
 
 

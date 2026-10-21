@@ -15,7 +15,11 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    ai_provider: Literal["mock", "disabled"] = "mock"
+    ai_provider: Literal["mock", "disabled", "gemini", "json_http"] = "mock"
+    ai_model: str | None = Field(default=None, min_length=1, max_length=128)
+    ai_api_key: SecretStr | None = None
+    ai_endpoint: str | None = None
+    ai_external_requests_enabled: bool = False
     parser_mode: Literal["hybrid", "rules", "mock"] = "hybrid"
     ai_timeout_seconds: float = Field(default=3.0, gt=0, le=30, allow_inf_nan=False)
     ai_max_input_chars: int = Field(default=2000, ge=128, le=4000)

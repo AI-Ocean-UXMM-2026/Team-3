@@ -139,7 +139,7 @@ class BuyerResponse(BaseModel):
     @field_validator("instructions")
     @classmethod
     def nonblank(cls, value):
-        if value is not None and not value.strip():
+        if value is not None and (not value.strip() or "\x00" in value):
             raise ValueError("Instructions must be nonblank")
         return value.strip() if value else value
 
@@ -166,7 +166,7 @@ class SetLocationReference(BuyerLocation):
     @field_validator("source_reference")
     @classmethod
     def source_nonblank(cls, value):
-        if not value.strip():
+        if not value.strip() or "\x00" in value:
             raise ValueError("Reference source is required")
         return value.strip()
 
@@ -180,6 +180,6 @@ class ReviewBuyerRequest(BaseModel):
     @field_validator("reason")
     @classmethod
     def nonblank_reason(cls, value):
-        if len(value.strip()) < 5:
+        if len(value.strip()) < 5 or "\x00" in value:
             raise ValueError("Review reason needs at least five nonblank characters")
         return value.strip()

@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "configuration": {
+    "orders": 5000,
+    "seed": 20261021,
+    "merchants": 3,
+    "hubs": 2,
+    "riders": 6,
+    "batch_size": 100,
+    "read_samples": 15,
+    "workflow_limit": 24,
+    "confirmation_rate": 0.65,
+    "delivery_failure_rate": 0.2,
+    "demo": false
+  }
+}

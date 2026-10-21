@@ -102,6 +102,13 @@ def extract_cod(text: str, address: AddressFields, sources: dict[str, FieldSourc
     for pattern in COD_PATTERNS:
         for match in pattern.finditer(text):
             span = match.span("value")
+            # In "<phone> COD <amount>", the reverse amount-before-COD rule
+            # also sees the phone. It is not a second payment candidate. Keep
+            # forward "COD <phone>" invalid, and retain unmatched COD markers.
+            if pattern is COD_PATTERNS[1] and any(
+                span[0] < p.end and span[1] > p.start for p in phone_spans
+            ):
+                continue
             if span in spans:
                 continue
             spans.add(span)

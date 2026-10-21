@@ -41,9 +41,12 @@ class ExtractionResult:
 
 
 class ExtractionGateway:
-    def __init__(self, provider: AddressExtractionProvider, timeout_seconds: float):
+    def __init__(
+        self, provider: AddressExtractionProvider, timeout_seconds: float, *, allow_external=False
+    ):
         self.provider = provider
         self.timeout_seconds = timeout_seconds
+        self.allow_external = allow_external
 
     async def extract(self, payload: SanitizedAddressInput) -> ExtractionResult:
         # Public identifiers must be declared in adapter code, never derived from secrets.
@@ -69,15 +72,12 @@ class ExtractionGateway:
                     message="AI adapter is unavailable. Deterministic results retained.",
                 )
             )
-        if external:
+        if external and not self.allow_external:
             return ExtractionResult(
                 AIAvailability(
                     status="unavailable",
                     provider=name,
-                    message=(
-                        "External AI calls are not enabled in Phase 3. "
-                        "Deterministic results retained."
-                    ),
+                    message=("External AI calls are not enabled. Deterministic results retained."),
                 )
             )
         if name == "disabled":

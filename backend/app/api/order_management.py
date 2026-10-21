@@ -80,8 +80,10 @@ def list_orders(
     confidence: Confidence | None = None,
     q: Annotated[str | None, Query(min_length=1, max_length=100)] = None,
 ):
-    if q is not None and not q.strip():
-        raise OrderAPIError(422, "VALIDATION_ERROR", "Search text must not be blank.")
+    if q is not None and (not q.strip() or "\x00" in q):
+        raise OrderAPIError(
+            422, "VALIDATION_ERROR", "Search text must be nonblank and contain no NUL characters."
+        )
     return service(request, session, actor).list(
         page, page_size, status, confidence, q.strip() if q is not None else None
     )

@@ -21,3 +21,26 @@ node_modules/
 .next/
 .DS_Store
 Thumbs.db
+venv/
+env/
+.tmp/
+*.tmp
+*.swp
+*~
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+private_access.json
+.hypothesis/
+test-results.xml
+
+.tmp-*.txt
+frontend/dist/
+workspace_access.json
+test-results/
+playwright-report/
+# Reproducible local verification outputs; curated Markdown reports remain reviewable.
+docs/visual-testing/screenshots/
+docs/visual-testing/BROWSER_OBSERVATIONS.json
+docs/phase16/BROWSER_OBSERVATIONS.json
+docs/phase16/AI_READINESS.json

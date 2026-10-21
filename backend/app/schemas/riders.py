@@ -82,6 +82,7 @@ class AssignOrder(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
     rider_id: UUID
+    route_id: UUID | None = None
     stop_sequence: int | None = Field(default=None, ge=1, le=10000, strict=True)
 
 
@@ -100,6 +101,8 @@ class DeliveryAction(BaseModel):
     request_id: UUID
     action: Literal["START", "DELIVERED", "FAILED"]
     cod_collected: bool | None = Field(default=None, strict=True)
+    actual_amount: int | None = Field(default=None, ge=0, le=1000000000, strict=True)
+    difference_reason: str | None = Field(default=None, min_length=1, max_length=500)
     failure_reason: FailureReason | None = None
     failure_note: str | None = Field(default=None, min_length=1, max_length=500, strict=True)
 
@@ -112,6 +115,10 @@ class DeliveryAction(BaseModel):
             raise ValueError("Failure details are only permitted for FAILED")
         if self.action != "DELIVERED" and self.cod_collected is not None:
             raise ValueError("COD collection can only be recorded with DELIVERED")
+        if self.action != "DELIVERED" and (
+            self.actual_amount is not None or self.difference_reason is not None
+        ):
+            raise ValueError("Actual cash can only be recorded with DELIVERED")
         if self.failure_note is not None:
             if not self.failure_note.strip() or "\x00" in self.failure_note:
                 raise ValueError("Failure note must be nonblank")

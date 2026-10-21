@@ -28,6 +28,14 @@ def codes(result):
     return {reason.code for reason in result.validation_reasons}
 
 
+@pytest.mark.parametrize("amount", [0, 12500, 25000])
+def test_phone_immediately_before_cod_does_not_hide_labelled_amount(client, amount):
+    result = parse(client, f"09790000000 COD {amount} MMK")
+    assert result.address.phone_number == "09790000000"
+    assert result.address.cod_amount == amount
+    assert result.confidence == "RED"  # Missing township still requires review.
+
+
 def test_actual_burmese_extraction_and_evidence(client):
     text = (
         "  အမည်: မလှ\nဖုန်း: ၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ "

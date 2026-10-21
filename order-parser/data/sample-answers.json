@@ -1,0 +1,22 @@
+[
+  { "landmark": "Junction Square", "street": null, "floor_unit": "၄ ထပ်တိုက် အခန်း ၃", "instructions": null, "vague_phrases": ["Junction Square နောက်ဘက်"] },
+  { "landmark": "အဆွေတော်", "street": null, "floor_unit": "၄ ထပ်တိုက် ညာဘက်ခန်း", "instructions": "ညနေ ၃ နာရီမှ လာပါ", "vague_phrases": ["အဆွေတော်နား"] },
+  { "landmark": null, "street": "Baho Road", "floor_unit": null, "instructions": null, "vague_phrases": [] },
+  { "landmark": null, "street": "ကမ္ဘာအေးဘုရားလမ်း", "floor_unit": null, "instructions": null, "vague_phrases": [] },
+  { "landmark": "8 မိုင်လမ်းဆုံ", "street": "ပြည်လမ်း", "floor_unit": null, "instructions": null, "vague_phrases": ["8 မိုင်လမ်းဆုံ အနီး"] },
+  { "landmark": "သုဝဏ္ဏ အားကစားကွင်း", "street": null, "floor_unit": null, "instructions": null, "vague_phrases": ["အားကစားကွင်းနား"] },
+  { "landmark": "ဘုန်းကြီးကျောင်း", "street": null, "floor_unit": null, "instructions": null, "vague_phrases": ["ဘုန်းကြီးကျောင်းနောက်ဘက်"] },
+  { "landmark": "ဆူးလေဘုရား", "street": "၃၇ လမ်း", "floor_unit": "၃ လွှာ", "instructions": null, "vague_phrases": [] },
+  { "landmark": null, "street": "အင်းစိန်လမ်း", "floor_unit": null, "instructions": null, "vague_phrases": [] },
+  { "landmark": null, "street": "Kaba Aye Pagoda Road", "floor_unit": "Building 7, Room 5B", "instructions": "Call before 5 pm", "vague_phrases": [] },
+  { "landmark": "ဆိုင်ကယ်ပြင်ဆိုင်", "street": null, "floor_unit": null, "instructions": null, "vague_phrases": ["ဈေးနား", "ဆိုင်ကယ်ပြင်ဆိုင်ဘေး"] },
+  { "landmark": "Hledan Centre", "street": null, "floor_unit": "၂ လွှာ", "instructions": null, "vague_phrases": [] },
+  { "landmark": "Ocean", "street": "ကျိုက္ကဆံလမ်း", "floor_unit": null, "instructions": null, "vague_phrases": ["Ocean ရှေ့"] },
+  { "landmark": null, "street": "၇၃ လမ်း", "floor_unit": null, "instructions": null, "vague_phrases": ["၃၀ နှင့် ၃၁ ကြား"] },
+  { "landmark": "Insein Market", "street": null, "floor_unit": null, "instructions": "မနက် ၁၀ နာရီနောက်မှ ဖုန်းဆက်ပါ", "vague_phrases": ["Insein Market ဘေး"] },
+  { "landmark": "ရန်ကုန်လေဆိပ် Terminal 1", "street": null, "floor_unit": null, "instructions": null, "vague_phrases": [] },
+  { "landmark": "တော်ဝင်စင်တာ", "street": "ဦးဝိစာရလမ်း", "floor_unit": null, "instructions": null, "vague_phrases": ["တော်ဝင်စင်တာ ဘေး"] },
+  { "landmark": "ဈေး", "street": null, "floor_unit": null, "instructions": "လမ်းကြားထဲ ဝင်ဝင်ချင်း", "vague_phrases": ["ဈေးအနီး", "လမ်းကြားထဲ ဝင်ဝင်ချင်း"] },
+  { "landmark": "ရွှေတိဂုံဘုရား အနောက်ဘက်မုခ်", "street": null, "floor_unit": null, "instructions": null, "vague_phrases": [] },
+  { "landmark": "Bogyoke Market", "street": null, "floor_unit": "၂ လွှာ ဆိုင်ခန်း ၁၂", "instructions": null, "vague_phrases": [] }
+]

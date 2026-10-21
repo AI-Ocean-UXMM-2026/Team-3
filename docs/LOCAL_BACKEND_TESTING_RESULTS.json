@@ -1,0 +1,24 @@
+{
+  "synthetic_test_data_only": true,
+  "baseline_python": {"passed": 775, "failed": 0, "seconds": 58.94},
+  "final_python": {"passed": 808, "failed": 0, "new_dashboard_cases": 33, "seconds": 71.35},
+  "javascript": {"passed": 7, "failed": 0, "new_dashboard_cases": 3},
+  "lint": "passed",
+  "format": "95 Python files already formatted",
+  "dependencies": "No broken requirements found",
+  "public_application_openapi_operations": 29,
+  "real_http": {
+    "origin": "http://127.0.0.1:8765",
+    "buyer_dispatcher_rider_cod": "passed",
+    "persisted_delivery_events_before_reset": 11,
+    "expired_link_status": 410,
+    "locked_link_status": 423,
+    "invalid_csrf_status": 403,
+    "reset": "passed; empty sandbox left running"
+  },
+  "visual_browser_verification": "blocked: no registered browser and native computer-use pipe unavailable",
+  "frontend_files_changed": 0,
+  "existing_application_files_changed_by_this_task": 0,
+  "new_dependencies": 0,
+  "pushed_or_deployed": false
+}

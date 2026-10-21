@@ -1,5 +1,11 @@
 # LannPya AI backend — Phase 7
 
+Reliability audit: [overnight verification](../docs/OVERNIGHT_VERIFICATION_SUMMARY.md).
+Repeat the isolated real-HTTP delivery check with
+`.\.venv\Scripts\python.exe scripts\verify_delivery_demo.py` from this backend directory.
+It reuses the existing demo engine, stops its servers and writes redacted audit results;
+normal `.env` and local databases remain untouched.
+
 FastAPI REST backend, independent of frontend technology. Deterministic local address
 extraction with encoding normalization, Myanmar phone validation, contextual COD parsing,
 controlled Yangon township aliases, field evidence, and explainable triage. Default hybrid

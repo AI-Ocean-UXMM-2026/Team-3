@@ -73,8 +73,9 @@ def dispatcher_status_sync(session, order, actor, previous):
 
 
 class RiderService:
-    def __init__(self, session, actor, settings, catalog):
+    def __init__(self, session, actor, settings, catalog, *, commit=True):
         self.session, self.actor, self.settings, self.catalog = session, actor, settings, catalog
+        self.commit = commit
 
     def dispatcher(self):
         if self.actor.role not in {UserRole.DISPATCHER, UserRole.ADMIN}:
@@ -193,7 +194,8 @@ class RiderService:
             "order_status": order.status,
             "order_version": order.version,
         }
-        self.session.commit()
+        if self.commit:
+            self.session.commit()
         return result
 
     def assign(self, order_id, body):
@@ -236,6 +238,10 @@ class RiderService:
                 "COD_AMOUNT_REQUIRED",
                 "Set an explicit COD amount; use zero for prepaid orders.",
             )
+        if order.parsing_metadata.get("parcel") and body.route_id is None:
+            raise OrderAPIError(
+                422, "ROUTE_REQUIRED", "Choose a rider route for workspace parcels."
+            )
         count = self.session.scalar(
             select(func.count())
             .select_from(DeliveryAssignment)
@@ -257,6 +263,10 @@ class RiderService:
         order.status = OrderStatus.ASSIGNED
         profile.queue_version += 1
         self.event(order, assignment, "RIDER_ASSIGNED", previous)
+        if body.route_id is not None:
+            from app.services.workflow import attach_order
+
+            attach_order(self.session, self.actor, order, assignment, body.route_id)
         return self.assignment_result(order, assignment)
 
     def unassign(self, order_id, body):
@@ -269,6 +279,9 @@ class RiderService:
                 "UNASSIGN_NOT_ALLOWED",
                 "Only an assigned, not-started delivery can be unassigned.",
             )
+        from app.services.workflow import detach_order
+
+        detach_order(self.session, self.actor, order)
         assignment.status, assignment.ended_at = "UNASSIGNED", utcnow()
         previous, order.status = order.status, OrderStatus.READY_FOR_DISPATCH
         bump_queue(self.session, assignment.rider_id)
@@ -321,6 +334,9 @@ class RiderService:
         order = self.session.get(Order, order_id)
         self.session.refresh(order)
         OrderManagementService.check_version(order, body.expected_version)
+        from app.services.workflow import record_collection, validate_delivery_route
+
+        validate_delivery_route(self.session, self.actor, order, body.action)
         target = (
             OrderStatus.OUT_FOR_DELIVERY if body.action == "START" else OrderStatus(body.action)
         )
@@ -339,6 +355,7 @@ class RiderService:
                 raise OrderAPIError(
                     409, "COD_AMOUNT_REQUIRED", "COD amount requires dispatcher review."
                 )
+            record_collection(order, body, self.actor)
             if (
                 order.cod_amount > 0
                 and self.settings.rider_require_cod_confirmation

@@ -1,0 +1,226 @@
+[
+  {
+    "input": "ကမာရွတ် Junction Square နောက်ဘက် ၄ ထပ်တိုက် အခန်း ၃",
+    "output": {
+      "landmark": "Junction Square",
+      "street": null,
+      "floor_unit": "၄ ထပ်တိုက် အခန်း ၃",
+      "instructions": null,
+      "vague_phrases": [
+        "Junction Square နောက်ဘက်"
+      ]
+    }
+  },
+  {
+    "input": "တာမွေ အဆွေတော်နား ၄ ထပ်တိုက် ညာဘက်ခန်း\nညနေ ၃ နာရီမှ လာပါ",
+    "output": {
+      "landmark": "အဆွေတော်",
+      "street": null,
+      "floor_unit": "၄ ထပ်တိုက် ညာဘက်ခန်း",
+      "instructions": "ညနေ ၃ နာရီမှ လာပါ",
+      "vague_phrases": [
+        "အဆွေတော်နား"
+      ]
+    }
+  },
+  {
+    "input": "No. 45, Baho Road, Sanchaung",
+    "output": {
+      "landmark": null,
+      "street": "Baho Road",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "ဗဟန်း ကမ္ဘာအေးဘုရားလမ်း အမှတ် ၁၂",
+    "output": {
+      "landmark": null,
+      "street": "ကမ္ဘာအေးဘုရားလမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "မရမ်းကုန်း 8 မိုင်လမ်းဆုံ အနီး ပြည်လမ်း",
+    "output": {
+      "landmark": "8 မိုင်လမ်းဆုံ",
+      "street": "ပြည်လမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "8 မိုင်လမ်းဆုံ အနီး"
+      ]
+    }
+  },
+  {
+    "input": "သင်္ဃန်းကျွန်း သုဝဏ္ဏ အားကစားကွင်းနား",
+    "output": {
+      "landmark": "သုဝဏ္ဏ အားကစားကွင်း",
+      "street": null,
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "အားကစားကွင်းနား"
+      ]
+    }
+  },
+  {
+    "input": "မြောက်ဒဂုံ ၃၅ ရပ်ကွက် ဘုန်းကြီးကျောင်းနောက်ဘက်",
+    "output": {
+      "landmark": "ဘုန်းကြီးကျောင်း",
+      "street": null,
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "ဘုန်းကြီးကျောင်းနောက်ဘက်"
+      ]
+    }
+  },
+  {
+    "input": "ကျောက်တံတား ဆူးလေဘုရား အရှေ့ဘက် ၃၇ လမ်း အမှတ် ၁၀၅ ၃ လွှာ",
+    "output": {
+      "landmark": "ဆူးလေဘုရား",
+      "street": "၃၇ လမ်း",
+      "floor_unit": "၃ လွှာ",
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "လှိုင် အင်းစိန်လမ်း",
+    "output": {
+      "landmark": null,
+      "street": "အင်းစိန်လမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "Yankin, Kaba Aye Pagoda Road, Building 7, Room 5B\nCall before 5 pm",
+    "output": {
+      "landmark": null,
+      "street": "Kaba Aye Pagoda Road",
+      "floor_unit": "Building 7, Room 5B",
+      "instructions": "Call before 5 pm",
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "သာကေတ ဈေးနား ဆိုင်ကယ်ပြင်ဆိုင်ဘေး",
+    "output": {
+      "landmark": "ဆိုင်ကယ်ပြင်ဆိုင်",
+      "street": null,
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "ဈေးနား",
+        "ဆိုင်ကယ်ပြင်ဆိုင်ဘေး"
+      ]
+    }
+  },
+  {
+    "input": "လှည်းတန်း Hledan Centre ၂ လွှာ",
+    "output": {
+      "landmark": "Hledan Centre",
+      "street": null,
+      "floor_unit": "၂ လွှာ",
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "Tamwe Ocean ရှေ့ ကျိုက္ကဆံလမ်း",
+    "output": {
+      "landmark": "Ocean",
+      "street": "ကျိုက္ကဆံလမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "Ocean ရှေ့"
+      ]
+    }
+  },
+  {
+    "input": "မန္တလေး ၇၃ လမ်း ၃၀ နှင့် ၃၁ ကြား",
+    "output": {
+      "landmark": null,
+      "street": "၇၃ လမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "၃၀ နှင့် ၃၁ ကြား"
+      ]
+    }
+  },
+  {
+    "input": "Insein, Insein Market ဘေး\nမနက် ၁၀ နာရီနောက်မှ ဖုန်းဆက်ပါ",
+    "output": {
+      "landmark": "Insein Market",
+      "street": null,
+      "floor_unit": null,
+      "instructions": "မနက် ၁၀ နာရီနောက်မှ ဖုန်းဆက်ပါ",
+      "vague_phrases": [
+        "Insein Market ဘေး"
+      ]
+    }
+  },
+  {
+    "input": "Mingaladon ရန်ကုန်လေဆိပ် Terminal 1 ရှေ့",
+    "output": {
+      "landmark": "ရန်ကုန်လေဆိပ် Terminal 1",
+      "street": null,
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "ဒဂုံ တော်ဝင်စင်တာ ဘေး ဦးဝိစာရလမ်း အမှတ် ၈",
+    "output": {
+      "landmark": "တော်ဝင်စင်တာ",
+      "street": "ဦးဝိစာရလမ်း",
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": [
+        "တော်ဝင်စင်တာ ဘေး"
+      ]
+    }
+  },
+  {
+    "input": "လှိုင်သာယာ ဈေးအနီး လမ်းကြားထဲ ဝင်ဝင်ချင်း",
+    "output": {
+      "landmark": "ဈေး",
+      "street": null,
+      "floor_unit": null,
+      "instructions": "လမ်းကြားထဲ ဝင်ဝင်ချင်း",
+      "vague_phrases": [
+        "ဈေးအနီး",
+        "လမ်းကြားထဲ ဝင်ဝင်ချင်း"
+      ]
+    }
+  },
+  {
+    "input": "ဗဟန်း ရွှေတိဂုံဘုရား အနောက်ဘက်မုခ် အနီး",
+    "output": {
+      "landmark": "ရွှေတိဂုံဘုရား အနောက်ဘက်မုခ်",
+      "street": null,
+      "floor_unit": null,
+      "instructions": null,
+      "vague_phrases": []
+    }
+  },
+  {
+    "input": "Pabedan Bogyoke Market ၂ လွှာ ဆိုင်ခန်း ၁၂",
+    "output": {
+      "landmark": "Bogyoke Market",
+      "street": null,
+      "floor_unit": "၂ လွှာ ဆိုင်ခန်း ၁၂",
+      "instructions": null,
+      "vague_phrases": []
+    }
+  }
+]

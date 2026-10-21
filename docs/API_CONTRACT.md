@@ -28,6 +28,9 @@ Header: `Content-Type: application/json`. Request object has exactly one require
 | raw_text | string | 1–10,000 original characters; Burmese, Myanglish, and English accepted; whitespace-only rejected |
 
 Extra fields, empty/whitespace strings, missing values, and non-string values return 422.
+NUL (`U+0000`) is rejected in raw messages, persistent text fields, buyer audit notes,
+and order search. This avoids inconsistent SQLite/PostgreSQL behavior. Ordinary tabs,
+newlines and valid Unicode remain supported; original valid raw input is preserved.
 
 ```json
 {"raw_text":"၀၉၇၉၁၂၃၄၅၆၇၊ လှိုင်မြို့နယ်၊ ဗဟိုလမ်း၊ COD ၂၅၀၀၀"}
@@ -1143,3 +1146,17 @@ Use the existing fetch helper for POST/PATCH, supplying the latest expected_vers
 a new crypto.randomUUID() per intentional delivery action. Do not automatically repeat
 conflicting updates with a new version. Actual redacted responses are in
 [PHASE6_SAMPLE_RESPONSES.json](PHASE6_SAMPLE_RESPONSES.json).
+
+
+## Additive integrated workspace operations
+
+The local integration adds these role-protected native operations without renaming existing endpoints:
+
+- `GET /api/session`
+- `GET /api/routes`
+- `POST /api/routes`
+- `POST /api/routes/{route_id}/actions`
+- `POST /api/orders/{order_id}/operations`
+- `POST /api/orders/{order_id}/prepare-assignment`
+
+See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.

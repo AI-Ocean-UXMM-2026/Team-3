@@ -1,0 +1,20 @@
+{
+  "demo_only": true,
+  "migration": "0003_rider_copilot",
+  "ai": "mock",
+  "green_enabled": false,
+  "counts": {
+    "orders": 5,
+    "buyer_requests": 3,
+    "delivery_assignments": 3,
+    "rider_action_receipts": 4,
+    "delivery_events": 32,
+    "confirmation_links": 3
+  },
+  "http_cases": 68,
+  "cors_origin": "http://localhost:5173",
+  "delivered": true,
+  "failed": true,
+  "rescheduling_requires_review": true,
+  "original_environment_preserved": true
+}

@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID
 
@@ -43,7 +43,9 @@ class EditableOrderFields(BaseModel):
     @classmethod
     def text_types(cls, value, info):
         if info.field_name not in {"latitude", "longitude", "cod_amount", "expected_version"}:
-            if value is not None and (not isinstance(value, str) or not value.strip()):
+            if value is not None and (
+                not isinstance(value, str) or not value.strip() or "\x00" in value
+            ):
                 raise ValueError("Text fields require a nonblank string or null")
             return value.strip() if isinstance(value, str) else value
         if isinstance(value, bool):
@@ -107,9 +109,26 @@ class StructuredOrder(EditableOrderFields):
         return self
 
 
+class ParcelContext(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    item: str = Field(min_length=1, max_length=200)
+    reference: str | None = Field(default=None, max_length=100)
+    sender: str | None = Field(default=None, max_length=200)
+    delivery_day: date
+    hub_received: bool = False
+
+    @field_validator("item", "reference", "sender")
+    @classmethod
+    def clean_text(cls, value):
+        if value is not None and (not value.strip() or "\x00" in value):
+            raise ValueError("Parcel text must be nonblank and contain no NUL")
+        return value.strip() if value is not None else None
+
+
 class CreateOrder(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    merchant_id: UUID
+    merchant_id: UUID | None = None
+    parcel: ParcelContext | None = None
     raw_text: str | None = None
     structured: StructuredOrder | None = None
 
@@ -120,6 +139,8 @@ class CreateOrder(BaseModel):
 
     @model_validator(mode="after")
     def exactly_one_input(self):
+        if self.merchant_id is None and self.parcel is None:
+            raise ValueError("merchant_id is required for legacy orders without parcel context")
         if (self.raw_text is None) == (self.structured is None):
             raise ValueError("Supply exactly one of raw_text or structured")
         return self

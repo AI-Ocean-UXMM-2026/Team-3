@@ -109,10 +109,17 @@ def recalculate(order: Order, catalog: LocationCatalog) -> None:
 
 class OrderManagementService:
     def __init__(
-        self, session: Session, actor: User, catalog: LocationCatalog, require_cod_confirmation=True
+        self,
+        session: Session,
+        actor: User,
+        catalog: LocationCatalog,
+        require_cod_confirmation=True,
+        *,
+        commit=True,
     ):
         self.session, self.actor, self.catalog = session, actor, catalog
         self.require_cod_confirmation = require_cod_confirmation
+        self.commit = commit
 
     def scoped(self):
         query = select(Order)
@@ -140,7 +147,8 @@ class OrderManagementService:
     def committed_response(self, order: Order) -> OrderResponse:
         self.session.flush()
         response = OrderResponse.model_validate(order)
-        self.session.commit()  # Before returning the successful HTTP response.
+        if self.commit:
+            self.session.commit()  # Before returning the successful HTTP response.
         return response
 
     def create(self, body: CreateOrder, parsed: ParseResponse | None, mode: str) -> OrderResponse:
@@ -148,8 +156,18 @@ class OrderManagementService:
             raise OrderAPIError(
                 403, "MERCHANT_SCOPE_FORBIDDEN", "Cannot create orders for another merchant."
             )
-        merchant = self.session.get(User, body.merchant_id)
-        if merchant is None or merchant.role != UserRole.MERCHANT:
+        # Legacy clients may still supply a merchant. New admin-created parcels
+        # are owned by the bound admin, without manufacturing a merchant user.
+        owner_id = body.merchant_id or self.actor.id
+        merchant = self.session.get(User, owner_id)
+        if (
+            merchant is None
+            or (body.merchant_id is not None and merchant.role != UserRole.MERCHANT)
+            or (
+                body.merchant_id is None
+                and self.actor.role not in {UserRole.ADMIN, UserRole.DISPATCHER}
+            )
+        ):
             raise OrderAPIError(
                 422, "INVALID_MERCHANT", "merchant_id must identify an existing merchant."
             )
@@ -200,6 +218,34 @@ class OrderManagementService:
                 order.field_sources[field] = manual_source(self.actor, missing=value is None)
             self.combine_parts(order)
             recalculate(order, self.catalog)
+        if body.parcel is not None:
+            from app.services.buyer_confirmation import YANGON
+
+            if body.parcel.delivery_day < utcnow().astimezone(YANGON).date():
+                raise OrderAPIError(
+                    422, "PAST_DELIVERY_DAY", "Choose today or a future delivery day."
+                )
+            context = body.parcel.model_dump(mode="json")
+            if not context["item"].strip():
+                raise OrderAPIError(422, "ITEM_REQUIRED", "Enter a parcel description.")
+            if body.structured is not None and (
+                not order.customer_name
+                or not order.customer_phone
+                or not order.township
+                or order.cod_amount is None
+            ):
+                raise OrderAPIError(
+                    422,
+                    "MANUAL_FIELDS_REQUIRED",
+                    (
+                        "Manual parcels need recipient, valid phone, township and "
+                        "exact COD amount (zero for prepaid)."
+                    ),
+                )
+            context["hub_received_at"] = (
+                utcnow().isoformat() if context.pop("hub_received") else None
+            )
+            order.parsing_metadata = {**order.parsing_metadata, "parcel": context}
         self.session.add(order)
         self.session.flush()
         self.event(order, "ORDER_CREATED", None, {"parsing_mode": mode})
@@ -223,6 +269,18 @@ class OrderManagementService:
     def correct(self, order_id, body: CorrectOrder) -> OrderResponse:
         order = self.get(order_id)
         self.check_version(order, body.expected_version)
+        if (
+            order.parsing_metadata.get("parcel", {}).get("route_id")
+            and order.status == OrderStatus.FAILED
+        ):
+            raise OrderAPIError(
+                409,
+                "RETURN_CUSTODY_REQUIRED",
+                (
+                    "A failed routed parcel must finish physical return and "
+                    "closeout; retry replanning is not yet available in the API workspace."
+                ),
+            )
         if order.status not in EDITABLE_STATUSES:
             raise OrderAPIError(
                 409, "ORDER_NOT_EDITABLE", "Order cannot be corrected in its current status."
@@ -271,6 +329,29 @@ class OrderManagementService:
     def change_status(self, order_id, body: ChangeStatus) -> OrderResponse:
         order = self.get(order_id)
         self.check_version(order, body.expected_version)
+        if (
+            order.parsing_metadata.get("parcel", {}).get("route_id")
+            and order.status == OrderStatus.FAILED
+        ):
+            raise OrderAPIError(
+                409,
+                "RETURN_CUSTODY_REQUIRED",
+                "Finish physical return/closeout. API retry replanning is not yet available.",
+            )
+        if order.parsing_metadata.get("parcel") and body.status in {
+            OrderStatus.ASSIGNED,
+            OrderStatus.OUT_FOR_DELIVERY,
+            OrderStatus.DELIVERED,
+            OrderStatus.FAILED,
+        }:
+            raise OrderAPIError(
+                409,
+                "USE_WORKFLOW_ACTION",
+                (
+                    "Use route assignment, departure and the assigned rider "
+                    "delivery action for workspace parcels."
+                ),
+            )
         if body.status not in ALLOWED_TRANSITIONS[order.status]:
             raise OrderAPIError(
                 409, "INVALID_STATUS_TRANSITION", "Requested status transition is not allowed."
@@ -316,6 +397,15 @@ class OrderManagementService:
                     "Resolve pending buyer requests before confirming dispatch.",
                 )
             recalculate(order, self.catalog)
+        if body.status == OrderStatus.READY_FOR_DISPATCH and order.parsing_metadata.get("parcel"):
+            if order.latitude is None or order.longitude is None:
+                raise OrderAPIError(
+                    409,
+                    "LOCATION_REQUIRED",
+                    "Review and save a delivery point before preparing this parcel.",
+                )
+            if order.parsing_metadata["parcel"].get("incident"):
+                raise OrderAPIError(409, "INCIDENT_OPEN", "Resolve the parcel incident first.")
         if body.status in {OrderStatus.CONFIRMED, OrderStatus.READY_FOR_DISPATCH}:
             if order.confidence_level == "RED" or not order.customer_phone or not order.township:
                 raise OrderAPIError(
