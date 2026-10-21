@@ -32,26 +32,19 @@ Frontend tests use a fake DOM (`frontend/tests/test-dom.js`): no `Element.closes
 | 4 | In the assign pop-up, let the dispatcher pick a rider directly (create a draft route for that rider and day if none exists), as well as choose an existing route | `orderDialog(id,'assign')`; domain commands `create_route` (check name in workflow-domain.js) then `assign` | Done |
 | 5 | Next-step icons grey until done, green when done | same "Next steps" list; add `.step.done` (green `--ok`) and `.step.todo` (grey) classes in signboard.css | Done |
 | 6 | Main action top right, e.g. move "Save and check again" to the top right of the order check | `detailView()` `.check-head`; use `<button form="edit-form">` in the header | Done |
-| 7 | Service board: "Plan rider routes" moves into each Ready card as its own button, opening the assign pop-up on the same page | `boardRows()` `card()`; cards are `<a>` today, so turn the card into a `<div>` with a link plus a button (no nested interactive elements) | Done (button shows only on Ready cards without a route; not yet seen in a screenshot because the seed has no Ready order) |
+| 7 | Service board: "Plan rider routes" moves into each Ready card as its own button, opening the assign pop-up on the same page | `boardRows()` `card()`; cards are `<a>` today, so turn the card into a `<div>` with a link plus a button (no nested interactive elements) | Done |
 | 8 | Buyer page shows order details: shop name, items, phone numbers | `customerView()` `.customer-parcel`; add `name`,`phone` to the verified order fields in `customer()` in workflow-domain.js | Done (phone shows as "ending 1602": a domain test forbids the full phone in the buyer view) |
 | 9 | Rider: buttons are Can't deliver + Accept; Delivered appears only after Accept | `riderView()` `.stop-actions`; add domain command `accept` (sets `o.accepted={at,riderId}`) | Done |
 | 10 | Rider: landmark block looks like a button (navy). Put the whole current stop in one bordered box instead | `.landmark` in riderView + signboard.css | Done |
 | 11 | Rider tabs: Picked up, On the way, Delivered, Returns, All, reached from a three-line menu beside the rider's name | `riderView()` header; tab state in a module variable, filter the stop list | Done |
 | 12 | Route status "Closed" reads "Complete" | `WORDS` map: add `closed:'Complete'` | Done |
-| 13 | Cash handover amounts as boxes, not the sentence "The rider counted X. The hub received Y." | `routeCloseout()` `.handover-state`; reuse the `.facts.cash-facts` grid | Done (not yet seen in a screenshot) |
+| 13 | Cash handover amounts as boxes, not the sentence "The rider counted X. The hub received Y." | `routeCloseout()` `.handover-state`; reuse the `.facts.cash-facts` grid | Done |
 
 Rider tab meaning chosen: Picked up = on today's route, not yet accepted; On the way = accepted, not finished; Delivered; Returns = `return_pending` or `returned`; All.
 
-## Left to polish (found in the last screenshot pass, not yet fixed)
+## Left to polish
 
-All in `frontend/css/signboard.css`, appended blocks at the end of the file:
-
-1. The "Order created" pop-up has no inner padding. Add `padding:22px 24px` to `.created-dialog`.
-2. The rider three-line menu also shows the generic details chevron. Add `.rider-menu>summary::before{display:none}`.
-3. The buyer's order details stack in one column on phones and get tall. Delete the `@media (max-width:560px){.customer-details{...}}` rule so it stays two columns.
-4. On phones the success toast is narrow and wraps to four lines. Add `width:max-content` to `.toast`.
-5. Not yet seen in a screenshot: the "Plan route" button on Ready cards, and the cash handover boxes in close-out. Seed a Ready order and a handed-over route, then look.
-6. Stage logic in `nextSteps()` is strict. "Check the buyer's pin" only shows after the parcel has arrived. If buyers often confirm before the parcel arrives, also show it in stage 1.
+Nothing open from this list. The four CSS fixes are in, "Check the buyer's pin" now also shows in stage 1, and the Plan route button, the rider pop-up and the cash handover boxes were checked in screenshots on 21 Oct.
 
 ## Already done earlier today (pushed)
 
