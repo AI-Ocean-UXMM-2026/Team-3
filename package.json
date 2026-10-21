@@ -1,12 +1,23 @@
 {
-  "name": "lannpya-functional-prototype",
-  "version": "0.8.3",
+  "name": "lannpya-unified-local-workspace",
+  "version": "0.8.0",
   "private": true,
-  "description": "Device-local delivery workflows before UI polish and backend implementation",
   "scripts": {
-    "test": "node --test workflow-domain.test.js order-parser.test.js functional-app.test.js api-model.test.mjs api-workspace.test.mjs lannpya-ai/docs/examples/lannpya-client.test.mjs",
-    "check": "node --check workflow-domain.js && node --check functional-app.js && node --check sw.js && node --check api-model.mjs && node --check api-workspace.mjs && node --check vendor/lannpya-order-parser.js",
+    "start": "node scripts/start_local.cjs",
+    "build": "node scripts/build_frontend.cjs",
+    "test:frontend": "node --test frontend/tests/workflow-domain.test.js frontend/tests/order-parser.test.js frontend/tests/functional-app.test.js frontend/tests/api-model.test.mjs frontend/tests/api-workspace.test.mjs frontend/tests/local-api.test.mjs",
+    "test:dashboard": "node --test docs/examples/lannpya-client.test.mjs tools/backend-test-dashboard/dashboard.test.cjs tools/backend-test-dashboard/dashboard-http.test.cjs",
+    "test:integration": "node --test frontend/tests/integration-http.test.mjs",
     "test:parser": "npm --prefix order-parser test",
-    "build:parser": "npm --prefix order-parser run build:browser"
+    "test:browser": "playwright test"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4"
   }
 }

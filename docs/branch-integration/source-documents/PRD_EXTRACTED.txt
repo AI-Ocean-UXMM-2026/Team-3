@@ -1,0 +1,200 @@
+LannPya AI (လမ်းပြ): Product Requirement Document & Strategic Solutions
+Domain: Logistics (Last-Mile Delivery) | 5-Day Buildathon Specification | Version 2
+Target Deployment
+Primary Users
+Key Technology
+Business Model
+Vercel / Netlify (static SPA + serverless API)
+Social shops, delivery hubs, riders and end buyers
+Rules-first parser + current Gemini Flash (swappable AI layer)
+Pay-per-parcel and B2B SaaS
+One-line positioning: Tracking apps tell you where a parcel went wrong. LannPya stops it going wrong before the rider leaves.
+SECTION 1: STRATEGIC CONCERNS & SOLUTIONS
+This section answers the main business, trust, security and technical questions about automating last-mile delivery in Myanmar. Figures marked assumption are working estimates we are validating with hub managers and riders.
+Concern 1: Business Model, Revenue & ROI
+Key Challenge: Who pays for this middleware, how does it make money, and what return does the buyer get?
+Revenue Architecture
+Volume Tier (pay per parcel cleared): For mid-size and large courier hubs and franchises. 50–100 MMK per delivery address processed. When a courier charges 2,500–4,000 MMK per parcel, paying about 50 MMK (around 1.5–2%) to avoid a failed delivery is an easy decision.
+Monthly SaaS Subscriptions:
+Starter (social shops): 25,000 MMK/month for batch Messenger address extraction and buyer confirmation links, up to 300 orders/month.
+Pro Hub (delivery hubs): 150,000–300,000 MMK/month for unlimited parsing, route re-sequencing and dispatch metrics.
+Parser API: Large couriers with their own apps can call the Burmese address parser directly and keep their existing tracking system.
+ROI Example (assumptions to validate)
+Item
+Value
+Hub size
+500 parcels/day (about 10 vans)
+Failed first attempts today
+8% = 40 parcels/day (assumption)
+Cost per failed attempt
+about 3,500 MMK in fuel, wages, re-sorting and rescheduling (assumption)
+Monthly loss today
+about 4,200,000 MMK
+Conservative case: failures cut to 4%
+saves about 2,100,000 MMK/month, about 14x return on a 150,000 MMK plan
+Target case: failures cut to 2.5%
+saves about 2,940,000 MMK/month, about 19.6x return
+Note: on pay-per-parcel pricing, the same hub would pay 750,000–1,500,000 MMK/month, so the return is about 2–4x in the target case. Large hubs are steered to the Pro Hub plan. Sources for the assumptions: [add hub manager interview / public report before submission].
+Concern 2: Fraud, Scam Prevention & Trust in Links
+Key Challenge: People in Myanmar distrust unknown SMS and Viber links because of phishing. Why would a buyer trust this one?
+Trust by Design
+Sent from a chat the buyer already trusts: By default, the confirmation link is sent by the shop inside its existing Messenger conversation with the buyer, not by SMS from an unknown number. SMS and Viber are fallbacks for hubs without a shop chat.
+Branded Order Context Card: The page shows the shop’s Facebook Page name and avatar, the invoice number, and the exact item with photo (e.g. ‘Thida Boutique, Floral Summer Dress, 28,000 MMK’). A scammer would not know what the buyer ordered two hours earlier.
+Clear COD and Payment Status: The card shows the exact amount due on delivery, or confirms the item was prepaid via KBZPay, WavePay or AYA Pay, so fake payment demands stand out.
+Never asks for anything sensitive: No passwords, bank details, app installs or top-ups. Only three actions: confirm the map pin, choose a time window, or leave a note.
+Concern 3: Wrong Recipient & Unauthorized Access
+Key Challenge: What if the link is forwarded or reaches the wrong person?
+Security Gates
+Light identity check: Before the pin or time can be changed, the visitor enters the last 4 digits of the recipient’s phone number. This is a light check against accidental forwards, not proof of identity. After 3 wrong tries the link locks and the shop is notified.
+Single-recipient tokenized link: Each delivery gets a unique, unguessable link. It can be reopened by the buyer until 24 hours after delivery, then it expires.
+View-only by default: Without the 4-digit check, the page shows only the shop name, item and delivery status, never the address or phone number.
+Concern 4: Address Change Abuse & Route Disruption
+Key Challenge: Can a buyer move the delivery anywhere and break the rider’s route?
+Geo-Fencing Policy (limits set by each courier)
+Zone 1, free micro-nudge (under 500 m): The buyer can move the pin within a visible 500 m circle on the map, for example from the main road into the right alley, or to a tea shop landmark. The rider’s route barely changes.
+Zone 2, same-township rescheduling: The buyer can change the time window within the same township before the rider leaves the depot. The cut-off time (default 9:00 AM) is set by the courier.
+Zone 3, cross-township change: Moving the pin to another township (e.g. Hledan to South Dagon) is blocked with a clear message: ‘Changing township needs a new delivery route. Extra fee: +1,500 MMK. Delivery moves to tomorrow. [Accept & Request] [Keep Current Pin]’. The fee and rules are set by the courier, because LannPya is the middleware, not the courier.
+Concern 5: Burmese Language AI, Accuracy & Mistake Control
+Key Challenge: Myanmar addresses are written in casual Burmese with informal landmarks and mixed Zawgyi/Unicode. Which AI do we use, why, and how do we stop it from making things up?
+Why an AI model at all? Rules can find phone numbers, amounts and township names. They cannot understand landmarks (‘အဆွေတော်နား’), floor and room details (‘၄ ထပ်တိုက် ညာဘက်ခန်း’) or instructions (‘ညနေ ၃ နာရီမှ လာပါ’), because people write these in endless ways. That is the part the AI handles.
+Why a current Gemini Flash model?
+Reads Burmese well and returns structured JSON that follows our schema.
+Fast and cheap: about 500 input and 200 output tokens per address, roughly $0.001 per parse at current Flash pricing, a small fraction of our 50 MMK price.
+Free tier is enough for building and demoing.
+Swappable: the model sits behind one interface, so we can switch to a newer or different model without changing the product. Only unclear (Amber) orders may be re-checked with a stronger model.
+The 3-Layer Hybrid Pipeline (rules first, AI only where rules stop)
+Layer 0 (Encoding): Zawgyi text is detected and converted to Unicode by rules (Google’s open-source myanmar-tools detector plus a converter) before anything else.
+Layer 1 (Deterministic rules): Phone numbers (09xxxxxxxxx) and amounts are extracted with regular expressions. The AI never produces these fields.
+Layer 2 (Geospatial dictionary): Townships and major roads are matched against a Yangon/Mandalay place list.
+Layer 3 (Gemini Flash): Extracts landmarks, floor/unit and delivery instructions. Every AI-filled field is marked with a sparkle icon so the dispatcher can check it at a glance.
+Confidence Triage (based on rule checks, not the AI’s own opinion)
+Level
+Rule checks
+What happens
+Green
+Valid phone + township matched + landmark or street found on the map
+Goes straight to the rider queue
+Amber
+Valid phone + township, but location still vague
+Buyer gets the confirmation link to set the pin; dispatcher sees the vague words highlighted
+Red
+Missing phone or unknown area
+Flagged on the dispatcher screen before the parcel leaves
+Each level also has an icon and a text label, so it does not rely on color alone.
+Concern 6: Data Privacy & Personal Information
+Key Challenge: How do we protect buyers’ phone numbers, home locations and order history?
+Minimal data to the AI: Names and phone numbers are removed in the browser before the AI call. Only the address text is sent.
+Masked rider calls: Riders call through a click-to-call relay, so buyers’ numbers are not saved on riders’ personal phones.
+Link expiry: Public links expire 24 hours after delivery. The shop’s and courier’s own records are kept for an agreed period for COD disputes, then deleted.
+SECTION 2: PRODUCT REQUIREMENT DOCUMENT (PRD)
+1. Executive Summary & Vision
+LannPya AI (လမ်းပြ, “the guide”) is an AI-assisted last-mile delivery middleware built for Myanmar’s social commerce. It turns informal Facebook, TikTok and Viber orders into verified, structured deliveries through Burmese address parsing, a buyer confirmation link and a rider route view. It works before tracking starts: it makes the address right so the parcel arrives the first time.
+2. Target Personas & Core Problems
+The Social Merchant (Facebook/TikTok shop owner): Copies dozens of unstructured Burmese messages into notebooks or spreadsheets by hand and loses hours chasing delivery status.
+The Courier Hub Dispatcher: Sees 8–15% failed deliveries from unclear addresses (assumption to validate) and spends the morning clarifying delivery notes.
+The Motorbike Rider: Calls lost buyers 2–3 times per drop, wasting fuel and time searching unmarked alleys.
+The End Buyer: Gets vague 3–5 day delivery windows and surprise calls during work or school. The only persona that most delivery apps ignore.
+User research (complete before submission): 5 short interviews: 2 shop owners, 2 riders, 1 hub dispatcher. One quote from each goes on the problem slide.
+3. Value Proposition Canvas
+Customer Jobs: Deliver 50–70 parcels per rider per day; avoid roadside calls; avoid COD disputes and failed deliveries.
+Customer Pains: About 3,500 MMK lost per failed delivery (assumption); unclear Burmese addresses; traffic; buyer not at home.
+Products & Services: Burmese AI Address Normalizer; no-app Buyer Confirmation Card; Rider Route Copilot.
+Pain Relievers: Turns chat text into verified map pins; targets about two thirds fewer failed first attempts; removes manual retyping for dispatchers.
+Gain Creators: One-tap buyer confirmation; 14–20x return for hubs on the Pro plan; fewer roadside calls per drop (to be measured in a pilot).
+4. Why Not Just Ask for a Google Maps Pin? (Competitive Answer)
+Option
+What goes wrong
+Buyer sends a Google Maps pin in Messenger
+Many buyers send no pin or a wrong one; the shop still retypes everything; the courier gets no structured data or time window
+Courier’s own tracking app
+Tracks the parcel after it leaves, but doesn’t fix a bad address before dispatch
+Parcel management / tracking platforms
+Handle creation, assignment and reports; no AI parsing and no buyer-facing confirmation
+LannPya
+Fixes the address and the buyer’s availability before the rider leaves, and can plug into any tracking system through an API
+5. UX Design Principles & Design System
+Principles
+AI you can check: Show why an order is Amber by highlighting the vague words in the original Burmese text; one tap to correct any field.
+Trust by context: The buyer sees the shop, the item and the amount before any action.
+Built for the street: The rider screen is used while stopped, readable in sunlight, with one-handed actions.
+Built for budget phones and weak signal: Fast on low-end Android, works offline where it matters.
+Design System
+Typography: Noto Sans Myanmar (or Pyidaungsu) for Burmese with line-height around 1.8 for stacked characters; Inter for Latin text and numbers. Button labels tested in Burmese, which runs longer than English.
+Colour and contrast: WCAG AA contrast everywhere; status colors always paired with an icon and a label.
+Components: Flat, solid cards (no glassmorphism blur, which is slow on budget phones and lowers contrast); large touch targets (minimum 48 px, 56 px on the rider screen).
+Performance budget: Buyer card under 200 KB; first content visible in under 2 seconds on 3G.
+States designed for every screen: loading skeleton, AI unavailable, no GPS permission, link expired, wrong 4 digits, offline, and empty lists.
+Journey maps: One per persona, showing today’s flow vs the LannPya flow, with the moment the AI helps marked.
+6. System Architecture & Data Flow
+Input: Dispatcher or merchant pastes raw Burmese chat orders, or uploads a CSV.
+Normalization: Encoding fix (Zawgyi to Unicode) → rules extract phone and COD → dictionary matches township → Gemini Flash extracts landmark, floor/unit and instructions.
+Triage: Green orders go to dispatch; Amber orders trigger a buyer confirmation link via the shop’s Messenger chat (SMS/Viber as fallback); Red orders are flagged for the dispatcher.
+Buyer Confirmation: The buyer adjusts the pin within 500 m and chooses a time window.
+Rider Sync: The rider’s queue reorders when buyers confirm or reschedule, and works offline with sync when signal returns.
+7. Functional Requirements
+Module 1: AI Burmese Address Normalizer (Dispatcher View)
+FR-1.1: Accepts pasted text blocks with multiple orders from Messenger/Viber, or CSV uploads.
+FR-1.2: Converts Zawgyi to Unicode and outputs structured JSON (Customer Name, Phone, Township, Street, Landmark, Floor/Unit, COD Amount, Instructions).
+FR-1.3: Assigns Green/Amber/Red from rule checks, each with icon, label and the reason shown.
+FR-1.4: Highlights vague words in the original text for Amber orders; any field can be corrected inline in one tap.
+FR-1.5: Marks every AI-filled field with a sparkle icon.
+Module 2: Buyer Confirmation Card (no-app mobile web link)
+FR-2.1: Lightweight page opened from a tokenized link, with no account or app install.
+FR-2.2: Shows shop branding, item photo, order total or prepaid status, and an interactive map pin (Leaflet + OpenStreetMap).
+FR-2.3: Light check: last 4 digits of the recipient’s phone, maximum 3 attempts, then the link locks and the shop is notified. The 500 m limit is drawn as a visible circle on the map.
+FR-2.4: Quick response buttons: [အိမ်မှာရှိပါတယ် (At Home)] | [အချိန်ရွှေ့မည် (Reschedule)] | [လုံခြုံရေးထံ ထားခဲ့ပါ (Leave with Security)].
+Module 3: Rider Route Copilot (mobile rider view)
+FR-3.1: High-contrast light theme readable in direct sunlight, with an optional dark theme for night shifts. Primary actions sit in the bottom third of the screen with tap targets of at least 56 px.
+FR-3.2: Delivery queue that reorders when buyers confirm or reschedule.
+FR-3.3: One-tap navigation link to Google Maps, with the Burmese landmark note shown at the top and read aloud on request.
+FR-3.4: Large “Delivered” button with a 2-second undo, then COD amount confirmation.
+FR-3.5: Queue and actions cached offline and synced when signal returns.
+8. Non-Functional Requirements & Demo Reliability
+Latency: First parsed result in under 2 seconds; results stream in per order for large batches.
+Demo fallback: If the AI service or internet fails during the live pitch, the app switches to pre-recorded realistic responses and shows a visible “Offline demo mode” badge, so judges know exactly what they are seeing.
+Deployment: Static single-page app with serverless API routes on Vercel/Netlify, with an offline fallback for the demo.
+Accessibility: WCAG 2.1 AA contrast, screen-reader labels, no information by color alone.
+9. Success Metrics
+Metric
+Target for the demo / pilot
+Time for a dispatcher to process 50 orders
+Under 5 minutes (vs about 2 hours by hand)
+Orders auto-classified Green
+Over 60% on our Burmese sample set
+First-attempt delivery rate
+Measured in pilot; target about two thirds fewer failures
+Usability (SUS score, 5-person test)
+Above 70
+10. 5-Day Buildathon Timeline
+Design work starts on Day 1, building runs Days 2–4, and Day 5 is kept for testing, polish and the pitch video.
+Day 1: Research, Design & Setup
+5 short user interviews (phone calls are fine); journey maps for the 4 personas.
+Low-fidelity wireframes of all 3 screens, then lock PRD, data schema and a realistic Burmese sample address set.
+Set up repo (Next.js or Vite) with continuous Vercel preview; set design tokens (Burmese typography, colors, spacing, components).
+Day 2: Dispatcher Dashboard & Hybrid Parser
+Batch-paste UI, Zawgyi conversion, browser-side removal of names and phones, Gemini Flash integration.
+Green/Amber/Red cards with reasons, vague-word highlighting, inline one-tap correction.
+Offline demo fallback with visible badge.
+Day 3: Buyer Confirmation Card & Map
+Mobile buyer view (/track/:id) with no login; Leaflet map with visible 500 m circle.
+4-digit light check with 3-attempt limit; quick action buttons with instant feedback.
+Messenger share flow for the shop.
+Day 4: Rider Copilot, Usability Test & Polish
+Rider queue with sunlight theme, large Delivered button with undo, landmark read-aloud, offline cache.
+Queue reordering when buyers update.
+Afternoon: 5-person usability test (one task per screen); record task time and one quote each; fix the top 2 issues.
+Feature freeze at end of day.
+Day 5: Testing & Pitch
+Morning: test on desktop Chrome, iOS Safari and a budget Android phone; check all error and offline states.
+Midday: script, record and edit the 5-minute pitch video.
+Afternoon: final deployment, slide deck, submission buffer.
+11. 5-Minute Pitch Structure (following one parcel end to end)
+0:00–0:45, The real problem: A rider’s quote about circling an alley, and a messy Messenger address on screen (‘အဆွေတော်နား၊ ၄ ထပ်တိုက်’).
+0:45–1:00, The cost: Failed deliveries cost a 500-parcel hub an estimated 4.2M MMK/month (stated as an estimate with its source).
+1:00–3:15, Live demo of Thida Boutique’s dress:
+Dispatcher pastes 20 orders, sees why one is Amber, and fixes it in one tap.
+Buyer opens the card inside the shop’s Messenger chat, passes the 4-digit check, and nudges the pin.
+Rider’s queue reorders and the landmark note is read aloud.
+3:15–3:55, Design decisions: Rules-first AI with visible checks, trust by context, sunlight-ready rider screen, budget-phone performance. One slide with usability test results.
+3:55–4:40, Business model: Pay-per-parcel and SaaS plans, with the conservative (14x) and target (19.6x) return cases.
+4:40–5:00, Vision: LannPya as the address layer for every courier and tracking system in Myanmar. Live QR code to try it.

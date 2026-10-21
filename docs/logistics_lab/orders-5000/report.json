@@ -1,0 +1,1111 @@
+{
+  "synthetic_only": true,
+  "configuration": {
+    "orders": 5000,
+    "seed": 20261021,
+    "merchants": 3,
+    "hubs": 2,
+    "riders": 6,
+    "batch_size": 100,
+    "read_samples": 15,
+    "workflow_limit": 24,
+    "confirmation_rate": 0.65,
+    "delivery_failure_rate": 0.2,
+    "demo": false
+  },
+  "metrics": {
+    "total_orders": 5000,
+    "initial_confidence": {
+      "AMBER": 3382,
+      "RED": 1618
+    },
+    "phone_township_valid_for_review": 3382,
+    "ambiguous_or_unverified_addresses": 3382,
+    "invalid_addresses": 1618,
+    "delivery_status": {
+      "DELIVERED": 18,
+      "DRAFT": 4976,
+      "FAILED": 6
+    },
+    "confirmation_links_created": 18,
+    "phone_challenges_verified_orders": 18,
+    "buyer_action_requests": 32,
+    "successful_buyer_action_orders": 18,
+    "rescheduling_requested_orders": 5,
+    "approved_rescheduling_orders": 5,
+    "orders_with_delivery_window": 5,
+    "dispatcher_review_events": 14,
+    "manual_intervention_executed_orders": 9,
+    "manual_review_flagged_orders": 5000,
+    "rider_assignments": 24,
+    "completed_assignments": 18,
+    "delivered": 18,
+    "failed": 6,
+    "cod": {
+      "delivered_expected_mmk": "358000",
+      "collection_asserted_mmk": "358000",
+      "unasserted_delivered_mmk": "0",
+      "state": "ASSERTIONS_ONLY_NOT_FINANCIAL_RECONCILIATION"
+    },
+    "queue_consistency_checks": 96,
+    "events": {
+      "ORDER_CREATED": 5000,
+      "STATUS_CHANGED": 54,
+      "RIDER_ASSIGNED": 24,
+      "DELIVERY_STARTED": 24,
+      "DELIVERY_COMPLETED": 18,
+      "BUYER_LINK_CREATED": 18,
+      "BUYER_SECURITY": 18,
+      "BUYER_RESPONSE": 28,
+      "DELIVERY_FAILED": 6,
+      "BUYER_LOCATION": 4,
+      "BUYER_REQUEST_REVIEWED": 14
+    },
+    "total_events": 5208,
+    "workflow_orders_exercised": 24,
+    "http_calls": 10477,
+    "unexpected_http_errors": 0,
+    "expected_rejection_calls": 0,
+    "duplicate_input_orders": 172,
+    "confirmed_window_queue_observations": 5,
+    "average_ingestion_api_ms": 16.433424680015015
+  },
+  "latency": {
+    "rider_create": {
+      "samples": 6,
+      "median_ms": 12.139,
+      "p95_ms": 107.142
+    },
+    "parse": {
+      "samples": 5000,
+      "median_ms": 4.127,
+      "p95_ms": 5.125
+    },
+    "order_create": {
+      "samples": 5000,
+      "median_ms": 11.939,
+      "p95_ms": 14.141
+    },
+    "order_detail": {
+      "samples": 92,
+      "median_ms": 5.456,
+      "p95_ms": 6.695
+    },
+    "status_update": {
+      "samples": 54,
+      "median_ms": 12.574,
+      "p95_ms": 14.721
+    },
+    "rider_assign": {
+      "samples": 24,
+      "median_ms": 15.694,
+      "p95_ms": 19.476
+    },
+    "rider_queue": {
+      "samples": 48,
+      "median_ms": 6.835,
+      "p95_ms": 87.402
+    },
+    "rider_queue_poll": {
+      "samples": 48,
+      "median_ms": 6.701,
+      "p95_ms": 7.768
+    },
+    "delivery_start": {
+      "samples": 24,
+      "median_ms": 15.372,
+      "p95_ms": 16.623
+    },
+    "delivery_finish": {
+      "samples": 24,
+      "median_ms": 16.321,
+      "p95_ms": 18.233
+    },
+    "link_create": {
+      "samples": 18,
+      "median_ms": 12.642,
+      "p95_ms": 14.154
+    },
+    "buyer_card": {
+      "samples": 18,
+      "median_ms": 12.532,
+      "p95_ms": 15.24
+    },
+    "buyer_verify": {
+      "samples": 18,
+      "median_ms": 23.827,
+      "p95_ms": 25.85
+    },
+    "buyer_details": {
+      "samples": 18,
+      "median_ms": 17.631,
+      "p95_ms": 19.681
+    },
+    "buyer_available": {
+      "samples": 18,
+      "median_ms": 21.099,
+      "p95_ms": 26.274
+    },
+    "buyer_pin_proposal": {
+      "samples": 4,
+      "median_ms": 21.128,
+      "p95_ms": 22.637
+    },
+    "buyer_request_history": {
+      "samples": 9,
+      "median_ms": 6.793,
+      "p95_ms": 7.962
+    },
+    "dispatcher_review": {
+      "samples": 14,
+      "median_ms": 13.072,
+      "p95_ms": 15.832
+    },
+    "buyer_reschedule": {
+      "samples": 10,
+      "median_ms": 20.241,
+      "p95_ms": 22.771
+    },
+    "paginated_list": {
+      "samples": 15,
+      "median_ms": 63.936,
+      "p95_ms": 73.41
+    },
+    "filtered_list": {
+      "samples": 15,
+      "median_ms": 48.574,
+      "p95_ms": 54.06
+    }
+  },
+  "trace_omitted_http_calls": 10020,
+  "http_status_counts": {
+    "201": 5048,
+    "200": 5429
+  },
+  "hubs": [
+    {
+      "reference": "HUB-1",
+      "name": "Synthetic Yangon hub 1",
+      "rider_numbers": [
+        1,
+        3,
+        5
+      ]
+    },
+    {
+      "reference": "HUB-2",
+      "name": "Synthetic Yangon hub 2",
+      "rider_numbers": [
+        2,
+        4,
+        6
+      ]
+    }
+  ],
+  "comparison": {
+    "model_only": true,
+    "orders": 5000,
+    "assumptions": {
+      "baseline_failure_rate": 0.15,
+      "unconfirmed_failure_rate": 0.15,
+      "confirmed_failure_rate": 0.08,
+      "confirmation_rate": 0.65,
+      "baseline_seconds_per_order": 120,
+      "lannpya_seconds_per_order": 45,
+      "confirmation_handling_seconds": 60,
+      "labour_mmk_per_hour": 3000,
+      "failed_attempt_cost_mmk": 3500
+    },
+    "baseline": {
+      "expected_failures": 750.0,
+      "processing_seconds": 600000,
+      "modeled_cost_mmk": 3125000.0
+    },
+    "lannpya": {
+      "expected_failures": 522.5,
+      "processing_seconds": 420000.0,
+      "modeled_cost_mmk": 2178750.0
+    },
+    "modeled_cost_difference_mmk": 946250.0,
+    "warning": "Assumption model, not observed courier ROI or causal evidence."
+  },
+  "sensitivity": [
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 230.00000000000003,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 405000.0
+      },
+      "modeled_cost_difference_mmk": 345000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 230.00000000000003,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 905000.0
+      },
+      "modeled_cost_difference_mmk": -155000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 230.00000000000003,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 980000.0
+      },
+      "modeled_cost_difference_mmk": 395000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 230.00000000000003,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 1480000.0
+      },
+      "modeled_cost_difference_mmk": -105000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 170.0,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 495000.0
+      },
+      "modeled_cost_difference_mmk": 255000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 170.0,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 995000.0
+      },
+      "modeled_cost_difference_mmk": -245000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 170.0,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 920000.0
+      },
+      "modeled_cost_difference_mmk": 455000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 170.0,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 1420000.0
+      },
+      "modeled_cost_difference_mmk": -45000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 400.00000000000006,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 575000.0
+      },
+      "modeled_cost_difference_mmk": 175000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 400.00000000000006,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 1075000.0
+      },
+      "modeled_cost_difference_mmk": -325000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 400.00000000000006,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 1575000.0
+      },
+      "modeled_cost_difference_mmk": -200000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 400.00000000000006,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 2075000.0
+      },
+      "modeled_cost_difference_mmk": -700000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 850.0000000000002,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 1175000.0
+      },
+      "modeled_cost_difference_mmk": -425000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 750000.0
+      },
+      "lannpya": {
+        "expected_failures": 850.0000000000002,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 1675000.0
+      },
+      "modeled_cost_difference_mmk": -925000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 850.0000000000002,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 3300000.0
+      },
+      "modeled_cost_difference_mmk": -1925000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.05,
+        "unconfirmed_failure_rate": 0.05,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 250.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1375000.0
+      },
+      "lannpya": {
+        "expected_failures": 850.0000000000002,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 3800000.0
+      },
+      "modeled_cost_difference_mmk": -2425000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 630.0,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 805000.0
+      },
+      "modeled_cost_difference_mmk": 445000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 630.0,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 1305000.0
+      },
+      "modeled_cost_difference_mmk": -55000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 630.0,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 2380000.0
+      },
+      "modeled_cost_difference_mmk": 745000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 630.0,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 2880000.0
+      },
+      "modeled_cost_difference_mmk": 245000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 269.99999999999994,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 595000.0
+      },
+      "modeled_cost_difference_mmk": 655000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 269.99999999999994,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 1095000.0
+      },
+      "modeled_cost_difference_mmk": 155000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 269.99999999999994,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 1270000.0
+      },
+      "modeled_cost_difference_mmk": 1855000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.03,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 269.99999999999994,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 1770000.0
+      },
+      "modeled_cost_difference_mmk": 1355000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 800.0,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 975000.0
+      },
+      "modeled_cost_difference_mmk": 275000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 800.0,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 1475000.0
+      },
+      "modeled_cost_difference_mmk": -225000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 800.0,
+        "processing_seconds": 210000.0,
+        "modeled_cost_mmk": 2975000.0
+      },
+      "modeled_cost_difference_mmk": 150000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.2,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 800.0,
+        "processing_seconds": 810000.0,
+        "modeled_cost_mmk": 3475000.0
+      },
+      "modeled_cost_difference_mmk": -350000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 950.0000000000001,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 1275000.0
+      },
+      "modeled_cost_difference_mmk": -25000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 1000.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 1250000.0
+      },
+      "lannpya": {
+        "expected_failures": 950.0000000000001,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 1775000.0
+      },
+      "modeled_cost_difference_mmk": -525000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 30.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 950.0000000000001,
+        "processing_seconds": 390000.0,
+        "modeled_cost_mmk": 3650000.0
+      },
+      "modeled_cost_difference_mmk": -525000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    },
+    {
+      "model_only": true,
+      "orders": 5000,
+      "assumptions": {
+        "baseline_failure_rate": 0.15,
+        "unconfirmed_failure_rate": 0.15,
+        "confirmed_failure_rate": 0.2,
+        "confirmation_rate": 0.8,
+        "baseline_seconds_per_order": 120,
+        "lannpya_seconds_per_order": 150.0,
+        "confirmation_handling_seconds": 60,
+        "labour_mmk_per_hour": 3000,
+        "failed_attempt_cost_mmk": 3500.0
+      },
+      "baseline": {
+        "expected_failures": 750.0,
+        "processing_seconds": 600000,
+        "modeled_cost_mmk": 3125000.0
+      },
+      "lannpya": {
+        "expected_failures": 950.0000000000001,
+        "processing_seconds": 990000.0,
+        "modeled_cost_mmk": 4150000.0
+      },
+      "modeled_cost_difference_mmk": -1025000.0,
+      "warning": "Assumption model, not observed courier ROI or causal evidence."
+    }
+  ],
+  "environment": {
+    "python": "3.14.7",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "database": "temporary SQLite",
+    "transport": "TestClient"
+  },
+  "isolation": {
+    "database_reopened": true,
+    "persisted_orders": 5000,
+    "persisted_events": 5208,
+    "status_fingerprint": "40f55791c6affc0a68d4ba39f8a1653f37de28c86da0f7921bf592a2b3999709",
+    "cleanup": "temporary database removed on function return"
+  }
+}

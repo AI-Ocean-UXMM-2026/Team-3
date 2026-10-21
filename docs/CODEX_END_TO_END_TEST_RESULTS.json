@@ -1,0 +1,20 @@
+{
+  "synthetic_data_only": true,
+  "python": {"passed": 812, "failed": 0, "seconds": 76.60, "new_cases": 4, "dashboard_cases": 37},
+  "javascript": {"passed": 17, "failed": 0, "new_reported_cases": 10, "http_cases_including_parent": 9},
+  "additional_affected_http_rerun": {"passed": 9, "failed": 0, "reason": "Stronger canonical instruction, pin and time-window assertions"},
+  "initial_bug_reproducer": {"failed_before_fix": true, "passed_after_fix": true},
+  "bug_fixed": "Rejected quiet API reads were not shown in the response panel",
+  "lint": "passed",
+  "format": "95 Python files already formatted",
+  "dependencies": "No broken requirements found",
+  "running_dashboard": {"origin": "http://127.0.0.1:8765", "health_status": 200, "test_mode": true, "existing_records_modified": false},
+  "workflow": "Actual JavaScript controls to real isolated HTTP server: parsing, order, buyer, dispatcher, rider, COD, completion and event history passed",
+  "persistence": "Independent SQLite connection read committed order and events",
+  "transaction_failure": "Actual event INSERT failure returned 503 and rolled back all order/event changes; recovery passed",
+  "ai_failure": "Local unavailable adapter preserved deterministic extraction and saved order",
+  "browser": "No registered browser; no visual test or screenshots",
+  "public_api_changes": 0,
+  "product_frontend_changes": 0,
+  "pushed_or_deployed": false
+}

@@ -1,0 +1,32 @@
+metric,value
+total_orders,1000
+initial_confidence,"{""AMBER"": 706, ""RED"": 294}"
+phone_township_valid_for_review,706
+ambiguous_or_unverified_addresses,706
+invalid_addresses,294
+delivery_status,"{""DELIVERED"": 18, ""DRAFT"": 976, ""FAILED"": 6}"
+confirmation_links_created,18
+phone_challenges_verified_orders,18
+buyer_action_requests,32
+successful_buyer_action_orders,18
+rescheduling_requested_orders,5
+approved_rescheduling_orders,5
+orders_with_delivery_window,5
+dispatcher_review_events,14
+manual_intervention_executed_orders,9
+manual_review_flagged_orders,1000
+rider_assignments,24
+completed_assignments,18
+delivered,18
+failed,6
+cod,"{""collection_asserted_mmk"": ""358000"", ""delivered_expected_mmk"": ""358000"", ""state"": ""ASSERTIONS_ONLY_NOT_FINANCIAL_RECONCILIATION"", ""unasserted_delivered_mmk"": ""0""}"
+queue_consistency_checks,96
+events,"{""BUYER_LINK_CREATED"": 18, ""BUYER_LOCATION"": 4, ""BUYER_REQUEST_REVIEWED"": 14, ""BUYER_RESPONSE"": 28, ""BUYER_SECURITY"": 18, ""DELIVERY_COMPLETED"": 18, ""DELIVERY_FAILED"": 6, ""DELIVERY_STARTED"": 24, ""ORDER_CREATED"": 1000, ""RIDER_ASSIGNED"": 24, ""STATUS_CHANGED"": 54}"
+total_events,1208
+workflow_orders_exercised,24
+http_calls,2477
+unexpected_http_errors,0
+expected_rejection_calls,0
+duplicate_input_orders,34
+confirmed_window_queue_observations,5
+average_ingestion_api_ms,15.95188319998124
