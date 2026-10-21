@@ -91,7 +91,7 @@ test('empty workspace has exactly three app sides, manual entry and a useful cus
 });
 test('manual order → customer location and availability → admin approval → rider delivery works with no demo clock adjustment',async()=>{
  const e=boot('#/manual',null,true);
- await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true});
+ await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true,prep:'ready_now',date:W.day(e.store().now())});
  let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.ok(order.link.token);assert.match(e.ctx.location.hash,/order\/LP-0001/);
  e.ctx.location.hash='#/customer';assert.match(e.root.textContent,/Document envelope/);
  await e.submit('#customer-link-form',{link:`file:///prototype/index.html#/track/${order.link.token}`});
