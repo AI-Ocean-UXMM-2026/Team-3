@@ -2,7 +2,7 @@ name: Backend verification
 
 on:
   pull_request:
-    paths: ["backend/**", "frontend/**", "order-parser/**", "scripts/**", "tools/**", "docs/**", ".github/workflows/backend-ci.yml"]
+    paths: ["backend/**", "frontend/**", "order-parser/**", "scripts/**", "tools/**", "tests/**", "docs/**", "package.json", "package-lock.json", "playwright.config.cjs", ".github/workflows/backend-ci.yml"]
   workflow_dispatch:
 
 permissions:
@@ -34,7 +34,13 @@ jobs:
       # Includes isolated migration/rollback tests, contract drift and synthetic corpus.
       - run: python -m pytest -q --junitxml=../test-results.xml
       - run: node --test ../docs/examples/lannpya-client.test.mjs
+      - run: npm ci --ignore-scripts
+        working-directory: .
       - run: npm run test:frontend && npm run build && npm run test:integration && npm run test:dashboard
+        working-directory: .
+        env:
+          LANNPYA_PYTHON: ${{ steps.python.outputs.python-path }}
+      - run: npx playwright install --with-deps chromium && npm run test:browser
         working-directory: .
         env:
           LANNPYA_PYTHON: ${{ steps.python.outputs.python-path }}
