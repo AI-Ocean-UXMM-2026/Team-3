@@ -1,0 +1,10 @@
+{
+  "name": "lannpya-functional-prototype",
+  "version": "0.7.0",
+  "private": true,
+  "description": "Device-local delivery workflows before UI polish and backend implementation",
+  "scripts": {
+    "test": "node --test workflow-domain.test.js functional-app.test.js api-model.test.mjs api-workspace.test.mjs lannpya-ai/docs/examples/lannpya-client.test.mjs",
+    "check": "node --check workflow-domain.js && node --check functional-app.js && node --check sw.js && node --check api-model.mjs && node --check api-workspace.mjs"
+  }
+}
