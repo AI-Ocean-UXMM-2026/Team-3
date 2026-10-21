@@ -172,7 +172,7 @@ test('local boundary rejects anonymous private reads, forged CSRF and invalid bu
   const res=await page.request.post('/dashboard/api',{headers:{Origin:app.origin,'X-Dashboard-CSRF':'forged'},data:{method:'GET',path:'/api/orders',actor:'dispatcher'}});
   expect(res.status()).toBe(403);
   for(const url of ['/api/orders','/.env','/backend/data/sandbox.sqlite3'])expect((await page.request.get(url)).status()).toBe(404);
-  await page.goto('/#/track/'+'x'.repeat(43));
+  await page.goto('/api.html#/track/'+'x'.repeat(43));
   await expect(page.locator('#api-status')).toHaveClass(/error/);await expect(page.locator('#verify-api-form')).toHaveCount(0);
   await anonymous.close();
 });
@@ -326,8 +326,8 @@ test('route form rejects past dates then saves a real draft route',async({page})
 });
 
 test('separate browser prototype is clearly simulated and does not write to the backend',async({page})=>{
-  await page.goto('/prototype.html');
-  await expect(page.locator('.demo-mode-banner')).toContainText('DEMO_SIMULATION');
+  await page.goto('/');
+  await expect(page.locator('.prototype-bar')).toContainText('Local prototype');
   await expect(page.locator('#app')).not.toBeEmpty();
   await shot(page,'explicit-browser-simulation');
 });

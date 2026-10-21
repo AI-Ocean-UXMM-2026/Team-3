@@ -180,7 +180,8 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 "X-Content-Type-Options": "nosniff",
                 "X-Frame-Options": "DENY",
                 "Content-Security-Policy": (
-                    "default-src 'self'; script-src 'self'; style-src 'self'; "
+                    "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; "
+                    "font-src 'self' https://fonts.gstatic.com; "
                     "connect-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
                     "frame-ancestors 'none'; "
                     "base-uri 'none'; form-action 'self'"
@@ -199,6 +200,14 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
 
     @app.get("/")
     def index(request: Request):
+        return page(request, "index.html")
+
+    # The connected API workspace lives beside the LannPya UI and needs the same session cookie.
+    @app.get("/api.html")
+    def api_workspace(request: Request):
+        return page(request, "api.html" if frontend is not None else "index.html")
+
+    def page(request: Request, name: str):
         key = request.cookies.get("lp_dashboard")
         if (
             key not in app.state.sessions
@@ -215,7 +224,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 )
             key = secrets.token_urlsafe(32)
             app.state.sessions[key] = {"created": now, "csrf": secrets.token_urlsafe(32)}
-        response = FileResponse((frontend or STATIC) / "index.html")
+        response = FileResponse((frontend or STATIC) / name)
         response.set_cookie(
             "lp_dashboard", key, httponly=True, samesite="strict", max_age=8 * 3600, path="/"
         )
@@ -427,7 +436,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
             p.relative_to(frontend).as_posix(): p
             for p in frontend.rglob("*")
             if p.is_file()
-            and p.suffix in {".html", ".css", ".js", ".mjs"}
+            and p.suffix in {".html", ".css", ".js", ".mjs", ".svg"}
             and not any(part in {"node_modules", "dist"} for part in p.parts)
             and ".test." not in p.name
             and not p.name.startswith("test-")

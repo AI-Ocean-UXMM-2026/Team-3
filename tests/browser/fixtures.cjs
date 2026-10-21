@@ -63,7 +63,7 @@ const test=base.extend({
   },
 });
 async function enter(page,side='admin',id=''){
-  await page.goto('/#/'+side);
+  await page.goto('/api.html#/'+side);
   await expect(page.locator('#connect-form, #create-form, #rider-account').first()).toBeVisible();
   const form=page.locator('#connect-form');if(!await form.count())return;
   if(side==='rider'&&id)await form.locator('[name=actor_id]').fill(id);
