@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "client_processes": 2,
+  "http_statuses": [
+    200,
+    409
+  ],
+  "persisted_order_version": 2,
+  "persisted_events": 2,
+  "limitations": "One API worker; two independent OS HTTP clients; SQLite."
+}

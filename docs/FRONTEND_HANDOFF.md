@@ -345,3 +345,17 @@ verification, real AI adapter, merchant onboarding API, trustworthy shop/items e
 public deployment or frontend UI. These are transparent prerequisites/limits, not hidden
 features. Health is liveness only, not a database/provider readiness check. No endpoint is
 missing for the stated local workflows; shared public multi-user use still requires auth.
+
+
+## Additive integrated workspace operations
+
+The local integration adds these role-protected native operations without renaming existing endpoints:
+
+- `GET /api/session`
+- `GET /api/routes`
+- `POST /api/routes`
+- `POST /api/routes/{route_id}/actions`
+- `POST /api/orders/{order_id}/operations`
+- `POST /api/orders/{order_id}/prepare-assignment`
+
+See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.

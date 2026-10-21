@@ -10,6 +10,7 @@ greenlet==3.5.6
 h11==0.16.0
 httpcore2==2.15.1
 httpx2==2.15.1
+hypothesis==6.170.5
 idna==3.20
 iniconfig==2.3.1
 Mako==1.4.3
@@ -28,6 +29,7 @@ python-dotenv==1.2.4
 python-myanmar==1.10.0
 ruff==0.17.1
 SQLAlchemy==2.0.55
+sortedcontainers==2.4.0
 starlette==1.9.0
 truststore==0.10.5
 typing-inspection==0.4.4

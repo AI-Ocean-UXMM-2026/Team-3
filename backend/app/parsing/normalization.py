@@ -22,7 +22,13 @@ def normalize_text(original: str) -> tuple[str, NormalizationInfo]:
     text = original
     # Myanmar digits alone do not need encoding detection.
     if re.search(r"[\u1000-\u103f\u1050-\u109f]", text):
-        probability = detector().get_zawgyi_probability(text)
+        try:
+            probability = detector().get_zawgyi_probability(text)
+        except Exception as exc:
+            # A missing/broken local detector must not discard deterministic results.
+            # Treat the encoding as uncertain and retain the original text for review.
+            logger.warning("Local encoding detection failed: %s", type(exc).__name__)
+            probability = 0.5
         info.encoding = "unicode_or_undetermined"
         if probability >= 0.95:
             info.encoding = "zawgyi"

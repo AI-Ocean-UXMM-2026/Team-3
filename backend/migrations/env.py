@@ -4,6 +4,7 @@ from app.core.config import Settings
 from app.db import (
     buyer_models,  # noqa: F401
     rider_models,  # noqa: F401
+    workflow_models,  # noqa: F401
 )
 from app.db.models import Base
 from app.db.session import Database

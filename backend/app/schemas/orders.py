@@ -11,6 +11,8 @@ class ParseRequest(BaseModel):
     @field_validator("raw_text")
     @classmethod
     def nonblank(cls, value: str) -> str:
+        if "\x00" in value:
+            raise ValueError("Text cannot contain NUL characters")
         if not value.strip():
             raise ValueError("Text must contain non-whitespace characters")
         return value

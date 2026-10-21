@@ -1,0 +1,197 @@
+{
+  "environment": {
+    "python": "3.14.7",
+    "os": "Windows-11-10.0.26200-SP0",
+    "database": "temporary SQLite",
+    "transport": "TestClient in-process"
+  },
+  "limitations": "Serial latency microbenchmark, not network/load capacity. One active queue stop.",
+  "runs": [
+    {
+      "fixture_order_count": 100,
+      "final_order_count": 115,
+      "metrics": {
+        "health": {
+          "requests": 15,
+          "median_ms": 2.225,
+          "p95_ms": 3.332,
+          "serial_requests_per_second": 430.16,
+          "error_count": 0
+        },
+        "parse_rules": {
+          "requests": 15,
+          "median_ms": 3.445,
+          "p95_ms": 24.211,
+          "serial_requests_per_second": 205.93,
+          "error_count": 0
+        },
+        "create_order": {
+          "requests": 15,
+          "median_ms": 11.47,
+          "p95_ms": 12.393,
+          "serial_requests_per_second": 87.58,
+          "error_count": 0
+        },
+        "list_page": {
+          "requests": 15,
+          "median_ms": 7.679,
+          "p95_ms": 11.054,
+          "serial_requests_per_second": 125.36,
+          "error_count": 0
+        },
+        "filter_search": {
+          "requests": 15,
+          "median_ms": 8.268,
+          "p95_ms": 12.379,
+          "serial_requests_per_second": 116.74,
+          "error_count": 0
+        },
+        "correction_with_event": {
+          "requests": 15,
+          "median_ms": 10.777,
+          "p95_ms": 12.325,
+          "serial_requests_per_second": 90.99,
+          "error_count": 0
+        },
+        "buyer_verify": {
+          "requests": 15,
+          "median_ms": 21.336,
+          "p95_ms": 62.663,
+          "serial_requests_per_second": 38.05,
+          "error_count": 0
+        },
+        "rider_queue_one_active_stop": {
+          "requests": 15,
+          "median_ms": 6.535,
+          "p95_ms": 9.824,
+          "serial_requests_per_second": 144.46,
+          "error_count": 0
+        }
+      }
+    },
+    {
+      "fixture_order_count": 1000,
+      "final_order_count": 1015,
+      "metrics": {
+        "health": {
+          "requests": 15,
+          "median_ms": 2.191,
+          "p95_ms": 2.892,
+          "serial_requests_per_second": 438.16,
+          "error_count": 0
+        },
+        "parse_rules": {
+          "requests": 15,
+          "median_ms": 3.485,
+          "p95_ms": 4.664,
+          "serial_requests_per_second": 272.05,
+          "error_count": 0
+        },
+        "create_order": {
+          "requests": 15,
+          "median_ms": 10.954,
+          "p95_ms": 12.829,
+          "serial_requests_per_second": 88.96,
+          "error_count": 0
+        },
+        "list_page": {
+          "requests": 15,
+          "median_ms": 12.768,
+          "p95_ms": 15.126,
+          "serial_requests_per_second": 78.22,
+          "error_count": 0
+        },
+        "filter_search": {
+          "requests": 15,
+          "median_ms": 18.999,
+          "p95_ms": 22.02,
+          "serial_requests_per_second": 50.9,
+          "error_count": 0
+        },
+        "correction_with_event": {
+          "requests": 15,
+          "median_ms": 10.694,
+          "p95_ms": 12.756,
+          "serial_requests_per_second": 91.78,
+          "error_count": 0
+        },
+        "buyer_verify": {
+          "requests": 15,
+          "median_ms": 21.539,
+          "p95_ms": 40.14,
+          "serial_requests_per_second": 44.38,
+          "error_count": 0
+        },
+        "rider_queue_one_active_stop": {
+          "requests": 15,
+          "median_ms": 6.693,
+          "p95_ms": 9.235,
+          "serial_requests_per_second": 146.39,
+          "error_count": 0
+        }
+      }
+    },
+    {
+      "fixture_order_count": 5000,
+      "final_order_count": 5015,
+      "metrics": {
+        "health": {
+          "requests": 15,
+          "median_ms": 2.211,
+          "p95_ms": 3.622,
+          "serial_requests_per_second": 416.66,
+          "error_count": 0
+        },
+        "parse_rules": {
+          "requests": 15,
+          "median_ms": 3.352,
+          "p95_ms": 3.936,
+          "serial_requests_per_second": 290.68,
+          "error_count": 0
+        },
+        "create_order": {
+          "requests": 15,
+          "median_ms": 11.437,
+          "p95_ms": 12.243,
+          "serial_requests_per_second": 87.09,
+          "error_count": 0
+        },
+        "list_page": {
+          "requests": 15,
+          "median_ms": 29.878,
+          "p95_ms": 32.026,
+          "serial_requests_per_second": 33.6,
+          "error_count": 0
+        },
+        "filter_search": {
+          "requests": 15,
+          "median_ms": 61.354,
+          "p95_ms": 68.453,
+          "serial_requests_per_second": 16.14,
+          "error_count": 0
+        },
+        "correction_with_event": {
+          "requests": 15,
+          "median_ms": 10.733,
+          "p95_ms": 13.459,
+          "serial_requests_per_second": 91.32,
+          "error_count": 0
+        },
+        "buyer_verify": {
+          "requests": 15,
+          "median_ms": 20.996,
+          "p95_ms": 40.942,
+          "serial_requests_per_second": 44.64,
+          "error_count": 0
+        },
+        "rider_queue_one_active_stop": {
+          "requests": 15,
+          "median_ms": 6.556,
+          "p95_ms": 8.884,
+          "serial_requests_per_second": 147.01,
+          "error_count": 0
+        }
+      }
+    }
+  ]
+}
