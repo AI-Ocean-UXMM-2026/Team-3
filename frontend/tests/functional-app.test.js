@@ -13,7 +13,7 @@ test('all workspace routes render actual controls without runtime errors',()=>{
 });
 test('customer verifies and saves one response through real form handlers',async()=>{
  const e=boot('#/track/demo-2045');await e.submit('#verify-form',{digits:'1602'});assert.ok(e.find('#customer-form'));
- await e.submit('#customer-form',{answer:'At home',time:W.WINDOWS[1],note:'Gate B'});assert.equal(e.store().order('LP-2045').confirmation.note,'Gate B');assert.match(e.root.textContent,/Saved: At home/);
+ await e.submit('#customer-form',{answer:'At home',time:W.WINDOWS[1],note:'Gate B'});assert.equal(e.store().order('LP-2045').confirmation.note,'Gate B');assert.match(e.root.textContent,/Your answer is saved/);assert.equal(e.find('#customer-form'),null);await e.action('edit-customer','demo-2045');assert.ok(e.find('#customer-form'));await e.submit('#customer-form',{answer:'At home',time:W.WINDOWS[1],note:'Gate C'});assert.equal(e.store().order('LP-2045').confirmation.note,'Gate C');assert.equal(e.store().order('LP-2045').location,'buyer_confirmed');
 });
 test('wrong checks and cutoff show recovery screens, not successful confirmation',async()=>{
  const e=boot('#/track/demo-2045');for(let i=0;i<3;i++)await e.submit('#verify-form',{digits:'0000'});assert.match(e.root.textContent,/This link is locked/);assert.equal(e.store().customer('demo-2045').available,false);
@@ -22,7 +22,7 @@ test('wrong checks and cutoff show recovery screens, not successful confirmation
 test('admin field corrections, hub receipt and assignment controls mutate shared records',async()=>{
  const e=boot('#/order/LP-2046');await e.submit('#edit-form',{reason:'Confirm item label',item:'Reviewed phone case'});assert.equal(e.store().order('LP-2046').item,'Reviewed phone case');
  await e.action('receive','LP-2046');await e.action('assign','LP-2046');await e.submit('dialog form',{routeId:'RT-001'});assert.equal(e.store().order('LP-2046').state,'assigned');
- e.ctx.location.hash='#/routes';await e.action('dispatch-route','RT-001');await e.submit('dialog form');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
+ e.ctx.location.hash='#/routes';assert.ok(e.find('a.route-tile'));e.ctx.location.hash='#/routes/RT-001';assert.ok(e.find('#app-sheet'));await e.action('dispatch-route','RT-001');await e.submit('dialog form');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
 });
 test('delivered undo is exactly timed; cash dialog cancellation does not complete delivery',async()=>{
  const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('delivered','LP-2046');await e.tick(1999);assert.equal(e.find('dialog'),null);await e.action('delivered','LP-2046');await e.tick(100);assert.equal(e.find('dialog'),null);assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
@@ -97,10 +97,10 @@ test('manual order → customer location and availability → admin approval →
  await e.submit('#customer-link-form',{link:`file:///prototype/index.html#/track/${order.link.token}`});
  await e.submit('#verify-form',{digits:'9082'});assert.ok(e.find('[name="latitude"]'));
  await e.action('preview-location','kamayut');await e.submit('#customer-form',{answer:'At home',time:W.ANY_TIME,note:'Ring the bell'});
- order=e.store().order(order.id);assert.equal(order.state,'held');assert.equal(order.location,'buyer_submitted');assert.equal(order.confirmation.note,'Ring the bell');assert.match(e.root.textContent,/awaiting admin approval/);
+ order=e.store().order(order.id);assert.equal(order.state,'held');assert.equal(order.location,'buyer_submitted');assert.equal(order.confirmation.note,'Ring the bell');assert.match(e.root.textContent,/The shop is checking your pin/);
  e.ctx.location.hash='#/order/'+order.id;await e.action('approve-location',order.id);await e.submit('dialog form',{reason:'Admin checked the delivery point'});assert.equal(e.store().order(order.id).state,'ready');
  e.ctx.location.hash='#/routes';await e.action('new-route');await e.submit('dialog form',{riderId:'rider-1',date:order.date});const route=e.store().snapshot().routes[0];
- e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{routeId:route.id});e.ctx.location.hash='#/routes';await e.action('dispatch-route',route.id);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
+ e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{routeId:route.id});e.ctx.location.hash='#/routes/'+route.id;await e.action('dispatch-route',route.id);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
  e.ctx.location.hash='#/ride';assert.match(e.root.textContent,/Delivery stop: Test customer/);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
  await e.action('accept',order.id);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
  e.ctx.location.hash='#/track/'+order.link.token;assert.match(e.root.textContent,/Your parcel was delivered/);

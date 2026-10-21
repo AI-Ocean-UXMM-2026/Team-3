@@ -86,3 +86,5 @@ Any future Burmese wording changes need another review. Refresh source reference
 | နေ့လည် | Afternoon (14:00–16:00) | Slot card |
 | ညနေ | Evening (16:00–18:00) | Slot card |
 | အချိန်မရွေး | Any time | Slot card |
+| သိမ်းပြီးပါပြီ | Saved (your answer is saved) | Buyer page, saved answer card |
+| ပြင်မည် | Edit (my answer) | Buyer page, Edit button |

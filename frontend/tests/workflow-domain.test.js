@@ -42,8 +42,8 @@ test('reissued/revoked/expired links never grant old access',()=>{
  const token=s.order('LP-2045').link.token;command(s,'revoke_link',{id:'LP-2045'});assert.equal(s.customer(token).status,'revoked');
  command(s,'issue_link',{id:'LP-2045'});const t=s.order('LP-2045').link.token;command(s,'clock',{value:'2026-11-01T01:30:00Z'});assert.equal(s.customer(t).status,'expired');
 });
-test('confirmation resolves location hold but leaves original triage amber',()=>{
- const s=make();confirm(s);assert.equal(s.order('LP-2045').state,'ready');assert.equal(s.triage('LP-2045').level,'amber');assert.equal(s.order('LP-2045').confirmation.note,'Blue gate');
+test('buyer pin confirmation resolves the location hold and clears the address check',()=>{
+ const s=make();confirm(s);assert.equal(s.order('LP-2045').state,'ready');assert.equal(s.order('LP-2045').location,'buyer_confirmed');assert.equal(s.triage('LP-2045').level,'green');assert.equal(s.order('LP-2045').confirmation.note,'Blue gate');
 });
 test('confirmation cannot hide an unknown payment hold',()=>{
  const s=make();command(s,'edit',{id:'LP-2045',fields:{payment:'unknown',expected:null},reason:'Amount unclear'});confirm(s);assert.equal(s.order('LP-2045').state,'held');
