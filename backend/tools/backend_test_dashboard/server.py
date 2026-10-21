@@ -1,4 +1,5 @@
 import ipaddress
+import logging
 import json
 import re
 import secrets
@@ -12,7 +13,7 @@ from uuid import UUID
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from app.core.config import Settings
 from tools.backend_test_dashboard.runtime import Sandbox
@@ -108,16 +109,27 @@ def error(status, code, message):
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
 
 
+logger = logging.getLogger(__name__)
+
+
 def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox, frontend=None):
     try:
         maps_key = Settings().google_maps_browser_key
-    except Exception:
+    except ValidationError as exc:
         maps_key = None
-    # Google Maps JS needs its script, tile and API hosts; it also injects inline styles.
-    maps_script = " https://*.googleapis.com https://*.gstatic.com https://*.google.com" if maps_key else ""
+        logger.warning("Google Maps disabled: backend settings are invalid (%s)", exc.error_count())
+    # Google Maps JS hosts, per Google's CSP guidance; opened only when a key is configured.
+    google = (
+        " https://*.googleapis.com https://*.gstatic.com https://*.google.com"
+        " https://*.googleusercontent.com"
+        if maps_key
+        else ""
+    )
+    maps_script = google
     maps_style = " 'unsafe-inline'" if maps_key else ""
-    maps_connect = " https://*.googleapis.com https://*.google.com https://*.gstatic.com" if maps_key else ""
-    maps_img = " https://*.googleapis.com https://*.gstatic.com https://*.google.com" if maps_key else ""
+    maps_connect = google + (" data: blob:" if maps_key else "")
+    maps_img = google
+    maps_extra = f"worker-src blob:; frame-src{google}; " if maps_key else ""
     parsed = urlsplit(origin)
     if (
         parsed.scheme != "http"
@@ -196,7 +208,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                     "font-src 'self' https://fonts.gstatic.com; "
                     f"connect-src 'self'{maps_connect}; "
                     f"img-src 'self' data: https://tile.openstreetmap.org{maps_img}; "
-                    "frame-ancestors 'none'; "
+                    f"{maps_extra}frame-ancestors 'none'; "
                     "base-uri 'none'; form-action 'self'"
                 ),
             }

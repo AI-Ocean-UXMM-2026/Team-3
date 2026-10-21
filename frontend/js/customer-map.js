@@ -37,15 +37,27 @@
       const place=(p,zoom)=>{marker.setPosition(p);map.panTo(p);if(zoom)map.setZoom(17);set(p.lat(),p.lng());};
       map.addListener('click',e=>place(e.latLng));
       marker.addListener('dragend',()=>place(marker.getPosition()));
-      if(search&&g.places?.Autocomplete){
-        const ac=new g.places.Autocomplete(search,{componentRestrictions:{country:'mm'},fields:['geometry','name']});
-        ac.addListener('place_changed',()=>{const loc=ac.getPlace()?.geometry?.location;if(loc)place(loc,true);});
-        search.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+      const off=new AbortController(),cleanup=[()=>off.abort(),()=>g.event.clearInstanceListeners(map),()=>g.event.clearInstanceListeners(marker),()=>marker.setMap(null)];
+      if(search){
+        if(g.places?.PlaceAutocompleteElement){
+          // Current Places widget; legacy Autocomplete is unavailable to new API projects.
+          const el=new g.places.PlaceAutocompleteElement({includedRegionCodes:['mm']});
+          el.className='pin-autocomplete';search.hidden=true;search.after(el);
+          el.addEventListener('gmp-select',async({placePrediction})=>{const p=placePrediction.toPlace();await p.fetchFields({fields:['location']});if(p.location)place(p.location,true);},{signal:off.signal});
+          cleanup.push(()=>el.remove(),()=>{search.hidden=false;});
+        }else if(g.places?.Autocomplete){
+          const ac=new g.places.Autocomplete(search,{componentRestrictions:{country:'mm'},fields:['geometry']});
+          ac.addListener('place_changed',()=>{const loc=ac.getPlace()?.geometry?.location;if(loc)place(loc,true);});
+          search.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();},{signal:off.signal});
+          cleanup.push(()=>g.event.clearInstanceListeners(ac),()=>document.querySelectorAll('.pac-container').forEach(n=>n.remove()));
+        }else search.closest('label')?.setAttribute('hidden','');
       }
       const sync=()=>{const p=current();if(p){marker.setPosition(p);map.panTo(p);}};
-      for(const f of [latitude,longitude])f.addEventListener('change',sync);
+      for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
       if(start)say(start.lat,start.lng);
-      mounted.push(()=>{g.event.clearInstanceListeners(map);node.replaceChildren();});
+      // Google mode needs no OpenStreetMap button or notice.
+      form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.hidden=true);
+      mounted.push(()=>{cleanup.forEach(f=>f());node.replaceChildren();});
       return;
     }
     search?.closest('label')?.setAttribute('hidden','');
@@ -56,8 +68,9 @@
     let marker;
     const place=(a,b,select)=>{if(!valid(a,b))return;if(!marker){marker=L.marker([a,b],{draggable:true,icon,autoPan:true,title:'Drag delivery pin',alt:'Selected delivery point'}).addTo(map);marker.on('dragend',()=>{const p=marker.getLatLng().wrap();place(p.lat,p.lng,true);});}else marker.setLatLng([a,b]);if(select)set(a,b);else say(a,b);};
     map.on('click',e=>{const p=e.latlng.wrap();place(p.lat,p.lng,true);});
+    const off=new AbortController();
     const sync=()=>{const p=current();if(p){place(p.lat,p.lng,false);map.setView([p.lat,p.lng],16);}};
-    for(const f of [latitude,longitude])f.addEventListener('change',sync);
+    for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
     if(start)place(start.lat,start.lng,false);
     const tilesButton=form.querySelector('[data-load-tiles],#load-street-tiles');
     if(tilesButton)tilesButton.onclick=()=>{
@@ -66,8 +79,8 @@
       tilesButton.disabled=true;
     };
     map.whenReady(()=>map.invalidateSize());
-    node.closest('details')?.addEventListener('toggle',()=>map.invalidateSize());
-    mounted.push(()=>map.remove());
+    node.closest('details')?.addEventListener('toggle',()=>map.invalidateSize(),{signal:off.signal});
+    mounted.push(()=>{off.abort();map.remove();});
   }
 
   // Read-only pin for the rider and the buyer. Without a key the node keeps its fallback text and link.
@@ -78,13 +91,13 @@
     if(!g||!node.isConnected)return;
     node.replaceChildren();node.classList.add('is-google');
     const map=new g.Map(node,{center:{lat:a,lng:b},zoom:17,disableDefaultUI:true,gestureHandling:'cooperative',clickableIcons:false});
-    new g.Marker({map,position:{lat:a,lng:b},title:'Delivery point'});
-    mounted.push(()=>{g.event.clearInstanceListeners(map);node.replaceChildren();});
+    const marker=new g.Marker({map,position:{lat:a,lng:b},title:'Delivery point'});
+    mounted.push(()=>{marker.setMap(null);g.event.clearInstanceListeners(map);node.replaceChildren();});
   }
 
   function mount(buyerForm){
     if(buyerForm)picker(buyerForm,{node:buyerForm.querySelector('#buyer-map'),status:buyerForm.querySelector('#map-selection-status'),note:'Submit for server validation and dispatcher review.'});
-    document.querySelectorAll('form [data-pin-map]').forEach(node=>{const form=node.closest('form');picker(form,{node,search:form.querySelector('[name=pin_search]'),status:form.querySelector('[data-pin-status]'),note:'Save to send this point to the rider and buyer.'});});
+    document.querySelectorAll('form [data-pin-map]').forEach(node=>{const form=node.closest('form');picker(form,{node,search:form.querySelector('[data-pin-search]'),status:form.querySelector('[data-pin-status]'),note:'Save to send this point to the rider and buyer.'});});
     document.querySelectorAll('[data-view-map]').forEach(view);
   }
   globalThis.LannPyaCustomerMap={mount,destroy,googleEnabled:()=>!!key()};

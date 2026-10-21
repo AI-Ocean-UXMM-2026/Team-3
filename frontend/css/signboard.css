@@ -658,7 +658,7 @@ details[open]::details-content{block-size:auto}
 @media (prefers-reduced-motion:reduce){
   .toast{transform:translate(-50%,0)!important;opacity:0;transition:opacity 200ms ease,visibility 0s 200ms!important}
   .toast.show{opacity:1;transition:opacity 200ms ease!important}
-  .btn:active,.customer-primary:active{transform:none}
+  .btn:active:not([disabled]),.customer-primary:active,.pin-toolbar button:active{transform:none}
 }
 
 /* Mobbin-informed refinements (21 Oct) */
