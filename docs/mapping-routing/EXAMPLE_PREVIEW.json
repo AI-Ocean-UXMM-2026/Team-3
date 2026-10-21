@@ -1,0 +1,154 @@
+{
+  "label": "FICTIONAL isolated API example; SIMULATED routing",
+  "request": {
+    "origin": {
+      "latitude": 16.8,
+      "longitude": 96.1
+    },
+    "orders": [
+      {
+        "order_id": "85fffff8-01ea-48d6-9fe7-78588c86836b"
+      }
+    ],
+    "riders": [
+      {
+        "rider_id": "acddef4d-d1c1-48ec-9fdf-f2eab502c094"
+      }
+    ],
+    "operating_window": {
+      "start": "2026-10-22T00:00:00+06:30",
+      "end": "2026-10-22T23:59:00+06:30"
+    },
+    "allow_simulation": true,
+    "solver_seconds": 1
+  },
+  "response": {
+    "id": "bd8d9501-455a-45c0-ac2c-5565081c9aa7",
+    "version": 1,
+    "state": "PREVIEW",
+    "created_at": "2026-10-21T18:48:24.761727Z",
+    "stale": false,
+    "origin": {
+      "latitude": 16.8,
+      "longitude": 96.1
+    },
+    "operating_window": {
+      "start": "2026-10-22T00:00:00+06:30",
+      "end": "2026-10-22T23:59:00+06:30"
+    },
+    "result": {
+      "solver": "OR-Tools",
+      "solver_status": "FEASIBLE",
+      "globally_optimal": false,
+      "elapsed_ms": 1012.385,
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "traffic_aware": false,
+      "matrix_size": 2,
+      "vehicles": [
+        {
+          "rider_id": "acddef4d-d1c1-48ec-9fdf-f2eab502c094",
+          "stops": [
+            {
+              "order_id": "85fffff8-01ea-48d6-9fe7-78588c86836b",
+              "sequence": 1,
+              "arrival": "2026-10-22T00:19:15+06:30",
+              "departure": "2026-10-22T00:22:15+06:30",
+              "demand": 1,
+              "latitude": 16.8254,
+              "longitude": 96.1309
+            }
+          ],
+          "distance_meters": 14098,
+          "duration_seconds": 2490,
+          "travel_seconds": 2310,
+          "geometry": {
+            "type": "LineString",
+            "coordinates": [
+              [
+                96.1,
+                16.8
+              ],
+              [
+                96.1,
+                16.8
+              ],
+              [
+                96.1,
+                16.81
+              ],
+              [
+                96.1,
+                16.82
+              ],
+              [
+                96.1,
+                16.83
+              ],
+              [
+                96.11,
+                16.83
+              ],
+              [
+                96.12,
+                16.83
+              ],
+              [
+                96.13,
+                16.83
+              ],
+              [
+                96.1309,
+                16.8254
+              ],
+              [
+                96.1309,
+                16.8254
+              ],
+              [
+                96.13,
+                16.83
+              ],
+              [
+                96.13,
+                16.82
+              ],
+              [
+                96.13,
+                16.81
+              ],
+              [
+                96.13,
+                16.8
+              ],
+              [
+                96.12,
+                16.8
+              ],
+              [
+                96.11,
+                16.8
+              ],
+              [
+                96.1,
+                16.8
+              ],
+              [
+                96.1,
+                16.8
+              ]
+            ]
+          },
+          "geometry_warning": null
+        }
+      ],
+      "unassigned": [],
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic.",
+        "Bounded heuristic solution; global optimality is not guaranteed."
+      ],
+      "attribution": "LannPya synthetic test graph"
+    },
+    "routes": {}
+  }
+}

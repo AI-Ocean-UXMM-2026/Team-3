@@ -10,6 +10,9 @@ npm.cmd start -- --port 8781 --state mtt-local
 ```
 
 Open http://127.0.0.1:8781 (loopback only).
+[Mapping/routing MVP](docs/mapping-routing/ARCHITECTURE.md) adds explicit simulated
+route previews, OR-Tools multi-rider optimization and separate assignment commits.
+Live routing remains disabled pending approved server credentials and provider verification.
 [MTT startup and workflows](docs/mtt-integration/WORKFLOWS_AND_STARTUP.md),
 [baseline audit](docs/mtt-integration/MTT_BASELINE_AUDIT.md),
 [database](docs/mtt-integration/DATABASE_ARCHITECTURE.md),

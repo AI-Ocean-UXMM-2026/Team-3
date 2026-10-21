@@ -24,6 +24,15 @@ class Settings(BaseSettings):
     ai_timeout_seconds: float = Field(default=3.0, gt=0, le=30, allow_inf_nan=False)
     ai_max_input_chars: int = Field(default=2000, ge=128, le=4000)
     environment: Literal["local", "test", "production"] = "local"
+    routing_provider: Literal["disabled", "offline", "google", "ors"] = "offline"
+    routing_external_requests_enabled: bool = False
+    google_routes_api_key: SecretStr | None = None
+    ors_api_key: SecretStr | None = None
+    routing_two_wheeler_enabled: bool = False
+    routing_request_timeout_seconds: float = Field(default=10, gt=0, le=30, allow_inf_nan=False)
+    routing_max_stops: int = Field(default=25, ge=1, le=50)
+    routing_requests_per_minute: int = Field(default=10, ge=1, le=60)
+    routing_plan_ttl_minutes: int = Field(default=15, ge=1, le=60)
     order_management_enabled: bool = False
     database_url: SecretStr = SecretStr("sqlite+pysqlite:///./data/lannpya_dev.sqlite3")
     dev_access_token: SecretStr | None = None

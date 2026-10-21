@@ -231,7 +231,7 @@ def create_route(session, actor, body, *, commit=True):
     return result
 
 
-def prepare_assignment(session, actor, identifier, body, settings, catalog):
+def prepare_assignment(session, actor, identifier, body, settings, catalog, *, commit=True):
     """One transaction for receipt, review, optional route creation and assignment.
 
     Existing service guards still run. Nothing departs until an explicit DISPATCH.
@@ -368,7 +368,8 @@ def prepare_assignment(session, actor, identifier, body, settings, catalog):
     session.flush()
     assignment = session.get(DeliveryAssignment, assigned["assignment"].id)
     output = result(assignment, route.id)
-    session.commit()
+    if commit:
+        session.commit()
     return output
 
 

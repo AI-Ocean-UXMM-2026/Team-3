@@ -107,8 +107,27 @@
 
   function mount(buyerForm){
     if(buyerForm)picker(buyerForm,{node:buyerForm.querySelector('#buyer-map'),status:buyerForm.querySelector('#map-selection-status'),note:'Submit for server validation and dispatcher review.'});
-    document.querySelectorAll('form [data-pin-map]').forEach(node=>{const form=node.closest('form');picker(form,{node,search:form.querySelector('[data-pin-search]'),status:form.querySelector('[data-pin-status]'),note:'Save to send this point to the rider and buyer.'});});
+    document.querySelectorAll('form [data-pin-map]').forEach(node=>{const form=node.closest('form');picker(form,{node,search:form.querySelector('[data-pin-search]'),status:form.querySelector('[data-pin-status]'),note:node.dataset.pinNote||'Save to send this point to the rider and buyer.'});});
     document.querySelectorAll('[data-view-map]').forEach(view);
   }
-  globalThis.LannPyaCustomerMap={mount,destroy,googleEnabled:()=>!!key()};
+  async function routeView(node,geometry,provider,stops=[]){
+    if(!node?.isConnected||!geometry)return;
+    // Google road data is never drawn on an unrelated Leaflet basemap.
+    if(provider==='google'){
+      const g=await loadGoogle();if(!node.isConnected)return;
+      if(!g){node.textContent='Google map unavailable. Route geometry is withheld; use the navigation link.';return;}
+      const path=geometry.coordinates.map(([lng,lat])=>({lat,lng}));
+      const map=new g.Map(node,{center:path[0],zoom:14,mapTypeControl:false,streetViewControl:false});
+      const line=new g.Polyline({path,map,strokeColor:'#D23F2E'}),bounds=new g.LatLngBounds();path.forEach(p=>bounds.extend(p));map.fitBounds(bounds);
+      mounted.push(()=>{line.setMap(null);g.event.clearInstanceListeners(map);node.replaceChildren();});return;
+    }
+    if(!globalThis.L){node.textContent='Map library unavailable. The ordered stop list remains available.';return;}
+    const map=L.map(node),line=L.geoJSON(geometry,{style:{color:'#D23F2E',weight:4}}).addTo(map);
+    for(const stop of stops)L.marker([stop.latitude,stop.longitude],{title:`Stop ${stop.sequence}`,icon:L.divIcon({className:'buyer-map-pin',html:`<b>${Number(stop.sequence)}</b>`,iconSize:[28,28]})}).addTo(map);
+    map.fitBounds(line.getBounds(),{padding:[20,20],maxZoom:17});
+    const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
+    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>button.textContent='Tiles unavailable; route geometry remains visible.');button.disabled=true;};
+    mounted.push(()=>{map.remove();button.remove();});
+  }
+  globalThis.LannPyaCustomerMap={mount,destroy,routeView,googleEnabled:()=>!!key()};
 })();

@@ -2,6 +2,10 @@
 
 Local base URL: `http://127.0.0.1:8000`. JSON over REST, UTF-8.
 Interactive docs: `/docs`; OpenAPI schema: `/openapi.json`.
+Phase 22 routing additions are specified in
+[mapping-routing/API_CONTRACT.md](mapping-routing/API_CONTRACT.md). These add
+protected previews, explicit commits and provider-neutral road-route contracts;
+existing endpoint requests and responses remain unchanged.
 Frontend entry point: [FRONTEND_HANDOFF.md](FRONTEND_HANDOFF.md); exported schemas:
 [OPENAPI.json](OPENAPI.json); isolated demo: [DEMO_GUIDE.md](DEMO_GUIDE.md).
 Health and stateless parsing require no token. Buyer cards use the separate capability

@@ -8,7 +8,7 @@ async function bridge(baseUrl) {
   if(base.hostname!=='127.0.0.1'||base.protocol!=='http:'||base.username||base.password||base.search||base.hash||!['','/'].includes(base.pathname))throw Error('Use this local integration origin only.');
   if(globalThis.location?.origin && globalThis.location.origin!==base.origin)throw Error('Cross-origin privileged integration is disabled.');
   const request=async(path,body,csrf)=>{
-    const response=await fetch(base.origin+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(15000),headers:body===undefined?{}:{'Content-Type':'application/json','X-Dashboard-CSRF':csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});
+    const response=await fetch(base.origin+path,{method:body===undefined?'GET':'POST',credentials:'same-origin',cache:'no-store',redirect:'error',referrerPolicy:'no-referrer',signal:AbortSignal.timeout(body?.path?.startsWith('/api/routes/')?45000:15000),headers:body===undefined?{}:{'Content-Type':'application/json','X-Dashboard-CSRF':csrf},...(body===undefined?{}:{body:JSON.stringify(body)})});
     let result;try{result=await response.json();}catch{throw new ApiError(response.status,'INVALID_RESPONSE','Local API returned invalid JSON; refresh before retrying.');}
     if(!response.ok){const e=result.data?.error||result.error;throw new ApiError(response.status,e?.code||'HTTP_ERROR',e?.message||'Local API failed',e?.details||[],response.headers.get('Retry-After'));}
     return result;

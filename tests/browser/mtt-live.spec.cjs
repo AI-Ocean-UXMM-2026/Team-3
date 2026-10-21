@@ -90,9 +90,9 @@ test('MTT reschedule is a separate review request; location review cannot approv
   await page.goto('/#/order/'+id);await expect(page.locator('[data-review-request]')).toBeVisible();
   await page.locator('[data-action=approve-location]').click();await page.locator('dialog [name=reason]').fill('Synthetic location review only');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
   let requests=(await inspect(page,`/api/orders/${id}/buyer-requests`)).items;expect(requests.find(r=>r.kind==='RESPONSE').resolution).toBeNull();
-  await page.locator('[data-review-request]').click();await page.locator('dialog [name=reason]').fill('Synthetic courier review of cross-day request');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog .form-error')).toContainText('Cross-day rescheduling needs operational replanning');
-  await page.locator('dialog [name=decision]').selectOption('REJECT');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
-  requests=(await inspect(page,`/api/orders/${id}/buyer-requests`)).items;expect(requests.find(r=>r.kind==='RESPONSE').resolution).toBe('REJECT');
+  await page.locator('[data-review-request]').click();await page.locator('dialog [name=reason]').fill('Synthetic courier review of cross-day request');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
+  requests=(await inspect(page,`/api/orders/${id}/buyer-requests`)).items;expect(requests.find(r=>r.kind==='RESPONSE').resolution).toBe('APPROVE');
+  const order=await inspect(page,'/api/orders/'+id);expect(new Date(order.delivery_time_window.split('/')[0]).toLocaleTimeString('en-GB',{timeZone:'Asia/Yangon',hour:'2-digit',minute:'2-digit'})).toBe('10:00');expect(order.parsing_metadata.parcel.delivery_day).toBe(new Date(Date.now()+23400000+86400000).toISOString().slice(0,10));
 });
 test('MTT unavailable GPS, timeout and missing map library preserve manual selection',async({page})=>{
   await manual(page);const link=await buyerLink(page);await buyer(page,link);
@@ -114,7 +114,9 @@ test('MTT device GPS only after click, permission denial recovers with manual pi
   await manual(page);const link=await buyerLink(page);await buyer(page,link);
   await expect(page.locator('[name=latitude]')).toHaveValue('');
   await context.grantPermissions(['geolocation']);await context.setGeolocation({latitude:16.81,longitude:96.14});
+  await page.evaluate(()=>{const original=navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);navigator.geolocation.getCurrentPosition=(ok,fail,options)=>{globalThis.qaGpsOptions=options;return original(ok,fail,options);};});
   await page.locator('[data-action=get-location]').click();await expect(page.locator('[name=latitude]')).toHaveValue('16.81');
+  expect(await page.evaluate(()=>globalThis.qaGpsOptions)).toMatchObject({enableHighAccuracy:true,maximumAge:0});await expect(page.locator('#map-selection-status')).toContainText('does not independently verify');
   await context.clearPermissions();
   await page.evaluate(()=>{navigator.geolocation.getCurrentPosition=(_ok,fail)=>fail({code:1});});
   await page.locator('[data-action=get-location]').click();await expect(page.locator('.form-error')).toContainText('permission denied');

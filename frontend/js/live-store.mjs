@@ -10,7 +10,7 @@ export function projectOrder(row){
 export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=location.origin,route=location.hash.slice(2)}={}){
   const links=new Map(),linkStates=new Map(),buyerStates=new Map(),native=new Map(),routeRows=new Map();
   let lastRoute=route||'dispatch',queueRows=[],requests=[],activeBuyer=null;
-  let state={orders:[],routes:[],events:[],outbox:[],downloads:{},policy:{areas:[],cutoff:900,enforceCutoff:true,maxRetries:0,radius:500,linkDays:3,version:1,noteLimit:2000},policyHistory:[],clockMode:'live'};
+  let state={orders:[],routes:[],plans:[],riderPlans:[],riders:[],events:[],outbox:[],downloads:{},policy:{areas:[],cutoff:900,enforceCutoff:true,maxRetries:0,radius:500,linkDays:3,version:1,noteLimit:2000},policyHistory:[],clockMode:'live'};
   const all=(side,path)=>api.all(side,path),call=(path,method='GET',body,side='admin')=>api.call(side,path,{method,body});
   function rows(routes){routeRows.clear();return routes.map(r=>{routeRows.set(r.id,r);return {...r,riderId:r.rider_id,date:r.day,orderIds:r.items.map(o=>o.id),active:null};});}
   function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r);if(links.has(r.id))o.link=links.get(r.id);return o;});}
@@ -22,8 +22,8 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   }
   async function sync(target=lastRoute){
     lastRoute=target;
-    if(target.startsWith('track/')){state.orders=[];state.routes=[];state.events=[];await loadBuyer(decodeURIComponent(target.slice(6))).catch(()=>{});return;}
-    if(target==='customer'){state.orders=[];state.routes=[];state.events=[];return;}
+    if(target.startsWith('track/')){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];await loadBuyer(decodeURIComponent(target.slice(6))).catch(()=>{});return;}
+    if(target==='customer'){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];return;}
     if(target.startsWith('ride')){
       await connect('rider');const rider=api.connections.rider.actor;
       if(!Object.values(W.ACTORS).some(a=>a.role==='rider'&&a.id===rider.id)){
@@ -32,11 +32,15 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       }
       const routes=await all('rider','/api/routes');state.routes=rows(routes);
       queueRows=(await call(`/api/riders/${rider.id}/queue`,'GET',undefined,'rider')).items;
+      state.riderPlans=(await call(`/api/riders/${rider.id}/route-plans`,'GET',undefined,'rider')).items||[];
+      state.plans=[];state.riders=[];
       const projected=new Map(routes.flatMap(r=>r.items.map(o=>[o.id,{id:o.id,name:o.name||'',state:o.return_received?'returned':states[o.status],collection:o.collection,routeId:r.id,attempts:[]}])));
       for(const q of queueRows){const pin=point(q.latitude,q.longitude);projected.set(q.order_id,{...(projected.get(q.order_id)||{}),id:q.order_id,version:q.order_version,name:q.customer_name||'',phone:q.customer_phone||'',street:q.street||'',landmark:q.landmark||'',note:q.delivery_instructions||'',floor:q.building_floor_unit||'',areaId:q.township,state:states[q.status],pin,anchor:null,location:q.coordinate_status,navigationUrl:q.navigation_ready?q.navigation_url:null,expected:q.cod_amount==null?null:Number(q.cod_amount),payment:Number(q.cod_amount)===0?'prepaid':'cod',time:q.delivery_time_window||W.ANY_TIME,date:'',attempts:[],confirmation:q.buyer_confirmation?.last_confirmed_at?{answer:({AVAILABLE:'At home',RESCHEDULE:'Rescheduled',LEAVE_WITH_SECURITY:'Leave with security'})[q.buyer_confirmation.availability]||'Location only; availability unconfirmed',time:q.delivery_time_window||W.ANY_TIME}:null});}
       state.orders=[...projected.values()];state.events=[];return;
     }
     await connect('admin');const [orders,routes,riders]=await Promise.all([all('admin','/api/orders'),all('admin','/api/routes'),all('admin','/api/riders')]);
+    state.riders=riders;state.riderPlans=[];
+    state.plans=target==='routes'?await all('admin','/api/routes/plans'):[];
     remember(orders);state.routes=rows(routes);
     Object.keys(W.ACTORS).filter(k=>W.ACTORS[k].role==='rider').forEach(k=>delete W.ACTORS[k]);
     riders.forEach((r,i)=>W.ACTORS[i?'rider'+(i+1):'rider']={id:r.id,role:'rider',name:r.name,hubId:'local'});
@@ -75,8 +79,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     }else if(type==='approve_customer_location'||type==='reject_customer_location'){
       const pending=requests.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution&&(p.requestId?r.request_id===p.requestId:r.kind==='LOCATION'));if(!pending.length)throw Error('No pending buyer requests. Refresh this order.');
       for(const r of pending){
-        const current=await api.order(p.id),start=r.submitted_values?.time_window?.start;
-        if(type==='approve_customer_location'&&start&&current.parsing_metadata?.parcel?.delivery_day&&W.day(Date.parse(start))!==current.parsing_metadata.parcel.delivery_day)throw Error('Cross-day rescheduling needs operational replanning. The current API cannot update the parcel delivery day; the request remains pending. Reject it or coordinate a revised order.');
+        const current=await api.order(p.id);
         await call(`/api/orders/${p.id}/buyer-requests/${r.id}`,'PATCH',{expected_version:current.version,decision:type==='reject_customer_location'?'REJECT':'APPROVE',reason:p.reason});
       }
     }else if(type==='verify_location'){
@@ -100,6 +103,11 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     return {value,pending:false};
   }
   const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,
+    routingStatus:()=>call('/api/routes/provider-status'),
+    calculateRoute:body=>call('/api/routes/calculate','POST',body),
+    previewPlan:body=>call('/api/routes/optimize','POST',body),
+    getPlan:id=>call(`/api/routes/plans/${id}`),
+    commitPlan:(plan,body)=>call(`/api/routes/plans/${plan.id}/commit`,'POST',{expected_version:plan.version,...body}),
     riderActor:()=>({...api.connections.rider?.actor,role:'rider'}),
     requests:()=>copy(requests.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution)),
     async selectRider(id){await connect('rider',id);await sync('ride');},
