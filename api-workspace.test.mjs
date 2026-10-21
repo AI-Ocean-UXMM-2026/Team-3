@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import {environment} from './test-dom.js';
 import {WorkspaceApi,context,today,townships,mmk,tokenFrom} from './api-model.mjs';
 
-const source=fs.readFileSync(new URL('./api-workspace.mjs',import.meta.url),'utf8').replace(/^import .*\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
+const source=fs.readFileSync(new URL('./api-workspace.mjs',import.meta.url),'utf8').replace(/^import .*\r?\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
 const token='A'.repeat(43),secret='x'.repeat(48);
 const order={id:'o1',status:'NEEDS_REVIEW',version:1,customer_name:'Buyer',customer_phone:'09791234567',township:'Kamaryut',street:'Hledan',cod_amount:'25000',latitude:'16.8254',longitude:'96.1309',confidence_level:'AMBER',parsing_metadata:{parcel:{item:'Envelope',delivery_day:today(),hub_received_at:'now'}}};
 function setup(t,hash='#/admin',override){

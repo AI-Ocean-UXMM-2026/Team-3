@@ -1,5 +1,13 @@
 # Handoff: LannPya Signboard UI overhaul
 
+## Continuation status · 21 October 2026
+
+The secondary dispatcher pages, plain dialog copy, rider night-mode coverage and built-system documentation are implemented. Read `DESIGN.md` for current tokens, components and responsive rules; `.impeccable/design.json` is its companion. Cream remains the pinned brand ground. All motion except the 240ms lane-count flip is immediate, including buyer pin changes.
+
+`BURMESE-REVIEW.md` contains 49 distinct authored Burmese UI runs. The project owner volunteered as the native-language reviewer; approval is pending and the PR must remain draft until their review is recorded. This is not native-approved copy.
+
+Validation: all 93 root tests and syntax checks pass. The API test helper now accepts Windows CRLF line endings. Fresh browser evidence is stored outside the repo; the supplied branch has no `screens` directory. The isolated three-variant route study also lives outside production code. The original handoff below remains as a record of the starting point.
+
 Branch: `claude/project-thread-gcp93k` on `fightahackathon/lannpya-ai`, branched from `prototype`. No PR has been opened yet.
 Run it by opening `index.html` (no build step). Run `npm test` to check it; 93 of 93 tests pass.
 
