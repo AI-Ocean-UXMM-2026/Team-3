@@ -39,6 +39,32 @@ The normal clock follows real time in Asia/Rangoon. Customer edits remain open u
 
 The Customer menu opens a real landing page, not an arbitrary first order. Its local preview list is for testing only; live customers will receive their own token link after backend integration. Locked, revoked or expired links explain how to contact the admin.
 
+## Order parser (prototype branch)
+
+`order-parser/` is the LannPya AI order parser (TypeScript, from FightaHackathon/Lan_Pya_AI): Zawgyi
+detection and conversion, Burmese phone/COD/wallet rules, a 33-township Yangon dictionary, the Gemini
+address extractor with recorded and offline fallbacks, triage and the buyer link. See
+[order-parser/README.md](order-parser/README.md).
+
+The local prototype loads its rules and dictionary layers from `vendor/lannpya-order-parser.js`, a
+browser bundle built from `order-parser/` (no AI call, nothing leaves the browser). **Admin → Paste chat
+orders** then:
+
+- converts Zawgyi to Unicode instead of holding it, and warns so the admin checks the result;
+- splits numbered orders written back to back (`1.` / `၁။`) as well as `---` and blank lines;
+- fills name, phone, township, street and COD/prepaid from unlabelled chat text (`၃ သောင်း`, `KPay နဲ့ လွှဲပြီး`).
+
+Labelled fields (`Name:`, `COD:`, `Payment:`) still win, ambiguous phones or amounts stay blank, and
+townships outside the prototype's two service areas stay red with a warning. Without the bundle,
+`workflow-domain.js` falls back to its original rules. Fields the parser filled carry
+`provenance[field].parser`.
+
+```bash
+npm test                 # prototype tests, including order-parser.test.js
+npm run test:parser      # parser suite (run npm install in order-parser/ first)
+npm run build:parser     # rebuild vendor/lannpya-order-parser.js after changing order-parser/src
+```
+
 ## Implementation and tests
 
 - `workflow-domain.js`: empty initialization/reset, manual/batch creation, three-role command guards, readiness, links, customer proposals, assignment/departure, attempts, returns/cash closeout and local replay.

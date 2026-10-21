@@ -350,7 +350,9 @@ def test_frontend_allowlist_and_production_gate(workspace):
     assert (
         c["admin"].get("/api-workspace.mjs").headers["content-type"].startswith("text/javascript")
     )
+    assert c["admin"].get("/vendor/lannpya-order-parser.js").status_code == 200
     for path in (
+        "/order-parser/package.json",
         "/data/workspace_access.json",
         "/.env",
         "/app/main.py",

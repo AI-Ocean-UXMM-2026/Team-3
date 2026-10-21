@@ -28,23 +28,37 @@
   const validWindow = time => time===ANY_TIME||WINDOWS.includes(time);
   const distance = (a,b) => {const rad=x=>x*Math.PI/180;const h=Math.sin(rad(b.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));};
   const inside = (p,area) => !!p && Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.lat>=area.bounds[0] && p.lat<=area.bounds[1] && p.lng>=area.bounds[2] && p.lng<=area.bounds[3];
+  // Optional LannPya AI order parser (vendor/lannpya-order-parser.js): Zawgyi conversion and Burmese rules/dictionary.
+  // Deterministic and local; it only fills fields the labelled rules below leave empty.
+  const enhancer = () => root.LannPyaOrderParser || null;
+  const split = raw => (enhancer()&&Array.from(enhancer().splitOrders(String(raw))))|| String(raw).split(/\r?\n\s*---\s*\r?\n|\r?\n\s*\r?\n/).map(s=>s.trim()).filter(Boolean);
   function parse(raw) {
-    const text=digits(raw).normalize('NFC');
+    const extra=enhancer()?.parseRules(String(raw))||null, filled=new Set();
+    const text=digits(extra?extra.text:raw).normalize('NFC');
     const field=key=>(text.match(new RegExp('^'+key+'\\s*[:：]\\s*(.+)$','im'))?.[1]||'').trim();
-    const phones=[...new Set((text.match(/(?:\+?95|09)[\d -]{6,17}\d/g)||[]).map(p=>p.replace(/[^\d]/g,'').replace(/^95/,'0')))];
-    const area=PLACES.find(p=>p.aliases.some(a=>text.toLowerCase().includes(a)));
-    const street=field('Street')||area?.streets.find(s=>text.toLowerCase().includes(s.toLowerCase()))||'';
+    const take=(key,value)=>{if(value)filled.add(key);return value;};
+    let phones=[...new Set((text.match(/(?:\+?95|09)[\d -]{6,17}\d/g)||[]).map(p=>p.replace(/[^\d]/g,'').replace(/^95/,'0')))];
+    if(!phones.length&&extra){phones=[...new Set(extra.phones.filter(p=>p.valid).map(p=>p.number))];take('phone',phones.length);}
+    const townships=extra?.townships||[];
+    const area=PLACES.find(p=>p.aliases.some(a=>text.toLowerCase().includes(a)))||(townships.length===1?take('areaId',PLACES.find(p=>p.id===townships[0])):undefined);
+    const street=field('Street')||area?.streets.find(s=>text.toLowerCase().includes(s.toLowerCase()))||take('street',[extra?.houseNo&&`No. ${extra.houseNo}`,extra?.street].filter(Boolean).join(', '));
     const amountText=field('COD');
-    const amount=amountText ? Number(amountText.replace(/[,\s]/g,'').replace(/MMK|Ks/ig,'')) : null;
-    const prepaid=/^prepaid$/i.test(field('Payment'));
+    const ruled=!amountText&&!field('Payment')&&extra?.codAmount!=null&&!extra.ambiguousAmount?take('expected',extra):null;
+    const amount=amountText ? Number(amountText.replace(/[,\s]/g,'').replace(/MMK|Ks/ig,'')) : ruled&&!ruled.prepaid?ruled.codAmount:null;
+    const prepaid=/^prepaid$/i.test(field('Payment'))||!!ruled?.prepaid;
     const encodingReview=/[\u1060-\u108f]/.test(text);
     const landmark=field('Landmark'), vague=/near|နား|အနီး|somewhere/i.test(landmark) && !/gate|building|တိုက်|အမှတ်/i.test(landmark);
     const anchor=street && area?.streets.includes(street) ? {lat:area.lat,lng:area.lng}:null;
-    const fields={name:field('Name'),phone:phones.length===1?phones[0]:'',areaId:area?.id||'',street,landmark,floor:field('Floor'),note:field('Note'),reference:field('Invoice'),item:field('Item')||'Parcel',payment:prepaid?'prepaid':Number.isSafeInteger(amount)&&amount>0?'cod':'unknown',expected:prepaid?0:amount,anchor,pin:anchor?{...anchor}:null,location:anchor&&!vague?'dictionary_matched':'unresolved',encodingReview,normalized:text,time:WINDOWS.includes(field('Time'))?field('Time'):WINDOWS[0],date:field('Date')||null};
-    const provenance=Object.fromEntries(['phone','expected','payment'].map(k=>[k,{source:'rule',evidence:k==='phone'?phones.join(', '):amountText||field('Payment')} ]));
+    const fields={name:field('Name')||take('name',extra?.name||''),phone:phones.length===1?phones[0]:'',areaId:area?.id||'',street,landmark,floor:field('Floor'),note:field('Note'),reference:field('Invoice'),item:field('Item')||'Parcel',payment:prepaid?'prepaid':Number.isSafeInteger(amount)&&amount>0?'cod':'unknown',expected:prepaid?0:amount,anchor,pin:anchor?{...anchor}:null,location:anchor&&!vague?'dictionary_matched':'unresolved',encodingReview,normalized:text,time:WINDOWS.includes(field('Time'))?field('Time'):WINDOWS[0],date:field('Date')||null};
+    const provenance=Object.fromEntries(['phone','expected','payment'].map(k=>[k,{source:'rule',evidence:k==='phone'?phones.join(', '):amountText||field('Payment')||(ruled?(ruled.prepaid?`Prepaid${ruled.paymentMethod?' via '+ruled.paymentMethod:''}`:String(ruled.codAmount)):'')} ]));
     for(const k of ['areaId','street','anchor'])provenance[k]={source:'dictionary',evidence:area?.name||'No supported match'};
     for(const k of ['name','item','landmark','floor','note'])provenance[k]={source:'rule',evidence:fields[k]||'Not extracted'};
+    if(filled.has('street'))provenance.street={source:'rule',evidence:street};
+    for(const k of [...filled,...(filled.has('expected')?['payment']:[])])provenance[k].parser='lannpya-order-parser';
     const warnings=[];if(phones.length>1)warnings.push('Multiple phone candidates — choose the recipient.');if(encodingReview)warnings.push('Encoding needs manual Unicode review; no automatic conversion provider connected.');
+    if(extra?.wasZawgyi){provenance.normalized={source:'rule',evidence:'Zawgyi converted to Unicode',parser:'lannpya-order-parser'};warnings.push('Converted from Zawgyi to Unicode — check names and the address against the original.');}
+    if(!area&&townships.length)warnings.push(townships.length>1?`Several townships named (${townships.join(', ')}) — choose one.`:`Township ${townships[0]} is outside the supported service areas.`);
+    if(!amountText&&!field('Payment')&&extra?.ambiguousAmount)warnings.push('Several amounts found — confirm the COD amount.');
     return {...fields,raw,provenance,warnings,vague};
   }
   const SAMPLE = `Name: Ma Thandar\nPhone: 09887341602\nTownship: Kamayut\nStreet: Hledan Road\nLandmark: အဆွေတော်နား\nCOD: 28000\nItem: Floral Summer Dress\nInvoice: DEMO-112\nNote: ၄ ထပ်တိုက် ညာဘက်ခန်း\n\n---\n\nName: Ko Min\nPhone: 09794339082\nTownship: Kamayut\nStreet: Thiri Mingalar Road\nLandmark: Blue gate 12\nCOD: 35000\nItem: Phone case\nInvoice: DEMO-113\n\n---\n\nName: Needs phone correction\nTownship: Sanchaung\nLandmark: near the market\nPayment: unknown\nItem: Canvas bag\nInvoice: DEMO-114`;
@@ -241,6 +255,6 @@
       export:()=>JSON.stringify(state,null,2)
     };
   }
-  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,REASONS,ACTORS,PLACES,SAMPLE,parse,triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
+  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,REASONS,ACTORS,PLACES,SAMPLE,parse,split,enhanced:()=>!!enhancer(),triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
   if(typeof module!=='undefined')module.exports=api;else root.Workflow=api;
 })(typeof window==='undefined'?globalThis:window);

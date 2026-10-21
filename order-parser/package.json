@@ -1,0 +1,29 @@
+{
+  "name": "lannpya-ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LannPya AI: rules-first Burmese order parser, triage and buyer-link logic",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit",
+    "demo": "node scripts/demo.ts",
+    "build:recordings": "node scripts/build-recordings.ts",
+    "build:browser": "esbuild scripts/browser-global.ts --bundle --format=iife --platform=browser --target=es2020 --inject:scripts/buffer-shim.ts --legal-comments=eof --minify --banner:js=\"/* LannPya AI order parser: rules, dictionary and Zawgyi conversion. Generated from order-parser/ by npm run build:browser; do not edit. */\" --outfile=../vendor/lannpya-order-parser.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "esbuild": "^0.28.2",
+    "typescript": "5.9",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "myanmar-tools": "1.1.3",
+    "rabbit-node": "^1.0.4",
+    "zod": "^4.6.7"
+  }
+}

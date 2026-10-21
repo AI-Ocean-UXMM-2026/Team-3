@@ -17,6 +17,7 @@ FILES = {
         "index.html",
         "functional-app.js",
         "workflow-domain.js",
+        "vendor/lannpya-order-parser.js",
         "extra.css",
         "interactions.css",
         "handoff.css",
