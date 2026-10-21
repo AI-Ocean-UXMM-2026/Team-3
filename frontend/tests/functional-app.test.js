@@ -67,7 +67,7 @@ test('customer nudges do not walk the fixed anchor past 500 metres',async()=>{
 test('batch preview imports valid rows while retaining simulated failed drafts',async()=>{
  const e=boot('#/scenarios');e.find('#scenario').value='parse_failure';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/new';
  const raw='Name: New A\nPhone: 09887341602\nTownship: Kamayut\nStreet: Hledan Road\nCOD: 5000\nItem: New A\nInvoice: NEW-A\n\n---\n\nName: New B\nPhone: 09794339082\nTownship: Kamayut\nStreet: Hledan Road\nCOD: 6000\nItem: New B\nInvoice: NEW-B';
- e.find('#batch-raw').value=raw;const parsing=e.action('parse');for(let i=0;i<8;i++)await e.tick(100);await parsing;assert.match(e.root.textContent,/1 failed/);await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,4);assert.match(e.root.textContent,/Record 1/);assert.match(e.root.textContent,/Simulated parser error/);
+ e.find('#batch-raw').value=raw;const parsing=e.action('parse');for(let i=0;i<8;i++)await e.tick(100);await parsing;assert.match(e.root.textContent,/1 couldn’t be read/);await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,4);assert.match(e.root.textContent,/Record 1/);assert.match(e.root.textContent,/Simulated parser error/);
  e.ctx.location.hash='#/scenarios';e.find('#scenario').value='normal';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/new';const retry=e.action('retry-row','0');await e.tick(100);await retry;await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,5);
 });
 test('failed save retains customer form and the same form can be retried',async()=>{
