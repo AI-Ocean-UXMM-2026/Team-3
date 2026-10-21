@@ -47,13 +47,27 @@ class HTTPProvider(RoadProvider):
             raise RoutingFailure("ROUTING_MODE_UNSUPPORTED", 422)
         return key.get_secret_value()
 
+    @staticmethod
+    def read_json(response, deadline):
+        content = bytearray()
+        for chunk in response.iter_bytes():
+            if time.monotonic() > deadline:
+                raise RoutingFailure("ROUTING_TIMEOUT", 504)
+            content.extend(chunk)
+            if len(content) > 2000000:
+                raise RoutingFailure("ROUTING_RESPONSE_TOO_LARGE", 502)
+        return json.loads(content, object_pairs_hook=unique_keys, parse_constant=reject_constant)
+
     def post(self, endpoint, body, headers, deadline):
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise RoutingFailure("ROUTING_TIMEOUT", 504)
         try:
             with httpx.Client(
-                timeout=remaining, follow_redirects=False, trust_env=False, transport=self.transport
+                timeout=remaining,
+                follow_redirects=False,
+                trust_env=False,
+                transport=self.transport or httpx.HTTPTransport(retries=0, trust_env=False),
             ) as client:
                 with client.stream("POST", endpoint, json=body, headers=headers) as response:
                     if response.status_code == 429:
@@ -61,19 +75,20 @@ class HTTPProvider(RoadProvider):
                     if response.status_code in {401, 403}:
                         raise RoutingFailure("ROUTING_CREDENTIAL_OR_QUOTA_REJECTED")
                     if response.status_code in {400, 404}:
+                        if self.name == "ors":
+                            try:
+                                data = self.read_json(response, deadline)
+                                code = data.get("error", {}).get("code")
+                            except (ValueError, TypeError, AttributeError):
+                                code = None
+                            if code == 2009:
+                                raise RoutingFailure("ROUTE_NOT_FOUND", 422)
+                            if code in {2010, 6010}:
+                                raise RoutingFailure("ROUTING_POINT_NOT_FOUND", 422)
                         raise RoutingFailure("ROUTING_REQUEST_UNSUPPORTED", 422)
                     if response.status_code != 200:
                         raise RoutingFailure("ROUTING_PROVIDER_UNAVAILABLE")
-                    content = bytearray()
-                    for chunk in response.iter_bytes():
-                        if time.monotonic() > deadline:
-                            raise RoutingFailure("ROUTING_TIMEOUT", 504)
-                        content.extend(chunk)
-                        if len(content) > 2000000:
-                            raise RoutingFailure("ROUTING_RESPONSE_TOO_LARGE", 502)
-            return json.loads(
-                content, object_pairs_hook=unique_keys, parse_constant=reject_constant
-            )
+                    return self.read_json(response, deadline)
         except httpx.TimeoutException:
             raise RoutingFailure("ROUTING_TIMEOUT", 504) from None
         except httpx.HTTPError:
@@ -106,6 +121,8 @@ class HTTPProvider(RoadProvider):
                         "travelMode": request.mode,
                         "routingPreference": "TRAFFIC_UNAWARE",
                         "polylineEncoding": "GEO_JSON_LINESTRING",
+                        "polylineQuality": "OVERVIEW",
+                        "computeAlternativeRoutes": False,
                         "regionCode": "MM",
                     },
                     {
@@ -130,7 +147,9 @@ class HTTPProvider(RoadProvider):
                     {
                         "coordinates": [
                             [p.longitude, p.latitude] for p in (request.origin, request.destination)
-                        ]
+                        ],
+                        "units": "m",
+                        "instructions": False,
                     },
                     {"Authorization": key},
                     deadline,

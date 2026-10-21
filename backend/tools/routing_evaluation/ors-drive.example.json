@@ -1,0 +1,15 @@
+{
+  "live_enabled": false,
+  "provider": "ors",
+  "modes": [
+    "DRIVE"
+  ],
+  "max_requests": 0,
+  "max_matrix_elements": 0,
+  "max_stops": 6,
+  "request_timeout_seconds": 10.0,
+  "evaluation_timeout_seconds": 60.0,
+  "max_estimated_cost": "0",
+  "pricing": null,
+  "pricing_max_age_days": 30
+}
