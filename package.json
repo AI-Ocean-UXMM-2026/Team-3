@@ -1,6 +1,6 @@
 {
   "name": "lannpya-functional-prototype",
-  "version": "0.7.1",
+  "version": "0.8.0",
   "private": true,
   "description": "Device-local delivery workflows before UI polish and backend implementation",
   "scripts": {
