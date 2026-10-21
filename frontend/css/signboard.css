@@ -630,3 +630,33 @@ body.night .data-table th{background:#0F1B2A}
 .btn.quiet:hover{background:transparent;color:var(--navy);text-decoration-thickness:2px}
 .data-table .action-row{margin:0;gap:4px 14px}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}}
+
+/* Motion, first batch (21 Oct). Strong ease-out for entrances; transitions, not keyframes, for anything fired twice in a row. */
+:root{--ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1)}
+/* Press feedback: every tap is acknowledged */
+.btn,.customer-primary,.pin-toolbar button{transition:background-color .15s ease,border-color .15s ease,transform 140ms var(--ease-out)}
+.btn:active:not([disabled]),.customer-primary:active,.pin-toolbar button:active{transform:scale(.97)}
+/* Toast: enters from the bottom edge and leaves the same way */
+.toast{transform:translate(-50%,calc(100% + 32px));opacity:1;visibility:hidden;transition:transform 300ms var(--ease-out),visibility 0s 300ms}
+.toast.show{transform:translate(-50%,0);visibility:visible;transition:transform 300ms var(--ease-out),visibility 0s}
+/* Dialogs: fade and settle in from 97%; the rider's dialog rises like a sheet */
+dialog[open]{transition:opacity 200ms var(--ease-out),transform 200ms var(--ease-out)}
+@starting-style{dialog[open]{opacity:0;transform:scale(.97)}}
+dialog[open]::backdrop{transition:background-color 200ms var(--ease-out)}
+@starting-style{dialog[open]::backdrop{background-color:transparent}}
+dialog.rider-dialog[open]{transition:transform 320ms var(--ease-drawer),opacity 200ms var(--ease-out)}
+@starting-style{dialog.rider-dialog[open]{opacity:1;transform:translateY(100%)}}
+/* Rider undo: the 2-second window drains along the button's bottom edge */
+.stop-actions .btn.undo{position:relative;overflow:hidden}
+.stop-actions .btn.undo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--saffron);transform-origin:left;animation:undo-drain 2000ms linear forwards}
+@keyframes undo-drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* Details: open and close in place instead of snapping */
+:root{interpolate-size:allow-keywords}
+details::details-content{block-size:0;overflow:clip;transition:block-size 220ms var(--ease-out),content-visibility 220ms allow-discrete}
+details[open]::details-content{block-size:auto}
+/* Reduced motion: no movement, but keep the fades that explain what changed */
+@media (prefers-reduced-motion:reduce){
+  .toast{transform:translate(-50%,0)!important;opacity:0;transition:opacity 200ms ease,visibility 0s 200ms!important}
+  .toast.show{opacity:1;transition:opacity 200ms ease!important}
+  .btn:active,.customer-primary:active{transform:none}
+}

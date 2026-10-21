@@ -1,4 +1,5 @@
 import ipaddress
+import json
 import re
 import secrets
 import time
@@ -10,9 +11,10 @@ from uuid import UUID
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.config import Settings
 from tools.backend_test_dashboard.runtime import Sandbox
 
 STATIC = Path(__file__).parent / "static"
@@ -107,6 +109,15 @@ def error(status, code, message):
 
 
 def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox, frontend=None):
+    try:
+        maps_key = Settings().google_maps_browser_key
+    except Exception:
+        maps_key = None
+    # Google Maps JS needs its script, tile and API hosts; it also injects inline styles.
+    maps_script = " https://*.googleapis.com https://*.gstatic.com https://*.google.com" if maps_key else ""
+    maps_style = " 'unsafe-inline'" if maps_key else ""
+    maps_connect = " https://*.googleapis.com https://*.google.com https://*.gstatic.com" if maps_key else ""
+    maps_img = " https://*.googleapis.com https://*.gstatic.com https://*.google.com" if maps_key else ""
     parsed = urlsplit(origin)
     if (
         parsed.scheme != "http"
@@ -180,9 +191,11 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 "X-Content-Type-Options": "nosniff",
                 "X-Frame-Options": "DENY",
                 "Content-Security-Policy": (
-                    "default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; "
+                    f"default-src 'self'; script-src 'self'{maps_script}; "
+                    f"style-src 'self' https://fonts.googleapis.com{maps_style}; "
                     "font-src 'self' https://fonts.gstatic.com; "
-                    "connect-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
+                    f"connect-src 'self'{maps_connect}; "
+                    f"img-src 'self' data: https://tile.openstreetmap.org{maps_img}; "
                     "frame-ancestors 'none'; "
                     "base-uri 'none'; form-action 'self'"
                 ),
@@ -197,6 +210,12 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
             "DASHBOARD_VALIDATION",
             "Invalid dashboard request. Check method, fields and JSON types.",
         )
+
+    @app.get("/maps-config.js")
+    def maps_config():
+        # A referrer-restricted browser key; it is visible to the browser by design.
+        body = "globalThis.LANNPYA_MAPS=" + json.dumps({"googleKey": maps_key or ""}) + ";"
+        return Response(body, media_type="text/javascript")
 
     @app.get("/")
     def index(request: Request):
