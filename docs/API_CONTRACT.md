@@ -1160,3 +1160,16 @@ The local integration adds these role-protected native operations without renami
 - `POST /api/orders/{order_id}/prepare-assignment`
 
 See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.
+
+## MTT local UI integration (Phase 19)
+
+Business endpoint names and schemas remain unchanged. MTT Signboard now uses the
+existing local BFF at `/dashboard/*` when served by the integration launcher. The
+new BFF `/runtime-config.js` explicitly identifies LIVE_BACKEND; it does not expose
+credentials or change the business API. `/prototype.html` remains DEMO_SIMULATION.
+Failed live requests never become local demo saves.
+
+See [MTT workflows and startup](mtt-integration/WORKFLOWS_AND_STARTUP.md) for exact
+proxy envelopes, native endpoint mappings, buyer-review behavior and unsupported
+demo-only operations. The generated [MTT OpenAPI snapshot](mtt-integration/OPENAPI.json)
+contains 35 business operations. This local BFF is not production authentication.

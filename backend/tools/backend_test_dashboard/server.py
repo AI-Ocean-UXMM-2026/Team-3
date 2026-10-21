@@ -231,6 +231,13 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
         body = "globalThis.LANNPYA_MAPS=" + json.dumps({"googleKey": maps_key or ""}) + ";"
         return Response(body, media_type="text/javascript")
 
+    @app.get("/runtime-config.js")
+    def runtime_config():
+        return Response(
+            'globalThis.LANNPYA_RUNTIME={mode:"LIVE_BACKEND"};',
+            media_type="text/javascript",
+        )
+
     @app.get("/")
     def index(request: Request):
         return page(request, "index.html")

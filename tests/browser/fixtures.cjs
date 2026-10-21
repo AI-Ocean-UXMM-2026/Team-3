@@ -69,7 +69,7 @@ async function enter(page,side='admin',id=''){
   if(side==='rider'&&id)await form.locator('[name=actor_id]').fill(id);
   await form.locator('button[type=submit]').click();
   await expect(form).toHaveCount(0);
-  await expect(page.locator('#api-status')).not.toHaveClass(/error/);
+  await expect(page.locator('#api-status')).toContainText('Connected to the server-bound actor.');
 }
 async function inspect(page,apiPath){
   const response=await page.request.get('/dashboard/bootstrap');const {csrf}=await response.json();

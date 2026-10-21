@@ -10,10 +10,11 @@
     if(!key())return Promise.resolve(null);
     if(globalThis.google?.maps?.Map)return Promise.resolve(globalThis.google.maps);
     googleReady??=new Promise(resolve=>{
-      globalThis.__lannpyaMapsReady=()=>resolve(globalThis.google.maps);
+      const timer=setTimeout(()=>resolve(null),8000);
+      globalThis.__lannpyaMapsReady=()=>{clearTimeout(timer);resolve(globalThis.google?.maps||null);};
       const s=document.createElement('script');
       s.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key())}&libraries=places&loading=async&callback=__lannpyaMapsReady`;
-      s.async=true;s.onerror=()=>{googleReady=null;resolve(null);};
+      s.async=true;s.onerror=()=>{clearTimeout(timer);googleReady=null;resolve(null);};
       document.head.append(s);
     });
     return googleReady;
@@ -27,7 +28,7 @@
     const latitude=form.querySelector('[name=latitude]'),longitude=form.querySelector('[name=longitude]');
     const current=()=>latitude.value!==''&&longitude.value!==''&&valid(Number(latitude.value),Number(longitude.value))?{lat:Number(latitude.value),lng:Number(longitude.value)}:null;
     const say=(a,b)=>{if(status)status.textContent=`Pinned at ${a.toFixed(6)}, ${b.toFixed(6)}. ${note}`;};
-    const set=(a,b)=>{latitude.value=a.toFixed(7);longitude.value=b.toFixed(7);say(a,b);};
+    const set=(a,b)=>{if(!valid(a,b))return;latitude.value=a.toFixed(7);longitude.value=b.toFixed(7);say(a,b);latitude.dispatchEvent(new Event('input',{bubbles:true}));};
     const g=await loadGoogle();
     if(!form.isConnected)return;
     if(g){
@@ -61,7 +62,7 @@
       return;
     }
     search?.closest('label')?.setAttribute('hidden','');
-    if(!globalThis.L)return;
+    if(!globalThis.L){node.textContent='Map library unavailable. Type coordinates manually or contact the shop.';return;}
     const start=current();
     const map=L.map(node,{worldCopyJump:true}).setView(start?[start.lat,start.lng]:[YANGON.lat,YANGON.lng],start?16:11);
     const icon=L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]});
@@ -88,7 +89,16 @@
     const a=Number(node.dataset.lat),b=Number(node.dataset.lng);
     if(!valid(a,b))return;
     const g=await loadGoogle();
-    if(!g||!node.isConnected)return;
+    if(!node.isConnected)return;
+    if(!g){
+      if(!globalThis.L)return;
+      node.replaceChildren();
+      const map=L.map(node).setView([a,b],16);
+      L.marker([a,b],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Saved delivery point'}).addTo(map);
+      const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
+      button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>{button.textContent='Tiles unavailable; saved coordinates remain available.';});button.disabled=true;};
+      map.whenReady(()=>map.invalidateSize());mounted.push(()=>{map.remove();button.remove();});return;
+    }
     node.replaceChildren();node.classList.add('is-google');
     const map=new g.Map(node,{center:{lat:a,lng:b},zoom:17,disableDefaultUI:true,gestureHandling:'cooperative',clickableIcons:false});
     const marker=new g.Marker({map,position:{lat:a,lng:b},title:'Delivery point'});
