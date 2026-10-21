@@ -86,14 +86,14 @@
     if(!PLACES.some(p=>p.id===o.areaId))reasons.push('Unknown or unsupported township');
     if(reasons.length)return {level:'red',reasons};
     if(o.encodingReview)return {level:'amber',reasons:['Unicode encoding requires manual review']};
-    if(!o.anchor || !['dictionary_matched','dispatcher_verified'].includes(o.location))return {level:'amber',reasons:['Location needs confirmation: vague landmark or unknown anchor']};
+    if(!o.anchor || !['dictionary_matched','dispatcher_verified','buyer_confirmed'].includes(o.location))return {level:'amber',reasons:['Location needs confirmation: vague landmark or unknown anchor']};
     return {level:'green',reasons:['Valid phone, supported township and resolved location']};
   }
   function blockers(o) {
     const t=triage(o), reasons=[];
     if(t.level==='red')reasons.push(...t.reasons);
     if(o.encodingReview)reasons.push('Review Unicode encoding');
-    if(!o.anchor||!['dictionary_matched','dispatcher_verified'].includes(o.location)&&!o.confirmation)reasons.push('Confirm delivery location');
+    if(!o.anchor||!['dictionary_matched','dispatcher_verified','buyer_confirmed'].includes(o.location)&&!o.confirmation)reasons.push('Confirm delivery location');
     if(o.payment==='unknown'||!Number.isSafeInteger(o.expected)||o.expected<0||(o.payment==='cod'&&o.expected===0))reasons.push('Confirm payment mode and exact amount');
     if(!o.received)reasons.push('Record physical hub receipt');
     if(o.incident)reasons.push('Resolve parcel incident');
@@ -269,7 +269,7 @@
         if(p.answer==='Leave with security'&&o.payment==='cod'&&!p.securityPays)throw Error('Confirm the security recipient can pay COD, or choose another option.');
         if(String(p.note||'').length>state.policy.noteLimit)throw Error('Rider note exceeds 300 characters.');
         o.confirmation={answer:p.answer,date,time:p.time,note:p.note||'',at:now(),policyVersion:state.policy.version};
-        o.pin=copy(p.pin);if(!o.anchor){o.proposedPin=copy(p.pin);o.location='buyer_submitted';}
+        o.pin=copy(p.pin);if(!o.anchor){o.proposedPin=copy(p.pin);o.location='buyer_submitted';}else if(o.location!=='dispatcher_verified')o.location='buyer_confirmed';
         o.date=date;o.time=p.time;o.note=p.note||'';o.version++;recalc(o);
         event('buyer_confirmed',o.id,`${p.answer} · ${p.time}${o.anchor?'':' · location awaiting admin review'}`,{id:'customer'});
         state.revision++;write();return customer(token);

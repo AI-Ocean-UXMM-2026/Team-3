@@ -847,3 +847,75 @@ body:has(.rider-wrap) .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px)
   .links-table td:nth-of-type(2)::before{content:"Buyer response"}
   .links-table td:nth-of-type(3)::before{content:"Next step"}
 }
+
+/* ---- 21 Oct, evening: pop-up sheets, route tiles, buyer saved state, rider history, breadcrumbs ---- */
+/* Pop-up sheet over the board / routes list. The page behind stays put; closing returns to it. */
+body.sheet-open{overflow:hidden}
+.sheet-scrim{position:fixed;inset:0;z-index:60;background:rgba(22,38,58,.48)}
+.app-sheet{position:fixed;z-index:61;inset:24px max(24px,calc((100vw - 1180px)/2)) auto;max-height:calc(100dvh - 48px);display:flex;flex-direction:column;background:var(--cream);border:var(--edge-strong);border-radius:var(--r);box-shadow:0 24px 60px -20px rgba(0,0,0,.45);overflow:hidden}
+.sheet-bar{display:flex;align-items:center;gap:12px;padding:8px 12px 8px 20px;background:var(--paper);border-bottom:var(--edge)}
+.sheet-label{flex:1;font:700 .82rem/1.3 var(--body);letter-spacing:.04em;text-transform:uppercase;color:var(--ink-2)}
+.sheet-close{min-height:44px}
+.sheet-body{flex:1;overflow:auto;overscroll-behavior:contain;padding:20px 24px 32px}
+.app-sheet.enter{animation:sheet-in 240ms var(--ease-out,cubic-bezier(.23,1,.32,1))}
+.sheet-scrim{animation:scrim-in 200ms ease-out}
+@keyframes sheet-in{from{opacity:0;transform:translateY(16px) scale(.985)}}
+@keyframes scrim-in{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){.app-sheet.enter{animation:scrim-in 160ms ease-out}}
+@media (max-width:640px){
+  .app-sheet{inset:12px 0 0 0;max-height:none;border-radius:16px 16px 0 0;border-bottom:0}
+  .app-sheet.enter{animation-name:sheet-up}
+  .sheet-body{padding:16px 16px 40px}
+}
+@keyframes sheet-up{from{transform:translateY(100%)}}
+
+/* Buyer link sits right under Next steps */
+.right-stack .buyer-link-card{margin-top:0}
+
+/* Rider routes: square tiles, three across, details in the pop-up */
+.route-grid{display:grid;grid-template-columns:repeat(3,minmax(0,260px));gap:16px}
+.route-tile{aspect-ratio:1/1;display:flex;flex-direction:column;gap:6px;padding:18px;background:var(--paper);border:var(--edge);border-radius:var(--r);box-shadow:var(--lift);color:var(--ink);text-decoration:none;min-width:0;transition:transform 160ms var(--ease-out,ease-out),border-color 160ms ease}
+.route-tile .route-id{font:700 .8rem/1.3 var(--body);letter-spacing:.04em;color:var(--ink-2)}
+.route-tile strong{font:800 1.3rem/1.25 var(--display);overflow-wrap:anywhere}
+.route-tile .route-day{color:var(--ink-2)}
+.route-tile .route-foot{margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px;font-size:.85rem;color:var(--ink-2)}
+.route-tile:focus-visible{outline:3px solid var(--saffron);outline-offset:2px}
+.route-tile:active{transform:scale(.98)}
+@media (hover:hover) and (pointer:fine){.route-tile:hover{border-color:var(--navy)}}
+@media (max-width:640px){.route-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:420px){.route-grid{gap:10px}.route-tile{padding:12px}.route-tile strong{font-size:1.05rem}}
+.app-sheet .route-sheet{margin-top:16px}
+
+/* Breadcrumbs */
+.crumbs ol{display:flex;flex-wrap:wrap;gap:4px;list-style:none;margin:0 0 8px;padding:0;font-size:.9rem;color:var(--ink-2)}
+.crumbs li+li::before{content:"›";margin-right:4px;color:var(--ink-2)}
+.crumbs a{display:inline-flex;align-items:center;min-height:32px;font-weight:700;color:var(--ink)}
+.crumbs [aria-current]{display:inline-flex;align-items:center;min-height:32px}
+
+/* Buyer: saved answer with Edit */
+.customer-saved{display:grid;gap:14px;padding:18px;border:1px solid var(--ok);background:var(--ok-bg);border-radius:var(--r)}
+.saved-head{display:flex;gap:12px;align-items:center}
+.saved-head svg{flex-shrink:0;width:28px;height:28px;padding:5px;border-radius:50%;background:var(--ok);color:#fff}
+.saved-head h2{margin:0;font-size:1.15rem}
+.saved-head .my{display:block;font-family:var(--my);font-size:.9rem;line-height:1.6;color:var(--ok)}
+.customer-saved .customer-details{margin:0;background:var(--paper)}
+.customer-secondary{display:flex;align-items:center;justify-content:center;width:100%;min-height:56px;border-radius:8px;border:var(--edge-strong);background:var(--paper);color:var(--ink);font:700 1rem/1.25 var(--body);cursor:pointer}
+.customer-secondary.stacked{flex-direction:column}
+.customer-secondary .my{font-family:var(--my);font-weight:600;font-size:.95rem;line-height:1.5}
+
+/* Rider history: view or remove one at a time */
+.rider-history h3{margin:0}
+.rider-history h4{margin:16px 0 6px;font-size:.95rem}
+.history-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.history-row{display:flex;align-items:flex-start;gap:8px;border:var(--edge);border-radius:var(--r-sm);background:var(--paper);padding:4px 4px 4px 12px}
+.history-row details{flex:1;min-width:0}
+.history-row summary{display:flex;align-items:center;gap:8px;min-height:44px;cursor:pointer;list-style:none}
+.history-row summary::-webkit-details-marker{display:none}
+.history-row summary>span:first-child{flex:1;min-width:0;display:grid}
+.history-row summary strong{overflow-wrap:anywhere}
+.history-view{font-weight:700;font-size:.85rem;text-decoration:underline;flex-shrink:0}
+.history-row details[open] .history-view{text-decoration:none}
+.history-detail{padding:4px 0 12px}
+.history-detail .closeout-sheet{box-shadow:none;margin:0}
+.history-remove{flex-shrink:0;min-width:44px;min-height:44px;justify-content:center}
+body.night .history-row,body.night .customer-secondary{background:var(--navy-2);color:var(--cream)}
