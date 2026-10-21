@@ -62,17 +62,67 @@ const test=base.extend({
     finally{await testInfo.attach('sanitized-browser-observations',{body:JSON.stringify({activity,errors,network},null,2),contentType:'application/json'});await context.close();}
   },
 });
-async function enter(page){
-  await page.goto('/');
-  await expect(page.locator('#app')).not.toBeEmpty();
+async function enter(page,side='admin',id=''){
+  await page.goto('/api.html#/'+side);
+  await expect(page.locator('#connect-form, #create-form, #rider-account').first()).toBeVisible();
+  const form=page.locator('#connect-form');if(!await form.count())return;
+  if(side==='rider'&&id)await form.locator('[name=actor_id]').fill(id);
+  await form.locator('button[type=submit]').click();
+  await expect(form).toHaveCount(0);
+  await expect(page.locator('#api-status')).not.toHaveClass(/error/);
 }
 async function inspect(page,apiPath){
   const response=await page.request.get('/dashboard/bootstrap');const {csrf}=await response.json();
   const r=await page.request.post('/dashboard/api',{headers:{Origin:new URL(page.url()).origin,'X-Dashboard-CSRF':csrf},data:{method:'GET',path:apiPath,body:null,actor:'dispatcher'}});
   expect(r.ok(),`Read-only inspection ${apiPath}`).toBeTruthy();return (await r.json()).data;
 }
+async function create(page,{raw='name: Fictional QA Buyer, ၀၉၇၉၀၀၀၀၀၀၀၊ လှိုင်မြို့နယ်၊ COD ၂၅၀၀၀ ကျပ်၊ address: Fictional Red Gate',pin=false}={}){
+  await enter(page);
+  await page.getByText('Parse a pasted address first (optional)',{exact:true}).click();
+  await page.locator('#parse-form [name=raw]').fill(raw);
+  await page.locator('#parse-form button[type=submit]').click();
+  await expect(page.locator('#parse-result')).toContainText(/AMBER|RED/);
+  await page.locator('#create-form [name=item]').fill('FICTIONAL QA parcel');
+  await page.locator('[data-action=save-raw]').click();
+  await expect(page.locator('#edit-api-form')).toBeVisible();
+  const id=new URL(page.url()).hash.split('/').at(-1);
+  if(pin){
+    await page.locator('#edit-api-form [name=latitude]').fill('0');
+    await page.locator('#edit-api-form [name=longitude]').fill('0');
+    await page.locator('#edit-api-form button[type=submit]').click();
+    await expect(page.locator('#prepare-assignment-form')).toBeVisible();
+  }
+  return id;
+}
+async function link(page){
+  await page.locator('[data-action=link]').click();
+  await expect(page.locator('[name=generated-link]')).toBeVisible();
+  return page.locator('[name=generated-link]').inputValue();
+}
+async function verify(page,url,digits='0000'){
+  await page.goto(url);await expect(page.locator('#verify-api-form')).toBeVisible();
+  await page.locator('#verify-api-form [name=digits]').fill(digits);
+  await page.locator('#verify-api-form button[type=submit]').click();
+}
+async function approve(page,id){
+  await page.locator('[data-action=refresh]').first().click();await expect(page.locator('#edit-api-form')).toBeVisible();
+  while(await page.locator('[data-action=review]').count()){
+    await page.locator('[data-action=review]').first().click();
+    await page.locator('dialog [name=reason]').fill('Fictional QA dispatcher review; location accuracy unverified');
+    await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
+    await expect(page.locator('#edit-api-form')).toBeVisible();
+  }
+}
+async function assignDispatch(page){
+  const form=page.locator('#prepare-assignment-form');await expect(form).toBeVisible();
+  if(await form.locator('[name=received]').count())await form.locator('[name=received]').check();
+  await form.locator('[name=ack]').check();await form.locator('button[type=submit]').click();
+  await expect(page.locator('[data-action=dispatch]')).toBeVisible();
+  await page.locator('[data-action=dispatch]').click();await page.locator('dialog button[type=submit]').click();
+  await expect(page.locator('dialog')).toHaveCount(0);
+}
 async function shot(page,name){
   fs.mkdirSync(shots,{recursive:true});
-  await page.screenshot({path:path.join(shots,name+'.png'),fullPage:true,animations:'disabled'});
+  await page.screenshot({path:path.join(shots,name+'.png'),fullPage:true,mask:[page.locator('[name=generated-link]')],animations:'disabled'});
 }
-module.exports={test,expect,enter,inspect,shot};
+module.exports={test,expect,enter,inspect,create,link,verify,approve,assignDispatch,shot};

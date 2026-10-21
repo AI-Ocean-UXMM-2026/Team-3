@@ -35,7 +35,7 @@ Read these first:
 
 ## What changed
 
-- `index.html` now loads only `signboard.css` plus the brand fonts. The old API workspace page (api.html) and its styles have been removed.
+- `index.html` now loads only `signboard.css` plus the brand fonts. The API workspace (api.html) is a developer test page in `backend/tools/api_workspace/`, served only by the local test server at `/api.html`.
 - `signboard.css` is the whole design system: tokens in `:root`, then shell, board, order check, buyer, rider, dialogs and mobile rules.
 - `functional-app.js` (view layer only; workflow logic and every `data-action` and form id are unchanged):
   - `ICON` and `icon()`: one SVG icon set, which replaces the Unicode glyphs.

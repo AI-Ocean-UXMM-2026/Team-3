@@ -45,7 +45,7 @@ test('demo service worker never intercepts live workspace or private API navigat
  const listeners={};
  const self={location:{origin:'http://127.0.0.1:8780'},registration:{scope:'http://127.0.0.1:8780/'},addEventListener:(name,fn)=>listeners[name]=fn};
  vm.runInNewContext(fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8'),{self,URL});
- for(const path of ['/','/index.html','/dashboard/bootstrap','/api/orders','/api/confirm/secret']){
+ for(const path of ['/','/index.html','/api.html','/dashboard/bootstrap','/api/orders','/api/confirm/secret']){
   let intercepted=false;listeners.fetch({request:{method:'GET',url:self.location.origin+path,mode:'navigate'},respondWith(){intercepted=true;}});
   assert.equal(intercepted,false,path);
  }

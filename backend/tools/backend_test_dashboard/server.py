@@ -19,6 +19,8 @@ from app.core.config import Settings
 from tools.backend_test_dashboard.runtime import Sandbox
 
 STATIC = Path(__file__).parent / "static"
+# Developer API workspace: a local test page for the backend, kept out of the product frontend.
+WORKSPACE = Path(__file__).parents[1] / "api_workspace"
 UUID_PATTERN = r"[0-9a-fA-F-]{36}"
 ORDER = rf"/api/orders/{UUID_PATTERN}"
 RIDER = rf"/api/riders/{UUID_PATTERN}"
@@ -233,7 +235,21 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
     def index(request: Request):
         return page(request, "index.html")
 
-    def page(request: Request, name: str):
+    @app.get("/api.html")
+    def api_workspace(request: Request):
+        if frontend is None:
+            return error(404, "NOT_FOUND", "The API workspace needs the frontend assets.")
+        return page(request, "api.html", WORKSPACE)
+
+    @app.get("/dev/{name}")
+    def workspace_asset(name: str):
+        if name not in {"api-workspace.mjs", "api.css", "styles.css", "functional.css"}:
+            return error(404, "NOT_FOUND", "Asset not found.")
+        return FileResponse(
+            WORKSPACE / name, media_type="text/javascript" if name.endswith(".mjs") else None
+        )
+
+    def page(request: Request, name: str, root: Path | None = None):
         key = request.cookies.get("lp_dashboard")
         if (
             key not in app.state.sessions
@@ -250,7 +266,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 )
             key = secrets.token_urlsafe(32)
             app.state.sessions[key] = {"created": now, "csrf": secrets.token_urlsafe(32)}
-        response = FileResponse((frontend or STATIC) / name)
+        response = FileResponse((root or frontend or STATIC) / name)
         response.set_cookie(
             "lp_dashboard", key, httponly=True, samesite="strict", max_age=8 * 3600, path="/"
         )
