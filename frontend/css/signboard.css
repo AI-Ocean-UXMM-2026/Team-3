@@ -780,3 +780,12 @@ body.night .stop-card .landmark{background:#0F1B2A;color:var(--cream);border-col
 .handover-facts dd{font:750 1.2rem/1.2 var(--display);margin-top:4px}
 .handover-facts .diff{border-color:var(--bad);background:var(--bad-bg)}
 .handover-facts .diff dd{color:var(--bad)}
+
+/* impeccable pass, 21 Oct: pop-up actions on one line, neutral handover boxes, toast clear of rider actions */
+.created-actions{flex-wrap:nowrap;align-items:center}
+.created-actions .grow{flex:1}
+@media (max-width:560px){.created-actions{flex-wrap:wrap}.created-actions .btn{flex:1 1 auto}.created-actions .grow{display:none}}
+.handover-facts>div:first-child{grid-column:auto;background:var(--cream);color:var(--ink);border:var(--edge);border-radius:var(--r-sm);padding:10px 12px}
+.handover-facts>div:first-child dt{color:var(--ink-2)}
+body:has(.rider-wrap) .toast{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+@media (max-width:560px){.check-actions{width:100%;justify-content:space-between}}
