@@ -5,6 +5,20 @@
   const LEGACY_KEYS = ['lannpya.workflow.v3','lannpya.delivery.v1','lannpya.form-drafts'];
   const ANY_TIME = 'Any time';
   const WINDOWS = ['10:00–12:00', '12:00–14:00', '14:00–16:00', '16:00–18:00'];
+  // Shop prep / stock timeline: sets the earliest delivery day the buyer can pick.
+  const PREP = [
+    { id: 'ready_now', days: 0, label: 'Ready now (same day)' },
+    { id: 'in_stock', days: 1, label: 'In stock (deliver tomorrow)' },
+    { id: 'pre_3', days: 3, label: 'Pre-order: 3 days prep' },
+    { id: 'pre_5', days: 5, label: 'Pre-order: 5 days prep' },
+    { id: 'pre_7', days: 7, label: 'Pre-order: 7 days prep' }
+  ];
+  // Buyer-facing time slots, a subset of WINDOWS.
+  const SLOTS = [
+    { time: '10:00–12:00', label: 'Morning', my: 'မနက်' },
+    { time: '14:00–16:00', label: 'Afternoon', my: 'နေ့လည်' },
+    { time: '16:00–18:00', label: 'Evening', my: 'ညနေ' }
+  ];
   const REASONS = ['Buyer not answering', 'Not at home', 'Can’t find the place', 'Buyer refused'];
   const ACTORS = {
     admin: { id: 'admin-1', role: 'admin', hubId: 'H-1', name: 'Admin' },
@@ -25,6 +39,8 @@
   const validDay = value => /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(value+'T00:00:00Z')) && new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
   const startMinute = time => time===ANY_TIME?0:Number(time.slice(0,2))*60+Number(time.slice(3,5));
   const endMinute = time => time===ANY_TIME?1440:Number(time.slice(6,8))*60+Number(time.slice(9,11));
+  const addDays = (d,n) => new Date(Date.parse(d+'T00:00:00Z')+n*86400000).toISOString().slice(0,10);
+  const readyFrom = (prepId,today) => {const p=PREP.find(x=>x.id===prepId);return p?addDays(today,p.days):today;};
   const validWindow = time => time===ANY_TIME||WINDOWS.includes(time);
   const distance = (a,b) => {const rad=x=>x*Math.PI/180;const h=Math.sin(rad(b.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));};
   const inside = (p,area) => !!p && Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.lat>=area.bounds[0] && p.lat<=area.bounds[1] && p.lng>=area.bounds[2] && p.lng<=area.bounds[3];
@@ -145,12 +161,14 @@
         if(!String(f.item||'').trim())throw Error('Enter a parcel description.');
         if(!['cod','prepaid'].includes(f.payment)||!Number.isSafeInteger(f.expected)||f.expected<0||(f.payment==='cod'&&f.expected===0)||(f.payment==='prepaid'&&f.expected!==0))throw Error('COD requires a positive whole MMK amount; prepaid requires zero.');
         if(!validDay(f.date)||f.date<day(now())||!validWindow(f.time)||f.date===day(now())&&endMinute(f.time)<=minute(now()))throw Error('Choose today or a future delivery date and an unexpired window. Any time is available for same-day testing.');
+        if(f.prep&&!PREP.some(x=>x.id===f.prep))throw Error('Choose a shop prep timeline.');
+        if(f.prep&&f.date<readyFrom(f.prep,day(now())))throw Error(`This stock timeline is ready on ${readyFrom(f.prep,day(now()))}. Choose that day or later.`);
         if(String(f.note||'').length>state.policy.noteLimit)throw Error('Rider note exceeds 300 characters.');
         if(f.reference&&state.orders.some(x=>x.reference===String(f.reference).trim())&&!p.createSeparate)throw Error('This invoice/reference already exists. Confirm intentional separate creation.');
         let point=null;
         if(f.lat!==''&&f.lat!=null||f.lng!==''&&f.lng!=null){point={lat:Number(f.lat),lng:Number(f.lng)};if(f.lat===''||f.lng===''||!inside(point,area))throw Error('Enter both coordinates inside the selected demo township, or leave both empty for customer location submission.');}
         const id=`LP-${String(state.nextOrderNumber++).padStart(4,'0')}`;
-        const fields={...parse(''),name:String(f.name).trim(),phone,item:String(f.item).trim(),sender:String(f.sender||'LannPya Delivery').trim(),reference:String(f.reference||'').trim(),areaId:area.id,street:String(f.street||'').trim(),landmark:String(f.landmark||'').trim(),floor:String(f.floor||'').trim(),note:String(f.note||''),payment:f.payment,expected:f.expected,date:f.date,time:f.time,encodingReview:false,raw:'Manually entered by admin',normalized:'',anchor:point&&p.locationReviewed?point:null,pin:point,proposedPin:point&&!p.locationReviewed?point:null,location:point&&p.locationReviewed?'dispatcher_verified':point?'buyer_submitted':'unresolved',received:!!p.received};
+        const fields={...parse(''),name:String(f.name).trim(),phone,item:String(f.item).trim(),sender:String(f.sender||'LannPya Delivery').trim(),reference:String(f.reference||'').trim(),areaId:area.id,street:String(f.street||'').trim(),landmark:String(f.landmark||'').trim(),floor:String(f.floor||'').trim(),note:String(f.note||''),payment:f.payment,expected:f.expected,date:f.date,time:f.time,prep:f.prep||'',readyDate:f.prep?readyFrom(f.prep,day(now())):'',encodingReview:false,raw:'Manually entered by admin',normalized:'',anchor:point&&p.locationReviewed?point:null,pin:point,proposedPin:point&&!p.locationReviewed?point:null,location:point&&p.locationReviewed?'dispatcher_verified':point?'buyer_submitted':'unresolved',received:!!p.received};
         fields.provenance=Object.fromEntries(Object.keys(fields).filter(k=>!['raw','normalized','provenance'].includes(k)).map(k=>[k,{source:'manual',evidence:'Admin manual entry',actor:actor.id,at:now()}]));
         const item=newOrder(fields,id);item.link={token:uid(),status:'active',failures:0,issued:now(),expires:now()+state.policy.linkDays*86400000,shared:false};state.orders.push(item);recalc(item);event('order_created',id,'Manual admin order created',actor);event('buyer_link_issued',id,'Customer confirmation link created',actor);return id;
       }
@@ -181,10 +199,12 @@
       if(type==='edit'){
         staff(actor,o);if(!editable(o))throw Error('Order is frozen after departure or completion.');
         if(!p.reason?.trim())throw Error('Record why fields changed.');
-        o.corrections=o.corrections||[];const edits={};const allowed=['name','sender','phone','areaId','street','landmark','floor','note','payment','expected','item','reference','date','time','encodingReview','normalized'];const changed=[];
-        for(const k of allowed)if(k in p.fields&&p.fields[k]!==o[k]){edits[k]={before:o[k]??null,after:p.fields[k]??null};o[k]=p.fields[k];o.provenance[k]={source:'manual',evidence:p.reason,actor:actor.id,at:now()};changed.push(k);}
+        o.corrections=o.corrections||[];const edits={};const allowed=['name','sender','phone','areaId','street','landmark','floor','note','payment','expected','item','reference','date','time','prep','encodingReview','normalized'];if('prep' in p.fields&&p.fields.prep&&!PREP.some(x=>x.id===p.fields.prep))throw Error('Choose a shop prep timeline.');const changed=[];
+        for(const k of allowed)if(k in p.fields&&p.fields[k]!==(k==='prep'?o[k]||'':o[k])){edits[k]={before:o[k]??null,after:p.fields[k]??null};o[k]=p.fields[k];o.provenance[k]={source:'manual',evidence:p.reason,actor:actor.id,at:now()};changed.push(k);}
         if(!['unknown','cod','prepaid'].includes(o.payment)||o.payment==='prepaid'&&o.expected!==0||o.expected!=null&&(!Number.isSafeInteger(o.expected)||o.expected<0))throw Error('Choose explicit COD/prepaid or unknown and a valid whole amount.');
         if(!validWindow(o.time)||!validDay(o.date))throw Error('Choose a valid delivery date and window.');
+        if(changed.includes('prep'))o.readyDate=o.prep?readyFrom(o.prep,day(now())):'';
+        if(o.readyDate&&o.date<o.readyDate)throw Error(`The stock is ready on ${o.readyDate}. Move the delivery day to then or later.`);
         if(changed.some(k=>['areaId','street','landmark'].includes(k))){o.location='unresolved';o.anchor=null;o.pin=null;}
         if(changed.some(k=>['phone','name','sender','areaId','street','landmark','payment','expected','item'].includes(k))){o.confirmation=null;if(o.link)o.link.status='revoked';}
         if(o.routeId&&(readiness(o).length||o.date!==route(o.routeId).date))throw Error('Unassign this draft route order before introducing a hold or changing its delivery day.');
@@ -220,7 +240,9 @@
       const before=copy(state);
       try{const value=apply(type,p,actor,operationId,meta.override);const result={operationId,value:value??null};state.operations[operationId]=result;state.revision++;write();return copy(result);}catch(err){state=before;throw err;}
     }
-    function customer(token){const o=state.orders.find(x=>x.link?.token===token);if(!o||activeLink(o)!=='active')return {available:false,status:o?activeLink(o):'invalid'};const publicData={available:true,id:o.id,sender:o.sender||'LannPya Delivery',item:o.item,reference:o.reference,payment:o.payment,expected:o.expected,state:o.state,version:o.version,verified:sessions.has(token),editable:deadline(o),remaining:3-o.link.failures};return sessions.has(token)?{...publicData,order:copy(Object.fromEntries(['id','item','payment','expected','state','date','time','anchor','pin','areaId','proposedPin','confirmation','note','version'].map(k=>[k,o[k]??null]))),collection:o.collection?{actual:o.collection.actual}:null}:publicData;}
+    // Days the buyer can choose: three days from when the stock is ready, never before today, fixed once routed.
+    function buyerDates(o){const today=day(now());if(o.routeId)return [o.date];const start=[o.readyDate||today,today].sort()[1];const list=[0,1,2].map(n=>addDays(start,n));if(o.date>=start&&!list.includes(o.date))list.push(o.date);return list.sort();}
+    function customer(token){const o=state.orders.find(x=>x.link?.token===token);if(!o||activeLink(o)!=='active')return {available:false,status:o?activeLink(o):'invalid'};const publicData={available:true,id:o.id,sender:o.sender||'LannPya Delivery',item:o.item,reference:o.reference,payment:o.payment,expected:o.expected,state:o.state,version:o.version,verified:sessions.has(token),editable:deadline(o),remaining:3-o.link.failures};return sessions.has(token)?{...publicData,order:copy(Object.fromEntries(['id','item','payment','expected','state','date','time','prep','readyDate','anchor','pin','areaId','proposedPin','confirmation','note','version'].map(k=>[k,o[k]??null]))),dates:buyerDates(o),collection:o.collection?{actual:o.collection.actual}:null}:publicData;}
     return {
       snapshot:()=>copy(state), now, persistent:()=>persistent, refresh,
       order(id,actor=ACTORS.admin){refresh();const o=get(id);scope(actor,o);return actor.role==='rider'?riderProjection(o):copy(o);},
@@ -239,13 +261,14 @@
         if(triageFor(o).level==='red')throw Error('Admin must correct the phone or supported township first.');
         const area=PLACES.find(a=>a.id===o.areaId);
         if(!area||!inside(p.pin,area)||o.anchor&&distance(o.anchor,p.pin)>state.policy.radius)throw Error('Keep the pin within 500 m of the original anchor AND inside the original demo township.');
-        if(!validWindow(p.time)||o.date<day(now())||o.date===day(now())&&endMinute(p.time)<=minute(now()))throw Error('Choose an available delivery window.');
+        const date=p.date||o.date;if(!buyerDates(o).includes(date))throw Error('Choose one of the delivery days shown.');
+        if(!validWindow(p.time)||date<day(now())||date===day(now())&&endMinute(p.time)<=minute(now()))throw Error('Choose an available delivery window.');
         if(!['At home','Reschedule','Leave with security'].includes(p.answer))throw Error('Choose how to receive the parcel.');
         if(p.answer==='Leave with security'&&o.payment==='cod'&&!p.securityPays)throw Error('Confirm the security recipient can pay COD, or choose another option.');
         if(String(p.note||'').length>state.policy.noteLimit)throw Error('Rider note exceeds 300 characters.');
-        o.confirmation={answer:p.answer,time:p.time,note:p.note||'',at:now(),policyVersion:state.policy.version};
+        o.confirmation={answer:p.answer,date,time:p.time,note:p.note||'',at:now(),policyVersion:state.policy.version};
         o.pin=copy(p.pin);if(!o.anchor){o.proposedPin=copy(p.pin);o.location='buyer_submitted';}
-        o.time=p.time;o.note=p.note||'';o.version++;recalc(o);
+        o.date=date;o.time=p.time;o.note=p.note||'';o.version++;recalc(o);
         event('buyer_confirmed',o.id,`${p.answer} · ${p.time}${o.anchor?'':' · location awaiting admin review'}`,{id:'customer'});
         state.revision++;write();return customer(token);
       },
@@ -255,6 +278,6 @@
       export:()=>JSON.stringify(state,null,2)
     };
   }
-  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,REASONS,ACTORS,PLACES,SAMPLE,parse,split,enhanced:()=>!!enhancer(),triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
+  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,PREP,SLOTS,addDays,readyFrom,REASONS,ACTORS,PLACES,SAMPLE,parse,split,enhanced:()=>!!enhancer(),triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
   if(typeof module!=='undefined')module.exports=api;else root.Workflow=api;
 })(typeof window==='undefined'?globalThis:window);

@@ -630,3 +630,74 @@ body.night .data-table th{background:#0F1B2A}
 .btn.quiet:hover{background:transparent;color:var(--navy);text-decoration-thickness:2px}
 .data-table .action-row{margin:0;gap:4px 14px}
 @media (prefers-reduced-motion:reduce){.btn{transition:none}}
+
+/* Motion, first batch (21 Oct). Strong ease-out for entrances; transitions, not keyframes, for anything fired twice in a row. */
+:root{--ease-out:cubic-bezier(.23,1,.32,1);--ease-drawer:cubic-bezier(.32,.72,0,1)}
+/* Press feedback: every tap is acknowledged */
+.btn,.customer-primary,.pin-toolbar button{transition:background-color .15s ease,border-color .15s ease,transform 140ms var(--ease-out)}
+.btn:active:not([disabled]),.customer-primary:active,.pin-toolbar button:active{transform:scale(.97)}
+/* Toast: enters from the bottom edge and leaves the same way */
+.toast{transform:translate(-50%,calc(100% + 32px));opacity:1;visibility:hidden;transition:transform 300ms var(--ease-out),visibility 0s 300ms}
+.toast.show{transform:translate(-50%,0);visibility:visible;transition:transform 300ms var(--ease-out),visibility 0s}
+/* Dialogs: fade and settle in from 97%; the rider's dialog rises like a sheet */
+dialog[open]{transition:opacity 200ms var(--ease-out),transform 200ms var(--ease-out)}
+@starting-style{dialog[open]{opacity:0;transform:scale(.97)}}
+dialog[open]::backdrop{transition:background-color 200ms var(--ease-out)}
+@starting-style{dialog[open]::backdrop{background-color:transparent}}
+dialog.rider-dialog[open]{transition:transform 320ms var(--ease-drawer),opacity 200ms var(--ease-out)}
+@starting-style{dialog.rider-dialog[open]{opacity:1;transform:translateY(100%)}}
+/* Rider undo: the 2-second window drains along the button's bottom edge */
+.stop-actions .btn.undo{position:relative;overflow:hidden}
+.stop-actions .btn.undo::after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:var(--saffron);transform-origin:left;animation:undo-drain 2000ms linear forwards}
+@keyframes undo-drain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+/* Details: open and close in place instead of snapping */
+:root{interpolate-size:allow-keywords}
+details::details-content{block-size:0;overflow:clip;transition:block-size 220ms var(--ease-out),content-visibility 220ms allow-discrete}
+details[open]::details-content{block-size:auto}
+/* Reduced motion: no movement, but keep the fades that explain what changed */
+@media (prefers-reduced-motion:reduce){
+  .toast{transform:translate(-50%,0)!important;opacity:0;transition:opacity 200ms ease,visibility 0s 200ms!important}
+  .toast.show{opacity:1;transition:opacity 200ms ease!important}
+  .btn:active:not([disabled]),.customer-primary:active,.pin-toolbar button:active{transform:none}
+}
+
+/* Mobbin-informed refinements (21 Oct) */
+/* Paste review: one status banner (Square, Unify) instead of chrome on every record */
+.preview-summary{display:flex;align-items:flex-start;gap:10px;max-width:1200px;padding:12px 16px;border-radius:var(--r);background:var(--navy);color:var(--cream);font-weight:500}
+.preview-summary .icon{flex:none;margin-top:3px;color:var(--saffron)}
+.preview-summary.all-read{background:var(--ok-bg);color:var(--ok)}.preview-summary.all-read .icon{color:var(--ok)}
+.preview-summary.has-issues{background:var(--saffron);color:var(--navy)}.preview-summary.has-issues .icon{color:var(--navy)}
+.preview-record>.section-head h2{display:flex;align-items:center;gap:10px}
+.record-no{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--navy);color:var(--cream);font-size:.85rem;flex:none}
+/* Rider: tools as one even row of icon-over-label buttons (Grab, DoorDash) */
+.stop-tools{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}
+.stop-tools .btn{flex-direction:column;gap:4px;padding:8px 6px;min-height:64px;text-align:center}
+.stop-tools .btn .bi{align-items:center;font-size:.85rem}
+/* Buyer pin: a label that says what the pin means (Swiggy, Fresha) */
+.editable-pin{overflow:visible}
+.pin-label{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);background:var(--navy);color:var(--cream);font:700 .75rem/1.3 var(--body);padding:5px 9px;border-radius:6px;white-space:nowrap;text-align:center;pointer-events:none}
+.pin-label .my{display:block;font:600 .75rem/1.6 var(--my)}
+.pin-label::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:6px solid transparent;border-top-color:var(--navy)}
+
+/* Buyer delivery day and time slots: cards that read as signs, the chosen one turns navy. */
+.when-pick{border:0;margin:0 0 14px;padding:0;min-width:0}
+.when-pick legend{display:flex;flex-direction:column;padding:0;margin-bottom:8px;font:700 .95rem/1.3 var(--body);color:var(--ink)}
+.when-pick legend .my{font:600 .85rem/1.7 var(--my,inherit);color:var(--ink-2)}
+.day-cards,.slot-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px}
+.slot-cards{grid-template-columns:repeat(auto-fit,minmax(132px,1fr))}
+.day-card,.slot-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:10px 8px;border:var(--edge-strong);border-radius:var(--r-sm);background:var(--paper);color:var(--navy);text-align:center;cursor:pointer;transition:background-color .15s ease,color .15s ease,border-color .15s ease}
+.day-card input,.slot-card input{position:absolute;inset:0;opacity:0;margin:0;cursor:inherit}
+.day-card .dow{font:700 .72rem/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+.day-card .dm{font:750 1.1rem/1.2 var(--display,var(--body))}
+.day-tag{margin-top:2px;font:700 .68rem/1 var(--body);padding:3px 7px;border-radius:999px;background:var(--saffron-soft);color:var(--wait)}
+.slot-card .icon{width:20px;height:20px;color:var(--saffron)}
+.slot-time{font:750 .95rem/1.2 var(--body);white-space:nowrap}
+.slot-name{display:flex;flex-direction:column;font-size:.8rem;line-height:1.3;color:var(--ink-2)}
+.slot-name .my{font-size:.8rem}
+.day-card:has(input:checked),.slot-card:has(input:checked){background:var(--navy);border-color:var(--navy);color:var(--cream)}
+.day-card:has(input:checked) .dow,.slot-card:has(input:checked) .slot-name{color:var(--cream)}
+.day-card:has(input:checked) .day-tag{background:var(--saffron);color:var(--navy)}
+.day-card:has(input:focus-visible),.slot-card:has(input:focus-visible){outline:3px solid var(--saffron);outline-offset:2px}
+.slot-card.is-past{cursor:not-allowed;opacity:.55;background:var(--cream-2)}
+@media (hover:hover) and (pointer:fine){.day-card:not(:has(input:checked)):hover,.slot-card:not(.is-past):not(:has(input:checked)):hover{border-color:var(--saffron)}}
+.field-hint{display:block;margin-top:4px;font-size:.8rem;font-weight:400;color:var(--ink-2)}

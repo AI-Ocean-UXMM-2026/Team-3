@@ -33,6 +33,8 @@ class Settings(BaseSettings):
     buyer_link_hours: int = Field(default=72, ge=1, le=168)
     buyer_session_minutes: int = Field(default=15, ge=1, le=30)
     buyer_frontend_base_url: str | None = None
+    # Browser key for Google Maps JS + Places; restrict it by HTTP referrer in Google Cloud.
+    google_maps_browser_key: str | None = Field(default=None, max_length=200)
     buyer_request_limit_per_minute: int = Field(default=60, ge=1, le=600)
     buyer_verify_limit_per_minute: int = Field(default=10, ge=1, le=60)
     buyer_rescheduling_enabled: bool = False

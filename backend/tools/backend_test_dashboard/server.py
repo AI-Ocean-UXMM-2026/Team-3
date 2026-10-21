@@ -1,4 +1,6 @@
 import ipaddress
+import json
+import logging
 import re
 import secrets
 import time
@@ -10,12 +12,15 @@ from uuid import UUID
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
-from pydantic import BaseModel, ConfigDict, Field
+from fastapi.responses import FileResponse, JSONResponse, Response
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
+from app.core.config import Settings
 from tools.backend_test_dashboard.runtime import Sandbox
 
 STATIC = Path(__file__).parent / "static"
+# Developer API workspace: a local test page for the backend, kept out of the product frontend.
+WORKSPACE = Path(__file__).parents[1] / "api_workspace"
 UUID_PATTERN = r"[0-9a-fA-F-]{36}"
 ORDER = rf"/api/orders/{UUID_PATTERN}"
 RIDER = rf"/api/riders/{UUID_PATTERN}"
@@ -106,7 +111,27 @@ def error(status, code, message):
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
 
 
+logger = logging.getLogger(__name__)
+
+
 def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox, frontend=None):
+    try:
+        maps_key = Settings().google_maps_browser_key
+    except ValidationError as exc:
+        maps_key = None
+        logger.warning("Google Maps disabled: backend settings are invalid (%s)", exc.error_count())
+    # Google Maps JS hosts, per Google's CSP guidance; opened only when a key is configured.
+    google = (
+        " https://*.googleapis.com https://*.gstatic.com https://*.google.com"
+        " https://*.googleusercontent.com"
+        if maps_key
+        else ""
+    )
+    maps_script = google
+    maps_style = " 'unsafe-inline'" if maps_key else ""
+    maps_connect = google + (" data: blob:" if maps_key else "")
+    maps_img = google
+    maps_extra = f"worker-src blob:; frame-src{google}; " if maps_key else ""
     parsed = urlsplit(origin)
     if (
         parsed.scheme != "http"
@@ -180,9 +205,12 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 "X-Content-Type-Options": "nosniff",
                 "X-Frame-Options": "DENY",
                 "Content-Security-Policy": (
-                    "default-src 'self'; script-src 'self'; style-src 'self'; "
-                    "connect-src 'self'; img-src 'self' data: https://tile.openstreetmap.org; "
-                    "frame-ancestors 'none'; "
+                    f"default-src 'self'; script-src 'self'{maps_script}; "
+                    f"style-src 'self' https://fonts.googleapis.com{maps_style}; "
+                    "font-src 'self' https://fonts.gstatic.com; "
+                    f"connect-src 'self'{maps_connect}; "
+                    f"img-src 'self' data: https://tile.openstreetmap.org{maps_img}; "
+                    f"{maps_extra}frame-ancestors 'none'; "
                     "base-uri 'none'; form-action 'self'"
                 ),
             }
@@ -197,8 +225,31 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
             "Invalid dashboard request. Check method, fields and JSON types.",
         )
 
+    @app.get("/maps-config.js")
+    def maps_config():
+        # A referrer-restricted browser key; it is visible to the browser by design.
+        body = "globalThis.LANNPYA_MAPS=" + json.dumps({"googleKey": maps_key or ""}) + ";"
+        return Response(body, media_type="text/javascript")
+
     @app.get("/")
     def index(request: Request):
+        return page(request, "index.html")
+
+    @app.get("/api.html")
+    def api_workspace(request: Request):
+        if frontend is None:
+            return error(404, "NOT_FOUND", "The API workspace needs the frontend assets.")
+        return page(request, "api.html", WORKSPACE)
+
+    @app.get("/dev/{name}")
+    def workspace_asset(name: str):
+        if name not in {"api-workspace.mjs", "api.css", "styles.css", "functional.css"}:
+            return error(404, "NOT_FOUND", "Asset not found.")
+        return FileResponse(
+            WORKSPACE / name, media_type="text/javascript" if name.endswith(".mjs") else None
+        )
+
+    def page(request: Request, name: str, root: Path | None = None):
         key = request.cookies.get("lp_dashboard")
         if (
             key not in app.state.sessions
@@ -215,7 +266,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 )
             key = secrets.token_urlsafe(32)
             app.state.sessions[key] = {"created": now, "csrf": secrets.token_urlsafe(32)}
-        response = FileResponse((frontend or STATIC) / "index.html")
+        response = FileResponse((root or frontend or STATIC) / name)
         response.set_cookie(
             "lp_dashboard", key, httponly=True, samesite="strict", max_age=8 * 3600, path="/"
         )
@@ -427,7 +478,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
             p.relative_to(frontend).as_posix(): p
             for p in frontend.rglob("*")
             if p.is_file()
-            and p.suffix in {".html", ".css", ".js", ".mjs"}
+            and p.suffix in {".html", ".css", ".js", ".mjs", ".svg"}
             and not any(part in {"node_modules", "dist"} for part in p.parts)
             and ".test." not in p.name
             and not p.name.startswith("test-")

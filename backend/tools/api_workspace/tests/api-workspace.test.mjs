@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import fs from 'node:fs';
-import {environment} from './test-dom.js';
-import {LocalWorkspaceApi as WorkspaceApi,context,today,townships,mmk,tokenFrom} from '../js/local-api.mjs';
+import {environment} from '../../../../frontend/tests/test-dom.js';
+import {LocalWorkspaceApi as WorkspaceApi,context,today,townships,mmk,tokenFrom} from '../../../../frontend/js/local-api.mjs';
 
-const source=fs.readFileSync(new URL('../js/api-workspace.mjs',import.meta.url),'utf8').replace(/^import[^\r\n]*\r?\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
+const source=fs.readFileSync(new URL('../api-workspace.mjs',import.meta.url),'utf8').replace(/^import[^\r\n]*\r?\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
 const token='A'.repeat(43),secret='x'.repeat(48);
 const order={id:'o1',status:'NEEDS_REVIEW',version:1,customer_name:'Buyer',customer_phone:'09791234567',township:'Kamaryut',street:'Hledan',cod_amount:'25000',latitude:'16.8254',longitude:'96.1309',confidence_level:'AMBER',parsing_metadata:{parcel:{item:'Envelope',delivery_day:today(),hub_received_at:'now'}}};
 function setup(t,hash='#/admin',override){

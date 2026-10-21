@@ -189,3 +189,15 @@ test('customer without an anchor can submit a proposal but cannot clear the admi
 test('Any time manual orders can dispatch and deliver today without the old fixed clock or cutoff',()=>{
  const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T21:30:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s,{lat:'16.8254',lng:'96.1309'}),received:true,locationReviewed:true}).value,o=s.order(id);assert.equal(s.deadline(id),true);s.verify(o.link.token,'9082');s.confirm(o.link.token,{pin:o.pin,time:W.ANY_TIME,answer:'At home',expectedVersion:o.version});const routeId=command(s,'new_route',{date:o.date,riderId:R.id}).value;command(s,'assign',{id,routeId});command(s,'dispatch',{routeId});command(s,'complete',{id,amount:100},R);assert.equal(s.order(id).state,'delivered');assert.equal(s.deadline(id),false);
 });
+test('shop prep timeline sets the earliest delivery day and the buyer chooses from the next three days',()=>{
+ const s=make();clock(s,'09:00');const today=W.day(s.now());
+ assert.throws(()=>command(s,'create_manual',{fields:manualFields(s,{prep:'pre_5'})}),/ready on/);
+ const id=command(s,'create_manual',{fields:manualFields(s,{prep:'pre_5',date:W.addDays(today,5)})}).value,o=s.order(id);
+ assert.equal(o.readyDate,W.addDays(today,5));
+ s.verify(o.link.token,'9082');const c=s.customer(o.link.token);
+ assert.deepEqual(c.dates,[5,6,7].map(n=>W.addDays(today,n)));
+ assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:{lat:16.8254,lng:96.1309},date:today,time:W.SLOTS[0].time,answer:'At home'}),/days shown/);
+ s.confirm(o.link.token,{expectedVersion:o.version,pin:{lat:16.8254,lng:96.1309},date:W.addDays(today,6),time:W.SLOTS[2].time,answer:'At home'});
+ assert.equal(s.order(id).date,W.addDays(today,6));assert.equal(s.order(id).confirmation.date,W.addDays(today,6));
+ assert.throws(()=>command(s,'edit',{id,fields:{date:W.addDays(today,2)},reason:'Buyer asked',expectedVersion:s.order(id).version}),/ready on/);
+});

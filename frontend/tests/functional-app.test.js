@@ -67,7 +67,7 @@ test('customer nudges do not walk the fixed anchor past 500 metres',async()=>{
 test('batch preview imports valid rows while retaining simulated failed drafts',async()=>{
  const e=boot('#/scenarios');e.find('#scenario').value='parse_failure';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/new';
  const raw='Name: New A\nPhone: 09887341602\nTownship: Kamayut\nStreet: Hledan Road\nCOD: 5000\nItem: New A\nInvoice: NEW-A\n\n---\n\nName: New B\nPhone: 09794339082\nTownship: Kamayut\nStreet: Hledan Road\nCOD: 6000\nItem: New B\nInvoice: NEW-B';
- e.find('#batch-raw').value=raw;const parsing=e.action('parse');for(let i=0;i<8;i++)await e.tick(100);await parsing;assert.match(e.root.textContent,/1 failed/);await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,4);assert.match(e.root.textContent,/Record 1/);assert.match(e.root.textContent,/Simulated parser error/);
+ e.find('#batch-raw').value=raw;const parsing=e.action('parse');for(let i=0;i<8;i++)await e.tick(100);await parsing;assert.match(e.root.textContent,/1 couldn’t be read/);await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,4);assert.match(e.root.textContent,/Record 1/);assert.match(e.root.textContent,/Simulated parser error/);
  e.ctx.location.hash='#/scenarios';e.find('#scenario').value='normal';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/new';const retry=e.action('retry-row','0');await e.tick(100);await retry;await e.action('commit-batch');assert.equal(e.store().snapshot().orders.length,5);
 });
 test('failed save retains customer form and the same form can be retried',async()=>{
@@ -91,7 +91,7 @@ test('empty workspace has exactly three app sides, manual entry and a useful cus
 });
 test('manual order → customer location and availability → admin approval → rider delivery works with no demo clock adjustment',async()=>{
  const e=boot('#/manual',null,true);
- await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true});
+ await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true,prep:'ready_now',date:W.day(e.store().now())});
  let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.ok(order.link.token);assert.match(e.ctx.location.hash,/order\/LP-0001/);
  e.ctx.location.hash='#/customer';assert.match(e.root.textContent,/Document envelope/);
  await e.submit('#customer-link-form',{link:`file:///prototype/index.html#/track/${order.link.token}`});

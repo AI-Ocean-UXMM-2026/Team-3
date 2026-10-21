@@ -8,9 +8,9 @@ import {spawn} from 'node:child_process';
 import {once} from 'node:events';
 import {setTimeout as delay} from 'node:timers/promises';
 import {createRequire} from 'node:module';
-import {LocalWorkspaceApi,context,today,townships,mmk,tokenFrom} from '../js/local-api.mjs';
-import {environment} from './test-dom.js';
-const require=createRequire(import.meta.url),{pythonPath,root}=require('../../scripts/python_path.cjs');
+import {LocalWorkspaceApi,context,today,townships,mmk,tokenFrom} from '../../../../frontend/js/local-api.mjs';
+import {environment} from '../../../../frontend/tests/test-dom.js';
+const require=createRequire(import.meta.url),{pythonPath,root}=require('../../../../scripts/python_path.cjs');
 
 test('selected application connects admin, native buyer verification, dispatcher and rider COD closeout', {timeout:60000}, async t=>{
  const probe=net.createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');const port=probe.address().port;await new Promise(r=>probe.close(r));
@@ -30,7 +30,7 @@ test('selected application connects admin, native buyer verification, dispatcher
   });
   const e=environment(null,'#/admin');Object.assign(e.ctx,{WorkspaceApi:LocalWorkspaceApi,context,today,townships,mmk,tokenFrom,crypto,history:{replaceState(){}}});
   Object.assign(e.ctx.location,{origin,protocol:'http:',pathname:'/api.html',href:origin+'/api.html#/admin'});
-  const source=fs.readFileSync(new URL('../js/api-workspace.mjs',import.meta.url),'utf8').replace(/^import[^\r\n]*\r?\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
+  const source=fs.readFileSync(new URL('../api-workspace.mjs',import.meta.url),'utf8').replace(/^import[^\r\n]*\r?\n/,'').replace(/\nload\(\);\s*$/,'\nglobalThis.ready=load();');
   vm.runInNewContext(source,e.ctx);await e.ctx.ready;
   const wait=async(predicate,label)=>{const end=Date.now()+10000;while(!predicate()){if(Date.now()>end)throw Error('Timed out: '+label+'; '+(e.find('#api-status')?.textContent||''));await delay(10);}};
   assert.equal(e.find('[name="token"]'),null);

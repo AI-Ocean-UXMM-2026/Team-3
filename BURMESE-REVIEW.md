@@ -75,3 +75,14 @@ Any future Burmese wording changes need another review. Refresh source reference
 ## Added 21 Oct 2026 (needs native review)
 - Page signs: ဝယ်သူ လင့်ခ်များ (Buyer links), ငွေစာရင်း ပိတ်ရန် (Hub close-out), စစ်ရန် အော်ဒါများ (Exceptions), အော်ဒါ တစ်ခု ထည့်ရန် (Add one order)
 - Rider undo: ပြန်ဖျက်မည် (Undo); rider toasts in the `MY` map in frontend/js/functional-app.js
+
+## Delivery day and time slots (buyer page)
+
+| Burmese | English meaning | Where |
+| --- | --- | --- |
+| ပို့ရမည့်နေ့ | Delivery day | Buyer page, day cards heading |
+| အချိန်ရွေးချယ်ပါ | Choose a time (Preferred time) | Buyer page, slot cards heading |
+| မနက် | Morning (10:00–12:00) | Slot card |
+| နေ့လည် | Afternoon (14:00–16:00) | Slot card |
+| ညနေ | Evening (16:00–18:00) | Slot card |
+| အချိန်မရွေး | Any time | Slot card |
