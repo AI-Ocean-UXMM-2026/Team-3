@@ -320,3 +320,25 @@ details[open]>summary::before{transform:rotate(45deg)}
 body.night .stop-actions{background:#0F1B2A}
 .board-tools .search{width:min(320px,100%)}
 @media (max-width:760px){.prototype-bar strong{display:none}.tab .my{display:none}.tab{min-height:44px}}
+/* Board head, labelled strip, one-row toolbar (finish review) */
+.board-head{margin:4px 0 12px}
+.board-head h1{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;margin:0}
+.board-head h1 .my{font-family:var(--my);font-weight:700;font-size:.8em;line-height:1.5}
+.board-strip{display:flex;gap:3px;margin:0 0 10px;min-height:0}
+.board-strip .seg{display:flex;align-items:center;gap:6px;min-width:0;overflow:hidden;white-space:nowrap;padding:5px 10px;border-radius:6px;font-size:.8rem;font-weight:700}
+.board-strip .seg.needs{background:var(--bad-bg);color:var(--bad)}.board-strip .seg.waiting{background:var(--wait-bg);color:var(--wait)}.board-strip .seg.ready{background:var(--ok-bg);color:var(--ok)}.board-strip .seg.rider{background:var(--navy-2);color:var(--cream)}.board-strip .seg.done{background:var(--cream-2);color:var(--ink-2)}
+.board-tools .search{display:flex;align-items:center;gap:8px;flex-direction:row;position:relative}
+.board-tools .search .icon{position:absolute;left:12px;color:var(--ink-2)}
+.board-tools .search input{padding-left:36px}
+.board-tools .filters{position:relative;margin:0}
+.board-tools .filters[open] .filter-grid{position:absolute;top:calc(100% + 6px);left:0;z-index:15;width:min(640px,90vw);background:var(--paper);border:var(--edge);border-radius:var(--r);padding:14px;box-shadow:0 12px 28px -10px rgba(0,0,0,.3)}
+.sign .my{font-weight:700;font-size:1.02rem;line-height:1.45;color:var(--cream)}
+.sign.hot .my{color:var(--navy)}
+.sign.empty .my{color:var(--ink-2)}
+.landmark{background:var(--navy);color:var(--cream)}
+.reasons.plain li{font-weight:600;color:var(--ink)}
+.bi{display:flex;flex-direction:column;align-items:flex-start;line-height:1.2}
+.bi .my{font-size:.78rem;font-weight:600;line-height:1.5}
+.btn.stack{flex-direction:column;gap:0}
+.btn.stack .my,.btn.go .my{line-height:1.4}
+@media (max-width:480px){.tabs{gap:0}.tab{padding:4px 6px;font-size:.85rem}.more summary{padding:0 6px;font-size:.85rem}.brand-word{display:none}.board-tools .grow{display:none}.board-tools .search{width:100%}}
