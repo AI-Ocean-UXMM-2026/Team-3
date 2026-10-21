@@ -30,7 +30,7 @@ test('delivered undo is exactly timed; cash dialog cancellation does not complet
 });
 test('rider completes COD via the timed controller and hub can finish cash closeout',async()=>{
  const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('delivered','LP-2046');await e.tick(2000);await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().order('LP-2046').collection.actual,35000);
- await e.action('submit-cash','RT-001');assert.equal(e.find('dialog'),null);assert.equal(e.store().snapshot().routes[0].handover.declared,35000);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
+ e.ctx.location.hash='#/ride/handover';await e.action('submit-cash','RT-001');assert.equal(e.find('dialog'),null);assert.equal(e.store().snapshot().routes[0].handover.declared,35000);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
  e.ctx.location.hash='#/closeout';assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='close-route'));await e.action('receive-cash','RT-001');assert.equal(e.find('[name="amount"]').value,'');assert.equal(e.find('#cash-difference').hidden,true);
  await e.submit('dialog form');assert.match(e.find('dialog').textContent,/Enter the amount you physically counted/);assert.equal(e.store().snapshot().routes[0].handover.status,'submitted');
  await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().snapshot().routes[0].state,'closed');assert.equal(e.find('dialog'),null);
@@ -38,7 +38,7 @@ test('rider completes COD via the timed controller and hub can finish cash close
 
 test('different handover amount retains reasons and admin disputes without silently closing',async()=>{
  const e=boot('#/ride',s=>{departed(s);s.execute('complete',{id:'LP-2046',amount:35000},R);});
- await e.action('different-cash','RT-001');const field=e.find('[name="amount"]');field.value='34000';field.oninput();assert.equal(e.find('#cash-difference').hidden,false);assert.equal(e.find('[name="reason"]').required,true);
+ e.ctx.location.hash='#/ride/handover';await e.action('different-cash','RT-001');const field=e.find('[name="amount"]');field.value='34000';field.oninput();assert.equal(e.find('#cash-difference').hidden,false);assert.equal(e.find('[name="reason"]').required,true);
  await e.submit('dialog form');assert.match(e.find('dialog').textContent,/Explain the difference/);assert.equal(e.store().snapshot().routes[0].handover,null);
  await e.submit('dialog form',{reason:'Counted short at hub'});assert.equal(e.store().snapshot().routes[0].handover.declared,34000);
  e.ctx.location.hash='#/closeout';await e.action('receive-cash','RT-001');await e.submit('dialog form',{amount:'34000',reason:'Hub counted short'});assert.equal(e.store().snapshot().routes[0].handover.status,'disputed');assert.equal(e.store().snapshot().routes[0].state,'closing');assert.match(e.root.textContent,/cash difference unresolved/);
@@ -48,7 +48,7 @@ test('different handover amount retains reasons and admin disputes without silen
 
 test('receipt is saved but collection differences still block shortcut closure',async()=>{
  const e=boot('#/ride',s=>{departed(s);s.execute('complete',{id:'LP-2046',amount:34000,reason:'Recipient paid short'},R);});
- await e.action('submit-cash','RT-001');e.ctx.location.hash='#/closeout';await e.action('receive-cash','RT-001');await e.submit('dialog form',{amount:'34000'});
+ e.ctx.location.hash='#/ride/handover';await e.action('submit-cash','RT-001');e.ctx.location.hash='#/closeout';await e.action('receive-cash','RT-001');await e.submit('dialog form',{amount:'34000'});
  assert.equal(e.store().snapshot().routes[0].handover.status,'received');assert.equal(e.store().snapshot().routes[0].state,'closing');assert.match(e.root.textContent,/LP-2046: resolve collection difference/);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='close-route'));
  e.ctx.location.hash='#/order/LP-2046';await e.action('discrepancy','LP-2046');await e.submit('dialog form',{reason:'Admin accepted documented adjustment'});
  e.ctx.location.hash='#/closeout';await e.action('close-route','RT-001');assert.equal(e.store().snapshot().routes[0].state,'closed');
@@ -56,8 +56,8 @@ test('receipt is saved but collection differences still block shortcut closure',
 
 test('zero cash route uses the same short flow and failed handover does not submit',async()=>{
  const e=boot('#/ride',s=>{departed(s);s.execute('fail',{id:'LP-2046',reason:W.REASONS[0],resolution:'return'},R);s.execute('return_received',{id:'LP-2046'},A);});
- e.ctx.location.hash='#/scenarios';e.find('#scenario').value='save_failure';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/ride';await e.action('submit-cash','RT-001');assert.equal(e.store().snapshot().routes[0].handover,null);
- e.ctx.location.hash='#/scenarios';e.find('#scenario').value='normal';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/ride';await e.action('submit-cash','RT-001');assert.equal(e.store().snapshot().routes[0].handover.declared,0);
+ e.ctx.location.hash='#/scenarios';e.find('#scenario').value='save_failure';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/ride/handover';await e.action('submit-cash','RT-001');assert.equal(e.store().snapshot().routes[0].handover,null);
+ e.ctx.location.hash='#/scenarios';e.find('#scenario').value='normal';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/ride/handover';await e.action('submit-cash','RT-001');assert.equal(e.store().snapshot().routes[0].handover.declared,0);
  e.ctx.location.hash='#/closeout';await e.action('receive-cash','RT-001');await e.submit('dialog form',{amount:'0'});assert.equal(e.store().snapshot().routes[0].state,'closed');
 });
 test('customer nudges do not walk the fixed anchor past 500 metres',async()=>{
@@ -110,4 +110,9 @@ test('customer action buttons cannot accidentally submit a location form',async(
 });
 test('customer with no verified anchor can recover a stale initial-location form',async()=>{
  const e=boot('#/manual',null,true);await e.submit('#manual-form',{name:'Customer',phone:'09794339082',item:'Parcel',payment:'prepaid',expected:'0',areaId:'kamayut'});const o=e.store().snapshot().orders[0];e.ctx.location.hash='#/track/'+o.link.token;await e.submit('#verify-form',{digits:'9082'});await e.action('preview-location','kamayut');e.store().execute('incident',{id:o.id,reason:'Admin updated parcel'},A);await e.submit('#customer-form');assert.match(e.root.textContent,/Conflict/);await e.action('refresh-customer',o.link.token);assert.equal(e.find('#customer-form').dataset.version,String(e.store().order(o.id).version));
+});
+test('delivered stops leave Deliveries and wait on the Cash handover page until the route closes',async()=>{
+ const e=boot('#/ride',s=>{departed(s);s.execute('complete',{id:'LP-2046',amount:35000},R);});assert.ok(!e.all('[data-action="select-stop"]').some(b=>b.dataset.id==='LP-2046'));assert.ok(!e.find('[data-action="submit-cash"]'));
+ e.ctx.location.hash='#/ride/handover';assert.match(e.root.textContent,/In this handover/);assert.match(e.root.textContent,/LP-2046/);assert.ok(e.find('[data-action="submit-cash"]'));
+ e.ctx.location.hash='#/ride/history';assert.match(e.root.textContent,/No past deliveries yet/);assert.ok(!e.find('.stop-card'));
 });
