@@ -1,0 +1,16 @@
+{
+  "python": {
+    "passed": 775,
+    "failed": 0,
+    "new_lab_cases": 26,
+    "seconds": 59.37
+  },
+  "javascript": {
+    "passed": 4,
+    "failed": 0
+  },
+  "ruff_lint": "passed",
+  "ruff_format": "90 files already formatted",
+  "dependency_check": "No broken requirements found",
+  "transport": "TestClient; no new browser or standalone HTTP run"
+}

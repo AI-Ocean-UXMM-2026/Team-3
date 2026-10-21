@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "demo": "node scripts/demo.ts",
     "build:recordings": "node scripts/build-recordings.ts",
-    "build:browser": "esbuild scripts/browser-global.ts --bundle --format=iife --platform=browser --target=es2020 --inject:scripts/buffer-shim.ts --legal-comments=eof --minify --banner:js=\"/* LannPya AI order parser: rules, dictionary and Zawgyi conversion. Generated from order-parser/ by npm run build:browser; do not edit. */\" --outfile=../vendor/lannpya-order-parser.js"
+    "build:browser": "esbuild scripts/browser-global.ts --bundle --format=iife --platform=browser --target=es2020 --inject:scripts/buffer-shim.ts --legal-comments=eof --minify --banner:js=\"/* LannPya AI order parser: rules, dictionary and Zawgyi conversion. Generated from order-parser/ by npm run build:browser; do not edit. */\" --outfile=../frontend/vendor/lannpya-order-parser.js"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

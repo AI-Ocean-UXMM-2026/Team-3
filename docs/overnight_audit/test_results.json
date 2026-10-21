@@ -1,0 +1,22 @@
+{
+  "python_tests": 749,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "seconds": 53.535,
+  "by_module": {
+    "tests.test_api": 30,
+    "tests.test_api_contract": 3,
+    "tests.test_buyer_confirmation": 71,
+    "tests.test_frontend_integration": 18,
+    "tests.test_hybrid": 72,
+    "tests.test_order_management": 85,
+    "tests.test_overnight_concurrency": 6,
+    "tests.test_overnight_parser": 317,
+    "tests.test_riders": 46,
+    "tests.test_rules_parser": 101
+  },
+  "new_tests": 323,
+  "javascript_tests_passed": 4,
+  "http_demo_cases_passed": 68
+}

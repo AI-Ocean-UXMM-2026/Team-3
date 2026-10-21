@@ -1,0 +1,30 @@
+{
+  "source_branches": 4,
+  "baseline_python_passed": 812,
+  "source_zlh_backend_passed": 447,
+  "latest_source_frontend_passed": 93,
+  "integrated_python": {
+    "passed": 839,
+    "failed": 0,
+    "seconds": 86.21
+  },
+  "integrated_node": {
+    "passed": 112,
+    "failed": 0
+  },
+  "typescript": {
+    "passed": 141,
+    "failed": 0,
+    "typecheck": "passed"
+  },
+  "static_assets_built": 21,
+  "openapi_operations": 35,
+  "lint": "passed",
+  "format_python_files": 102,
+  "dependency_check": "passed",
+  "browser": "unavailable; no visual test",
+  "live_origin": "http://127.0.0.1:8780",
+  "ai": "rules plus mock; real adapter source preserved but inactive",
+  "pushed": false,
+  "merged_into_main": false
+}
