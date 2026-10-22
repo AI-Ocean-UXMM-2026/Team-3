@@ -40,12 +40,12 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     }
     await connect('admin');const [orders,routes,riders]=await Promise.all([all('admin','/api/orders'),all('admin','/api/routes'),all('admin','/api/riders')]);
     state.riders=riders;state.riderPlans=[];
-    state.plans=target==='routes'?await all('admin','/api/routes/plans'):[];
+    state.plans=target.split('/')[0]==='routes'?await all('admin','/api/routes/plans'):[];
     remember(orders);state.routes=rows(routes);
     Object.keys(W.ACTORS).filter(k=>W.ACTORS[k].role==='rider').forEach(k=>delete W.ACTORS[k]);
     riders.forEach((r,i)=>W.ACTORS[i?'rider'+(i+1):'rider']={id:r.id,role:'rider',name:r.name,hubId:'local'});
     state.events=[];requests=[];
-    if(target.startsWith('order/')){const id=target.slice(6);const [events,updates]=await Promise.all([all('admin',`/api/orders/${id}/events`),all('admin',`/api/orders/${id}/buyer-requests`)]);requests=updates;state.events=events.map(e=>({id:e.id,orderId:id,type:e.event_type,text:`${e.previous_status||''} → ${e.new_status}`,actor:new Date(e.created_at).toISOString(),at:e.created_at})).sort((a,b)=>a.at.localeCompare(b.at));const o=state.orders.find(o=>o.id===id),pending=updates.find(r=>r.kind==='LOCATION'&&r.decision==='REVIEW_REQUIRED'&&!r.resolution);if(o&&pending)o.proposedPin=point(pending.submitted_values.latitude,pending.submitted_values.longitude);}
+    const detailId=target.startsWith('order/')?target.slice(6):target.startsWith('dispatch/')?target.slice(9):'';if(detailId){const id=detailId;const [events,updates]=await Promise.all([all('admin',`/api/orders/${id}/events`),all('admin',`/api/orders/${id}/buyer-requests`)]);requests=updates;state.events=events.map(e=>({id:e.id,orderId:id,type:e.event_type,text:`${e.previous_status||''} → ${e.new_status}`,actor:new Date(e.created_at).toISOString(),at:e.created_at})).sort((a,b)=>a.at.localeCompare(b.at));const o=state.orders.find(o=>o.id===id),pending=updates.find(r=>r.kind==='LOCATION'&&r.decision==='REVIEW_REQUIRED'&&!r.resolution);if(o&&pending)o.proposedPin=point(pending.submitted_values.latitude,pending.submitted_values.longitude);}
   }
   // Controlled names, never fixture rectangles or township-centre coordinates.
   const places=['Hlaing','Kamaryut','Sanchaung','Bahan','Mayangon','Insein','Yankin','Tamwe','Thingangyun','South Okkalapa','North Okkalapa','North Dagon','South Dagon','East Dagon','Dagon Seikkan'];
