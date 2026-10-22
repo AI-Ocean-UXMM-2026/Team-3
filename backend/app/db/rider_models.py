@@ -33,6 +33,19 @@ class DeliveryAssignment(Base):
             name="ck_assignment_status",
         ),
         CheckConstraint(
+            "response_status IN ('PENDING','ACCEPTED','DECLINED') "
+            "AND NOT (status = 'ACTIVE' AND response_status = 'DECLINED')",
+            name="ck_assignment_response",
+        ),
+        CheckConstraint("offer_version >= 1", name="ck_offer_version"),
+        CheckConstraint(
+            "(response_status = 'PENDING' AND responded_at IS NULL) OR "
+            "(response_status = 'DECLINED' AND responded_at IS NOT NULL) OR "
+            "(response_status = 'ACCEPTED' AND "
+            "(allocation_cycle IS NULL OR responded_at IS NOT NULL))",
+            name="ck_offer_timestamp",
+        ),
+        CheckConstraint(
             "stop_sequence IS NULL OR stop_sequence BETWEEN 1 AND 10000",
             name="ck_assignment_sequence",
         ),
@@ -55,6 +68,12 @@ class DeliveryAssignment(Base):
     rider_id: Mapped[UUID] = mapped_column(ForeignKey("rider_profiles.id", ondelete="RESTRICT"))
     dispatcher_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
     status: Mapped[str] = mapped_column(String(16), default="ACTIVE")
+    # Explicit compatibility policy for legacy/manual assignment callers.
+    # The automatic allocator always overrides this with PENDING.
+    response_status: Mapped[str] = mapped_column(String(16), default="ACCEPTED")
+    offer_version: Mapped[int] = mapped_column(Integer, default=1)
+    allocation_cycle: Mapped[int | None] = mapped_column(Integer)
+    responded_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     stop_sequence: Mapped[int | None] = mapped_column(Integer)
     failure_reason: Mapped[str | None] = mapped_column(String(32))
     failure_note: Mapped[str | None] = mapped_column(String(500))
@@ -76,6 +95,48 @@ class RiderActionReceipt(Base):
     assignment_id: Mapped[UUID] = mapped_column(
         ForeignKey("delivery_assignments.id", ondelete="RESTRICT")
     )
+    request_id: Mapped[UUID] = mapped_column(Uuid)
+    payload_hash: Mapped[str] = mapped_column(String(64))
+    result: Mapped[dict] = mapped_column(JSON_VALUE)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class AllocationCoordinator(Base):
+    __tablename__ = "allocation_coordinator"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+
+
+class AutomaticAllocation(Base):
+    __tablename__ = "automatic_allocations"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('ASSIGNED','WAITING_FOR_RIDER','WAITING_FOR_READINESS','CANCELLED')",
+            name="ck_allocation_status",
+        ),
+        CheckConstraint("cycle >= 1", name="ck_allocation_cycle"),
+        Index("ix_allocation_wait", "status", "created_at", "order_id"),
+    )
+    order_id: Mapped[UUID] = mapped_column(
+        ForeignKey("orders.id", ondelete="RESTRICT"), primary_key=True
+    )
+    dispatcher_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    buyer_response_id: Mapped[UUID] = mapped_column(
+        ForeignKey("buyer_requests.id", ondelete="RESTRICT")
+    )
+    material_hash: Mapped[str] = mapped_column(String(64))
+    cycle: Mapped[int] = mapped_column(Integer, default=1)
+    status: Mapped[str] = mapped_column(String(32))
+    reason: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow, onupdate=utcnow)
+
+
+class AllocationReceipt(Base):
+    __tablename__ = "allocation_receipts"
+    __table_args__ = (Index("ux_allocation_actor_request", "actor_id", "request_id", unique=True),)
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    actor_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"))
+    order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"))
     request_id: Mapped[UUID] = mapped_column(Uuid)
     payload_hash: Mapped[str] = mapped_column(String(64))
     result: Mapped[dict] = mapped_column(JSON_VALUE)

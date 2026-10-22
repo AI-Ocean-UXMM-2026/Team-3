@@ -98,6 +98,9 @@ def test_migrated_schema_and_no_drift(store):
         "rider_profiles",
         "delivery_assignments",
         "rider_action_receipts",
+        "allocation_coordinator",
+        "automatic_allocations",
+        "allocation_receipts",
         "workflow_routes",
         "routing_plans",
         "routing_rate_limits",
@@ -106,7 +109,7 @@ def test_migrated_schema_and_no_drift(store):
         assert connection.scalar(text("PRAGMA foreign_keys")) == 1
         assert (
             connection.scalar(text("select version_num from alembic_version"))
-            == "0005_routing_plans"
+            == "0006_automatic_assignment"
         )
         assert (
             compare_metadata(

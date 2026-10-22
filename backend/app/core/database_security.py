@@ -19,6 +19,7 @@ def check_browser_grants(database):
                 'users', 'orders', 'delivery_events', 'confirmation_links', 'buyer_sessions',
                 'buyer_requests', 'buyer_rate_limits', 'location_references', 'rider_profiles',
                 'delivery_assignments', 'rider_action_receipts', 'workflow_routes',
+                'allocation_coordinator', 'automatic_allocations', 'allocation_receipts',
                 'routing_plans', 'routing_rate_limits', 'alembic_version')
               AND has_table_privilege(r.oid, c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
             LIMIT 1

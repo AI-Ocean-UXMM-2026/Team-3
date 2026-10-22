@@ -99,7 +99,9 @@ class DeliveryAction(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
     request_id: UUID
-    action: Literal["START", "DELIVERED", "FAILED"]
+    action: Literal["START", "DELIVERED", "FAILED", "ACCEPT", "DECLINE"]
+    assignment_id: UUID | None = None
+    offer_version: int | None = Field(default=None, ge=1, strict=True)
     cod_collected: bool | None = Field(default=None, strict=True)
     actual_amount: int | None = Field(default=None, ge=0, le=1000000000, strict=True)
     difference_reason: str | None = Field(default=None, min_length=1, max_length=500)
@@ -108,6 +110,10 @@ class DeliveryAction(BaseModel):
 
     @model_validator(mode="after")
     def action_fields(self):
+        if self.action in {"ACCEPT", "DECLINE"} and (
+            self.assignment_id is None or self.offer_version is None
+        ):
+            raise ValueError("Offer response requires assignment_id and offer_version")
         if self.action == "FAILED":
             if not self.failure_reason:
                 raise ValueError("Failed delivery requires a reason code")
@@ -133,6 +139,10 @@ class AssignmentResponse(BaseModel):
     rider_id: UUID
     dispatcher_id: UUID
     status: Literal["ACTIVE", "UNASSIGNED", "COMPLETED", "FAILED", "CANCELLED"]
+    response_status: Literal["PENDING", "ACCEPTED", "DECLINED"] = "ACCEPTED"
+    offer_version: int = 1
+    allocation_cycle: int | None = None
+    responded_at: datetime | None = None
     stop_sequence: int | None
     failure_reason: str | None
     failure_note: str | None
@@ -166,10 +176,21 @@ class ActionResult(BaseModel):
     cod_collected: bool | None
     failure_reason: FailureReason | None
     updated_at: datetime
+    response_status: Literal["PENDING", "ACCEPTED", "DECLINED"] = "ACCEPTED"
+    offer_version: int = 1
+    allocation_status: str | None = None
+    outcome: str | None = None
+    replacement_assignment: AssignmentResponse | None = None
+    replacement_route: dict | None = None
+    reason: str | None = None
 
 
 class QueueDelivery(BaseModel):
     assignment_id: UUID
+    response_status: Literal["PENDING", "ACCEPTED", "DECLINED"] = "ACCEPTED"
+    offer_version: int = 1
+    allocation_cycle: int | None = None
+    allocation_status: str | None = None
     order_id: UUID
     status: OrderStatus
     order_version: int

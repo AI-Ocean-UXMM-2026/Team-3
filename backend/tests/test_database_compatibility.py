@@ -24,7 +24,14 @@ from app.db import (
 )
 from app.db.buyer_models import ConfirmationLink, LocationReference
 from app.db.models import Base, DeliveryEvent, Order, User
-from app.db.rider_models import DeliveryAssignment, RiderActionReceipt, RiderProfile
+from app.db.rider_models import (
+    AllocationCoordinator,
+    AllocationReceipt,
+    AutomaticAllocation,
+    DeliveryAssignment,
+    RiderActionReceipt,
+    RiderProfile,
+)
 from app.db.routing_models import RoutingPlan
 from app.db.session import Database, normalize_database_url
 from app.db.workflow_models import WorkflowRoute
@@ -87,7 +94,9 @@ def test_settings_database_url_aliases(monkeypatch):
 
 def test_credentials_masked_in_str():
     """Verify SecretStr prevents accidental credential leakage in logs or representations."""
-    s = Settings(_env_file=None, database_url=SecretStr("postgres://postgres:SUPER_SECRET@host:5432/db"))
+    s = Settings(
+        _env_file=None, database_url=SecretStr("postgres://postgres:SUPER_SECRET@host:5432/db")
+    )
     assert "SUPER_SECRET" not in str(s.database_url)
     assert "SUPER_SECRET" not in repr(s.database_url)
     assert s.database_url.get_secret_value() == "postgres://postgres:SUPER_SECRET@host:5432/db"
@@ -112,6 +121,9 @@ def test_credentials_masked_in_str():
         RiderProfile,
         DeliveryAssignment,
         RiderActionReceipt,
+        AllocationCoordinator,
+        AutomaticAllocation,
+        AllocationReceipt,
         WorkflowRoute,
         RoutingPlan,
         routing_models.RoutingRateLimit,
@@ -154,13 +166,13 @@ def test_postgresql_specific_types_compiled():
 
 
 def test_alembic_migration_revisions_chain():
-    """Verify that Alembic migration history has exactly 5 contiguous revisions leading to head."""
+    """Verify that Alembic migration history has contiguous revisions leading to head."""
     from app.db.session import BACKEND_ROOT
 
     config = Config(str(BACKEND_ROOT / "alembic.ini"))
     script = ScriptDirectory.from_config(config)
     head = script.get_current_head()
-    assert head == "0005_routing_plans"
+    assert head == "0006_automatic_assignment"
 
     # Walk through revisions from head down to base
     revs = []
@@ -170,6 +182,7 @@ def test_alembic_migration_revisions_chain():
         curr = script.get_revision(curr.down_revision) if curr.down_revision else None
 
     assert revs == [
+        "0006_automatic_assignment",
         "0005_routing_plans",
         "0004_workflow_routes",
         "0003_rider_copilot",

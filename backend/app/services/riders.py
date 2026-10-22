@@ -122,6 +122,12 @@ class RiderService:
         self.session.flush()
         result = self.rider_response(profile, user)
         self.session.commit()
+        if body.operational_status == "AVAILABLE":
+            from app.services.automatic_assignment import drain_waiting
+
+            drain_waiting(self.session, self.settings, self.catalog)
+            self.session.refresh(profile)
+            result = self.rider_response(profile, user)
         return result
 
     def list(self, page, page_size, operational_status=None):
@@ -159,6 +165,12 @@ class RiderService:
         self.session.flush()
         result = self.rider_response(profile, user)
         self.session.commit()
+        if body.operational_status == "AVAILABLE":
+            from app.services.automatic_assignment import drain_waiting
+
+            drain_waiting(self.session, self.settings, self.catalog)
+            self.session.refresh(profile)
+            result = self.rider_response(profile, user)
         return result
 
     def order(self, order_id, expected):
@@ -200,6 +212,9 @@ class RiderService:
 
     def assign(self, order_id, body):
         self.dispatcher()
+        from app.services.automatic_assignment import lock_allocator
+
+        lock_allocator(self.session)
         order = self.order(order_id, body.expected_version)
         profile, _ = self.rider(body.rider_id)
         lock_profile(self.session, profile.id)
@@ -271,6 +286,9 @@ class RiderService:
 
     def unassign(self, order_id, body):
         self.dispatcher()
+        from app.services.automatic_assignment import lock_allocator
+
+        lock_allocator(self.session)
         order = self.order(order_id, body.expected_version)
         assignment = active_assignment(self.session, order.id)
         if assignment is None or order.status != OrderStatus.ASSIGNED:
@@ -305,14 +323,24 @@ class RiderService:
 
     def action(self, rider_id, order_id, body):
         self.rider(rider_id)
+        from app.services.automatic_assignment import lock_allocator
+
+        if body.action in {"ACCEPT", "DECLINE"} and (
+            self.actor.role != UserRole.RIDER or self.actor.id != rider_id
+        ):
+            raise OrderAPIError(
+                403, "ASSIGNED_RIDER_REQUIRED", "Only the assigned rider can respond to an offer."
+            )
+        lock_allocator(self.session)
         lock_order(self.session, order_id)
         lock_profile(self.session, rider_id)
+        payload = body.model_dump(mode="json")
+        # Existing persisted action receipts predate these optional offer fields.
+        for name in ("assignment_id", "offer_version"):
+            if name not in body.model_fields_set:
+                payload.pop(name)
         payload_hash = hashlib.sha256(
-            (
-                str(rider_id)
-                + str(order_id)
-                + json.dumps(body.model_dump(mode="json"), sort_keys=True)
-            ).encode()
+            (str(rider_id) + str(order_id) + json.dumps(payload, sort_keys=True)).encode()
         ).hexdigest()
         receipt = self.session.scalar(
             select(RiderActionReceipt).where(
@@ -334,6 +362,14 @@ class RiderService:
         order = self.session.get(Order, order_id)
         self.session.refresh(order)
         OrderManagementService.check_version(order, body.expected_version)
+        if body.action in {"ACCEPT", "DECLINE"}:
+            return self.offer_response(order, assignment, body, payload_hash)
+        if assignment.response_status != "ACCEPTED":
+            raise OrderAPIError(
+                409,
+                "OFFER_ACCEPTANCE_REQUIRED",
+                "Accept the current rider offer before delivery actions.",
+            )
         from app.services.workflow import record_collection, validate_delivery_route
 
         validate_delivery_route(self.session, self.actor, order, body.action)
@@ -402,11 +438,100 @@ class RiderService:
             cod_collected=assignment.cod_collected,
             failure_reason=assignment.failure_reason,
             updated_at=order.updated_at,
+            response_status=assignment.response_status,
+            offer_version=assignment.offer_version,
         )
         self.session.add(
             RiderActionReceipt(
                 actor_id=self.actor.id,
                 rider_id=rider_id,
+                order_id=order.id,
+                assignment_id=assignment.id,
+                request_id=body.request_id,
+                payload_hash=payload_hash,
+                result=result.model_dump(mode="json"),
+            )
+        )
+        self.session.commit()
+        if body.action in {"DELIVERED", "FAILED"}:
+            from app.services.automatic_assignment import drain_waiting
+
+            drain_waiting(self.session, self.settings, self.catalog)
+        return result
+
+    def offer_response(self, order, assignment, body, payload_hash):
+        from app.db.rider_models import AutomaticAllocation
+        from app.services.automatic_assignment import attempt, output, project
+        from app.services.workflow import detach_order, parcel, set_parcel
+
+        if (
+            body.assignment_id != assignment.id
+            or body.offer_version != assignment.offer_version
+            or assignment.response_status != "PENDING"
+            or order.status != OrderStatus.ASSIGNED
+        ):
+            raise OrderAPIError(
+                409, "STALE_OFFER", "This pending offer changed; refresh your queue."
+            )
+        allocation = self.session.get(AutomaticAllocation, order.id)
+        if allocation is None or assignment.allocation_cycle != allocation.cycle:
+            raise OrderAPIError(409, "STALE_OFFER", "This allocation is no longer current.")
+        if body.action == "ACCEPT":
+            from app.services.automatic_assignment import require_current_authorization
+
+            require_current_authorization(self.session, order, assignment)
+        assignment.response_status = "ACCEPTED" if body.action == "ACCEPT" else "DECLINED"
+        assignment.responded_at = utcnow()
+        assignment.offer_version += 1
+        order.updated_at = utcnow()
+        replacement = None
+        if body.action == "ACCEPT":
+            allocation.reason = "Rider accepted; awaiting dispatcher departure."
+            project(order, allocation)
+            self.event(
+                order, assignment, "STATUS_CHANGED", order.status, {"action": "OFFER_ACCEPTED"}
+            )
+            outcome = "ACCEPTED"
+        else:
+            assignment.status, assignment.ended_at = "UNASSIGNED", utcnow()
+            detach_order(self.session, self.actor, order)
+            context = parcel(order)
+            context.pop("routing", None)
+            set_parcel(order, context)
+            previous, order.status = order.status, OrderStatus.READY_FOR_DISPATCH
+            self.event(
+                order, assignment, "RIDER_UNASSIGNED", previous, {"action": "OFFER_DECLINED"}
+            )
+            self.session.flush()
+            replacement = attempt(
+                self.session, order, allocation, self.actor, self.settings, self.catalog
+            )
+            outcome = "REASSIGNED" if replacement else allocation.status
+        bump_queue(self.session, assignment.rider_id)
+        current = output(self.session, order, allocation, replacement)
+        result = ActionResult(
+            request_id=body.request_id,
+            assignment_id=assignment.id,
+            order_id=order.id,
+            rider_id=assignment.rider_id,
+            status=order.status,
+            assignment_status=assignment.status,
+            order_version=order.version,
+            cod_collected=None,
+            failure_reason=None,
+            updated_at=order.updated_at,
+            response_status=assignment.response_status,
+            offer_version=assignment.offer_version,
+            allocation_status=allocation.status,
+            outcome=outcome,
+            replacement_assignment=current["assignment"],
+            replacement_route=current["route"] if replacement else None,
+            reason=allocation.reason,
+        )
+        self.session.add(
+            RiderActionReceipt(
+                actor_id=self.actor.id,
+                rider_id=assignment.rider_id,
                 order_id=order.id,
                 assignment_id=assignment.id,
                 request_id=body.request_id,
@@ -508,6 +633,12 @@ class RiderService:
             )
             item = QueueDelivery(
                 assignment_id=assignment.id,
+                response_status=assignment.response_status,
+                offer_version=assignment.offer_version,
+                allocation_cycle=assignment.allocation_cycle,
+                allocation_status=order.parsing_metadata.get("parcel", {})
+                .get("allocation", {})
+                .get("status"),
                 order_id=order.id,
                 status=order.status,
                 order_version=order.version,

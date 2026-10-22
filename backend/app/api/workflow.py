@@ -61,6 +61,14 @@ class PrepareAssignment(BaseModel):
         return self
 
 
+class AutoAssignment(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_id: UUID
+    expected_version: int = Field(ge=1, strict=True)
+    acknowledge_unverified_location: bool = Field(default=False, strict=True)
+    receive_at_hub: bool = Field(default=False, strict=True)
+
+
 @router.get("/session")
 def session_info(request: Request, actor: RiderActor) -> dict:
     return {
@@ -101,8 +109,34 @@ def route_action(route_id: UUID, body: RouteAction, session: SessionDep, actor: 
 
 
 @router.post("/orders/{order_id:uuid}/operations", response_model=OrderResponse)
-def order_operation(order_id: UUID, body: OrderOperation, session: SessionDep, actor: RiderActor):
-    return workflow.order_operation(session, actor, order_id, body)
+def order_operation(
+    order_id: UUID, body: OrderOperation, request: Request, session: SessionDep, actor: RiderActor
+):
+    result = workflow.order_operation(session, actor, order_id, body)
+    if body.action in {"RECEIVE", "RESOLVE_INCIDENT"}:
+        from app.db.models import Order
+        from app.services.automatic_assignment import drain_waiting
+
+        drain_waiting(session, request.app.state.settings, request.app.state.location_catalog)
+        session.expire_all()
+        result = OrderResponse.model_validate(session.get(Order, order_id))
+    return result
+
+
+@router.post("/orders/{order_id:uuid}/auto-assignment")
+def auto_assignment(
+    order_id: UUID, body: AutoAssignment, request: Request, session: SessionDep, actor: RiderActor
+) -> dict:
+    from app.services.automatic_assignment import reconfirm
+
+    return reconfirm(
+        session,
+        actor,
+        order_id,
+        body,
+        request.app.state.settings,
+        request.app.state.location_catalog,
+    )
 
 
 @router.post("/orders/{order_id:uuid}/prepare-assignment")

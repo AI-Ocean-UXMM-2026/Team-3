@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -59,11 +60,27 @@ def create_app(
 
     @asynccontextmanager
     async def lifespan(application):
+        recovery_task = None
+        recovery_stop = asyncio.Event()
         try:
             if settings.supabase_auth_enabled and active_database is not None:
                 check_browser_grants(active_database)
+            if active_database is not None and settings.environment != "test":
+                from app.services.automatic_assignment import recover_waiting, recovery_worker
+
+                await asyncio.to_thread(
+                    recover_waiting, active_database, settings, application.state.location_catalog
+                )
+                recovery_task = asyncio.create_task(
+                    recovery_worker(
+                        active_database, settings, application.state.location_catalog, recovery_stop
+                    )
+                )
             yield
         finally:
+            if recovery_task is not None:
+                recovery_stop.set()
+                await recovery_task
             if own_database and active_database is not None:
                 active_database.dispose()
 

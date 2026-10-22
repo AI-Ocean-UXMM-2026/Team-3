@@ -123,6 +123,9 @@ def verify(url: str | None = None) -> int:
             "rider_profiles",
             "delivery_assignments",
             "rider_action_receipts",
+            "allocation_coordinator",
+            "automatic_allocations",
+            "allocation_receipts",
             "workflow_routes",
             "routing_plans",
         ]
@@ -130,7 +133,7 @@ def verify(url: str | None = None) -> int:
         if missing:
             print(f"[!] Warning: Missing expected application tables: {missing}")
         else:
-            print("[+] All 12 canonical application tables present.")
+            print(f"[+] All {len(required_tables)} canonical application tables present.")
 
     except Exception as exc:
         print(f"[-] Error inspecting schema: {exc}")

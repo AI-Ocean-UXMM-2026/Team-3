@@ -301,6 +301,9 @@ def preview(session, actor, settings, query, provider=None):
 
 
 def commit(session, actor, settings, identifier, body, catalog):
+    from app.services.automatic_assignment import lock_allocator
+
+    lock_allocator(session)
     dispatcher(actor)
     session.execute(
         update(RoutingPlan).where(RoutingPlan.id == identifier).values(version=RoutingPlan.version)

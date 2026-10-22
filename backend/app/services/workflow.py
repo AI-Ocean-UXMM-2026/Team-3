@@ -238,6 +238,9 @@ def prepare_assignment(session, actor, identifier, body, settings, catalog, *, c
     A failed/stale attempt must not leave a stray route or half-ready parcel.
     """
     admin(actor)
+    from app.services.automatic_assignment import lock_allocator
+
+    lock_allocator(session)
     from app.db.rider_models import DeliveryAssignment
     from app.schemas.management import ChangeStatus, OrderResponse
     from app.schemas.riders import AssignmentResponse, AssignOrder
@@ -374,6 +377,9 @@ def prepare_assignment(session, actor, identifier, body, settings, catalog, *, c
 
 
 def route_action(session, actor, identifier, body):
+    from app.services.automatic_assignment import lock_allocator
+
+    lock_allocator(session)
     row = route_row(session, identifier, actor, True)
     data = deepcopy(row.data)
     fingerprint = hashlib.sha256(
@@ -414,6 +420,16 @@ def route_action(session, actor, identifier, body):
             session.refresh(order)
             context = parcel(order)
             assignment = active_assignment(session, order.id)
+            if assignment and assignment.response_status != "ACCEPTED":
+                raise OrderAPIError(
+                    409,
+                    "OFFER_ACCEPTANCE_REQUIRED",
+                    "Every rider offer must be accepted before departure.",
+                )
+            if assignment:
+                from app.services.automatic_assignment import require_current_authorization
+
+                require_current_authorization(session, order, assignment)
             if (
                 order.status != OrderStatus.ASSIGNED
                 or not assignment
@@ -553,6 +569,9 @@ def route_action(session, actor, identifier, body):
 
 def order_operation(session, actor, identifier, body):
     admin(actor)
+    from app.services.automatic_assignment import lock_allocator
+
+    lock_allocator(session)
     lock_order(session, identifier)
     order = OrderManagementService(session, actor, None).get(identifier)
     session.refresh(order)
