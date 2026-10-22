@@ -116,3 +116,8 @@ test('delivered stops leave Deliveries and wait on the Cash handover page until 
  e.ctx.location.hash='#/ride/handover';assert.match(e.root.textContent,/In this handover/);assert.match(e.root.textContent,/LP-2046/);assert.ok(e.find('[data-action="submit-cash"]'));
  e.ctx.location.hash='#/ride/history';assert.match(e.root.textContent,/No past deliveries yet/);assert.ok(!e.find('.stop-card'));
 });
+test('language switch shows one language at a time and is offered on every role',async()=>{
+ const e=boot('#/dispatch');assert.ok(e.find('[data-action="lang"]'));await e.action('lang','my');const cls=()=>(e.ctx.document.body.attributes.class||'').split(' ');assert.ok(cls().includes('lang-my'));assert.ok(!cls().includes('lang-en'));
+ await e.action('lang','en');assert.ok(cls().includes('lang-en'));
+ e.ctx.location.hash='#/ride';assert.ok(e.find('.rider-head [data-action="lang"]'));
+});

@@ -959,3 +959,24 @@ body.night .handover-orders li{background:var(--navy-2);color:var(--cream)}
   .check-grid>.left-stack>.chat-pane{order:0}
   .check-grid>.left-stack>.panel{order:3}
 }
+
+/* ---- Language mode: one language at a time (body.lang-en / body.lang-my) ---- */
+.lang-switch{display:inline-flex;flex-shrink:0;border:var(--edge-strong);border-radius:999px;overflow:hidden;background:var(--paper)}
+.lang-switch button{min-height:32px;min-width:44px;padding:0 10px;border:0;background:transparent;color:var(--ink);font:700 .78rem/1 var(--body);cursor:pointer}
+.lang-switch button[lang="my"]{font-family:var(--my);font-weight:600}
+.lang-switch button[aria-pressed="true"]{background:var(--navy);color:var(--cream)}
+.lang-switch button:focus-visible{outline:3px solid var(--saffron);outline-offset:-3px}
+.prototype-bar .lang-switch{margin-left:auto}
+.shop-bar .lang-switch,.rider-head .lang-switch{margin-left:auto;border-color:rgba(255,245,228,.4);background:transparent}
+.shop-bar .lang-switch button,.rider-head .lang-switch button{color:var(--cream);min-height:40px}
+.shop-bar .lang-switch button[aria-pressed="true"],.rider-head .lang-switch button[aria-pressed="true"]{background:var(--cream);color:var(--navy)}
+.rider-head .lang-switch{margin-left:0}
+/* English mode: drop the Burmese half of every bilingual label */
+body.lang-en .my,body.lang-en .bi>[lang="my"]{display:none!important}
+/* Burmese mode: drop the English half; Burmese takes the full size */
+body.lang-my .en,
+body.lang-my .my~span:not(.my):not([lang="my"]):not(.undo-done):not(.num),
+body.lang-my span:not(.my):not([lang="my"]):not(.num):has(~.my),
+body.lang-my .bi>[lang="my"]~span{display:none!important}
+body.lang-my .my,body.lang-my .bi>[lang="my"]{font-size:1em!important;font-weight:inherit;line-height:1.6}
+body.experience .prototype-bar .lang-switch{display:none}
