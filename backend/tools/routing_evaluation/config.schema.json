@@ -1,0 +1,205 @@
+{
+  "$defs": {
+    "ModePrice": {
+      "additionalProperties": false,
+      "properties": {
+        "route_per_request": {
+          "anyOf": [
+            {
+              "maximum": 1000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Route Per Request"
+        },
+        "matrix_unit_price": {
+          "anyOf": [
+            {
+              "maximum": 1000000.0,
+              "minimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Matrix Unit Price"
+        },
+        "matrix_billing_unit": {
+          "enum": [
+            "REQUEST",
+            "ELEMENT"
+          ],
+          "title": "Matrix Billing Unit",
+          "type": "string"
+        },
+        "route_sku": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Route Sku",
+          "type": "string"
+        },
+        "matrix_sku": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Matrix Sku",
+          "type": "string"
+        }
+      },
+      "required": [
+        "route_per_request",
+        "matrix_unit_price",
+        "matrix_billing_unit",
+        "route_sku",
+        "matrix_sku"
+      ],
+      "title": "ModePrice",
+      "type": "object"
+    },
+    "Pricing": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        },
+        "reviewed_on": {
+          "format": "date",
+          "title": "Reviewed On",
+          "type": "string"
+        },
+        "source": {
+          "maxLength": 300,
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "modes": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ModePrice"
+          },
+          "propertyNames": {
+            "enum": [
+              "DRIVE",
+              "TWO_WHEELER"
+            ]
+          },
+          "title": "Modes",
+          "type": "object"
+        }
+      },
+      "required": [
+        "currency",
+        "reviewed_on",
+        "source",
+        "modes"
+      ],
+      "title": "Pricing",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "live_enabled": {
+      "default": false,
+      "title": "Live Enabled",
+      "type": "boolean"
+    },
+    "provider": {
+      "default": "google",
+      "enum": [
+        "google",
+        "ors"
+      ],
+      "title": "Provider",
+      "type": "string"
+    },
+    "modes": {
+      "items": {
+        "enum": [
+          "DRIVE",
+          "TWO_WHEELER"
+        ],
+        "type": "string"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Modes",
+      "type": "array"
+    },
+    "max_requests": {
+      "default": 0,
+      "maximum": 32,
+      "minimum": 0,
+      "title": "Max Requests",
+      "type": "integer"
+    },
+    "max_matrix_elements": {
+      "default": 0,
+      "maximum": 250,
+      "minimum": 0,
+      "title": "Max Matrix Elements",
+      "type": "integer"
+    },
+    "max_stops": {
+      "default": 6,
+      "maximum": 10,
+      "minimum": 1,
+      "title": "Max Stops",
+      "type": "integer"
+    },
+    "request_timeout_seconds": {
+      "default": 10,
+      "exclusiveMinimum": 0,
+      "maximum": 30,
+      "title": "Request Timeout Seconds",
+      "type": "number"
+    },
+    "evaluation_timeout_seconds": {
+      "default": 60,
+      "exclusiveMinimum": 0,
+      "maximum": 120,
+      "title": "Evaluation Timeout Seconds",
+      "type": "number"
+    },
+    "max_estimated_cost": {
+      "anyOf": [
+        {
+          "maximum": 1000.0,
+          "minimum": 0.0,
+          "type": "number"
+        },
+        {
+          "type": "string"
+        }
+      ],
+      "default": "0",
+      "title": "Max Estimated Cost"
+    },
+    "pricing": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Pricing"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "pricing_max_age_days": {
+      "default": 30,
+      "maximum": 90,
+      "minimum": 1,
+      "title": "Pricing Max Age Days",
+      "type": "integer"
+    }
+  },
+  "title": "EvaluationSettings",
+  "type": "object"
+}

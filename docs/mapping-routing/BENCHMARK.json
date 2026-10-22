@@ -1,0 +1,75 @@
+{
+  "label": "SIMULATED / TEST DATA; no measured Yangon road performance",
+  "environment": {
+    "python": "3.14.7",
+    "os": "Windows-11-10.0.26200-SP0",
+    "processor": "Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "database": "isolated SQLite",
+    "transport": "in-process FastAPI TestClient",
+    "ortools": "9.15.6755"
+  },
+  "method": "3 samples/size, 1 second solver budget, 3 riders x 20 capacity; p95 nearest-rank of 3 is max; no live provider calls",
+  "persisted_previews_after_reopen": 12,
+  "results": [
+    {
+      "stops": 5,
+      "matrix_cells": 36,
+      "samples": 3,
+      "assigned_counts": [
+        5,
+        5,
+        5
+      ],
+      "capacity_and_horizon_compliant": true,
+      "matrix_median_ms": 1.214,
+      "solver_median_ms": 1001.774,
+      "api_median_ms": 1034.971,
+      "api_p95_nearest_rank_ms": 1068.229
+    },
+    {
+      "stops": 10,
+      "matrix_cells": 121,
+      "samples": 3,
+      "assigned_counts": [
+        10,
+        10,
+        10
+      ],
+      "capacity_and_horizon_compliant": true,
+      "matrix_median_ms": 4.014,
+      "solver_median_ms": 1000.956,
+      "api_median_ms": 1046.507,
+      "api_p95_nearest_rank_ms": 1046.905
+    },
+    {
+      "stops": 20,
+      "matrix_cells": 441,
+      "samples": 3,
+      "assigned_counts": [
+        20,
+        20,
+        20
+      ],
+      "capacity_and_horizon_compliant": true,
+      "matrix_median_ms": 15.288,
+      "solver_median_ms": 1001.698,
+      "api_median_ms": 1080.828,
+      "api_p95_nearest_rank_ms": 1081.24
+    },
+    {
+      "stops": 50,
+      "matrix_cells": 2601,
+      "samples": 3,
+      "assigned_counts": [
+        50,
+        50,
+        50
+      ],
+      "capacity_and_horizon_compliant": true,
+      "matrix_median_ms": 106.819,
+      "solver_median_ms": 1002.7,
+      "api_median_ms": 1234.225,
+      "api_p95_nearest_rank_ms": 1281.372
+    }
+  ]
+}

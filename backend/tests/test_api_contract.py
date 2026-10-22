@@ -19,7 +19,7 @@ def test_checked_in_openapi_is_generated_from_the_application():
     assert app.openapi() == contract()
     prior_snapshot = BACKEND_ROOT.parent / "docs" / "OPENAPI.json"
     assert json.loads(prior_snapshot.read_text(encoding="utf-8")) == contract()
-    assert sum(len(methods) for methods in app.openapi()["paths"].values()) == 35
+    assert sum(len(methods) for methods in app.openapi()["paths"].values()) == 45
 
 
 def test_health_and_actual_parse_match_openapi_response_contract():

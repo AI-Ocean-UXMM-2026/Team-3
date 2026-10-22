@@ -28,6 +28,9 @@ ALLOWED = {
     "GET": [
         r"/api/session",
         r"/api/routes",
+        r"/api/routes/(provider-status|plans)",
+        r"/api/routes/google-demo/status",
+        rf"/api/routes/plans/{UUID_PATTERN}",
         r"/health",
         r"/api/orders",
         ORDER,
@@ -35,9 +38,13 @@ ALLOWED = {
         r"/api/riders",
         RIDER,
         RIDER + r"/queue",
+        RIDER + r"/route-plans",
     ],
     "POST": [
         r"/api/routes",
+        r"/api/routes/(calculate|matrix|optimize)",
+        r"/api/routes/google-demo",
+        rf"/api/routes/plans/{UUID_PATTERN}/commit",
         rf"/api/routes/{UUID_PATTERN}/actions",
         ORDER + r"/(operations|prepare-assignment)",
         r"/api/orders/parse",
@@ -231,6 +238,13 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
         body = "globalThis.LANNPYA_MAPS=" + json.dumps({"googleKey": maps_key or ""}) + ";"
         return Response(body, media_type="text/javascript")
 
+    @app.get("/runtime-config.js")
+    def runtime_config():
+        return Response(
+            'globalThis.LANNPYA_RUNTIME={mode:"LIVE_BACKEND"};',
+            media_type="text/javascript",
+        )
+
     @app.get("/")
     def index(request: Request):
         return page(request, "index.html")
@@ -390,11 +404,20 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                     (
                         body.method == "GET"
                         and path
-                        in {f"/api/riders/{body.rider_id}/queue", "/api/session", "/api/routes"}
+                        in {
+                            f"/api/riders/{body.rider_id}/queue",
+                            f"/api/riders/{body.rider_id}/route-plans",
+                            "/api/session",
+                            "/api/routes",
+                            "/api/routes/google-demo/status",
+                        }
                     )
                     or (
                         body.method == "POST"
-                        and re.fullmatch(rf"/api/routes/{UUID_PATTERN}/actions", path)
+                        and (
+                            re.fullmatch(rf"/api/routes/{UUID_PATTERN}/actions", path)
+                            or path == "/api/routes/google-demo"
+                        )
                     )
                     or (
                         body.method == "PATCH"

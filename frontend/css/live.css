@@ -1,0 +1,8 @@
+.live-map {height:320px;width:100%;border:1px solid var(--navy,#16263a);border-radius:12px;margin:16px 0}
+.buyer-map-pin span {color:#d23f2e;font-size:32px;line-height:30px}
+.live-notice {padding:12px 20px;background:#16263a;color:#fff5e4;font-size:13px}
+.live-map .leaflet-control-attribution {font-size:10px}
+[hidden] {display:none!important}
+@media(max-width:450px){.live-map{height:260px}}
+
+.routing-panel,.plan-vehicle{min-width:0;overflow-wrap:anywhere}.routing-panel fieldset{min-width:0;border:1px solid #baa98b;padding:16px;margin:16px 0}.routing-panel label{display:block;margin:8px 0}.routing-panel .inline-check{display:flex;align-items:flex-start;gap:8px}.routing-panel input:not([type=checkbox]),.routing-panel select{max-width:100%;box-sizing:border-box}.routing-panel .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}.routing-panel li{margin:8px 0}.plan-vehicle{padding:12px;border-top:1px solid #baa98b}

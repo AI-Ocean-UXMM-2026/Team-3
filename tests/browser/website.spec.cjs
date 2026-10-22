@@ -164,6 +164,14 @@ test('rider failure, cancellation of modal, refresh and physical return requirem
   await shot(page,'rider-failed');
 });
 
+test('rider navigation waits for a pending dispatch refresh before connecting',async({page})=>{
+  const id=await create(page,{pin:true});await assignDispatch(page);
+  await page.locator('.role-switch a[href="#/rider"]').click();
+  await page.locator('#connect-form button[type=submit]').click();
+  await expect(page.locator('.current-stop')).toBeVisible();
+  expect((await inspect(page,'/api/orders/'+id)).status).toBe('OUT_FOR_DELIVERY');
+});
+
 test('local boundary rejects anonymous private reads, forged CSRF and invalid buyer tokens',async({page,browser,app})=>{
   await enter(page);
   const anonymous=await browser.newContext();const outsider=await anonymous.newPage();
@@ -326,9 +334,12 @@ test('route form rejects past dates then saves a real draft route',async({page})
 });
 
 test('separate browser prototype is clearly simulated and does not write to the backend',async({page})=>{
-  await page.goto('/');
-  await expect(page.locator('.prototype-bar')).toContainText('Local prototype');
+  const writes=[];page.on('request',r=>{if(r.url().endsWith('/dashboard/api')&&r.postDataJSON()?.method!=='GET')writes.push(r.postDataJSON()?.path);});
+  await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
+  await page.goto('/prototype.html');
+  await expect(page.locator('.prototype-bar')).toContainText('DEMO_SIMULATION');
   await expect(page.locator('#app')).not.toBeEmpty();
+  expect(writes).toEqual([]);
   await shot(page,'explicit-browser-simulation');
 });
 
