@@ -46,3 +46,7 @@ immutabledict==4.3.1
 python-dateutil==2.9.0.post0
 six==1.17.0
 tzdata==2026.5
+
+# PostgreSQL driver for Supabase and hosted database connectivity
+psycopg==3.3.6
+psycopg-binary==3.3.6
