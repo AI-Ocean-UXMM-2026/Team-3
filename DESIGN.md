@@ -24,21 +24,21 @@ colors:
   night-muted: "#B6C5D8"
 typography:
   heading:
-    fontFamily: "Inter, system-ui, sans-serif"
+    fontFamily: "Big Shoulders Display, Noto Sans Myanmar, Impact, sans-serif"
     fontSize: "clamp(1.6rem, 1.2rem + 1.4vw, 2.2rem)"
     fontWeight: 750
     lineHeight: 1.15
     letterSpacing: "-0.02em"
   body:
-    fontFamily: "Manrope, Noto Sans Myanmar, system-ui, sans-serif"
+    fontFamily: "Public Sans, Noto Sans Myanmar, system-ui, sans-serif"
     fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.65
   burmese:
-    fontFamily: "Noto Sans Myanmar, Manrope, sans-serif"
+    fontFamily: "Noto Sans Myanmar, Public Sans, sans-serif"
     lineHeight: 1.8
   cash:
-    fontFamily: "Inter, system-ui, sans-serif"
+    fontFamily: "Big Shoulders Display, Noto Sans Myanmar, Impact, sans-serif"
     fontSize: "2.2rem"
     fontWeight: 750
     lineHeight: 1
@@ -98,7 +98,7 @@ Night mode is explicitly selected in the rider view. It sets a dark page ground,
 
 ## Typography
 
-Inter at optical size 32 carries headings, sign counts and cash. Manrope carries English body text. Noto Sans Myanmar carries Burmese; use `lang="my"` when authoring new Burmese text. Burmese defaults to 1.8 line height, including lane labels. Compact rider action labels use their established 1.4–1.5 values and must be checked for stacked marks and wrapping.
+Signpaint type (chosen 22 Oct): Big Shoulders Display, condensed capitals like painted Yangon shop signs, carries page titles, lane signs, counts and money only. Public Sans carries names, section headings and all running text. Spacing uses a 4 px scale (`--s1`…`--s14`): the dispatcher is dense (12–16 px card padding, 40 px buttons), the rider roomy (48 px buttons, 56 px main actions, 24 px between blocks), the buyer one calm column (20 px padding, 32 px between steps). A language switch shows English or Burmese, one at a time. Noto Sans Myanmar carries Burmese; use `lang="my"` when authoring new Burmese text. Burmese defaults to 1.8 line height, including lane labels. Compact rider action labels use their established 1.4–1.5 values and must be checked for stacked marks and wrapping.
 
 Use sentence case, a clear heading scale and tabular numerals. Amounts display as `35,000 Ks`. Preserve exact amounts; do not round. Headings use -0.02em tracking; do not tighten Burmese text. Controls wrap rather than truncate essential actions. English remains visible beneath Burmese in rider dialogs for bilingual use.
 
