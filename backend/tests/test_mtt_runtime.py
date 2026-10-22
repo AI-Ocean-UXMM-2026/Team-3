@@ -17,6 +17,8 @@ def test_live_runtime_is_explicit_private_no_store_and_has_real_ui_assets():
         runtime = client.get("/runtime-config.js")
         assert "LIVE_BACKEND" in runtime.text
         assert runtime.headers["cache-control"] == "no-store"
+        assert "style-src-attr 'unsafe-inline'" in runtime.headers["content-security-policy"]
+        assert "script-src 'self';" in runtime.headers["content-security-policy"]
         assert "secret" not in runtime.text.lower()
         root = client.get("/").text
         for asset in ("live-bootstrap.js", "customer-map.js", "runtime-config.js"):

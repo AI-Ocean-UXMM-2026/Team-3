@@ -5,7 +5,7 @@
   "scripts": {
     "start": "node scripts/start_local.cjs",
     "build": "node scripts/build_frontend.cjs",
-    "test:frontend": "node --test frontend/tests/workflow-domain.test.js frontend/tests/order-parser.test.js frontend/tests/functional-app.test.js frontend/tests/api-model.test.mjs backend/tools/api_workspace/tests/api-workspace.test.mjs frontend/tests/local-api.test.mjs frontend/tests/live-store.test.mjs frontend/tests/routing-ui.test.mjs",
+    "test:frontend": "node --test frontend/tests/workflow-domain.test.js frontend/tests/order-parser.test.js frontend/tests/functional-app.test.js frontend/tests/api-model.test.mjs backend/tools/api_workspace/tests/api-workspace.test.mjs frontend/tests/local-api.test.mjs frontend/tests/live-store.test.mjs frontend/tests/routing-ui.test.mjs frontend/tests/auth.test.mjs frontend/tests/demo-rider-auth.test.js",
     "test:integration": "node --test backend/tools/api_workspace/tests/integration-http.test.mjs",
     "test:dashboard": "node --test docs/examples/lannpya-client.test.mjs tools/backend-test-dashboard/dashboard.test.cjs tools/backend-test-dashboard/dashboard-http.test.cjs",
     "test:parser": "npm --prefix order-parser test",
@@ -19,9 +19,11 @@
     "node": ">=22.18"
   },
   "devDependencies": {
-    "@playwright/test": "1.64.1"
+    "@playwright/test": "1.64.1",
+    "esbuild": "0.28.2"
   },
   "dependencies": {
+    "@supabase/supabase-js": "2.118.0",
     "leaflet": "1.9.4"
   }
 }

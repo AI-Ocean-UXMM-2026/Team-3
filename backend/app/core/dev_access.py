@@ -2,7 +2,7 @@ import hmac
 import ipaddress
 
 from fastapi import Depends, Request
-from fastapi.security import APIKeyHeader
+from fastapi.security import APIKeyHeader, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.order_errors import OrderAPIError
@@ -14,10 +14,21 @@ access_header = APIKeyHeader(
     auto_error=False,
     description="Local-only development token; not production authentication.",
 )
+bearer_header = HTTPBearer(
+    auto_error=False,
+    description="Supabase user access token when Supabase authentication is enabled.",
+)
 
 
-def require_dev_access(request: Request, token: str | None = Depends(access_header)) -> None:
+def require_dev_access(
+    request: Request, token: str | None = Depends(access_header), bearer=Depends(bearer_header)
+) -> None:
     settings = request.app.state.settings
+    if settings.supabase_auth_enabled:
+        from app.core.supabase_auth import require_supabase_access
+
+        require_supabase_access(request)
+        return
     if (
         settings.environment not in {"local", "test"}
         or not settings.order_management_enabled
@@ -64,8 +75,17 @@ def get_session(request: Request, access=Depends(require_dev_access)):
 
 
 def get_bound_actor(request: Request, session: Session = Depends(get_session)) -> User:
-    actor = session.get(User, request.app.state.settings.dev_actor_id)
+    subject = (
+        getattr(request.state, "auth_subject", None)
+        if request.app.state.settings.supabase_auth_enabled
+        else request.app.state.settings.dev_actor_id
+    )
+    actor = session.get(User, subject) if subject else None
     if actor is None:
+        if request.app.state.settings.supabase_auth_enabled:
+            raise OrderAPIError(
+                403, "ACCOUNT_NOT_PROVISIONED", "Your hub has not enabled this account yet."
+            )
         raise OrderAPIError(403, "DEV_ACTOR_UNAVAILABLE", "Development actor is unavailable.")
     return actor
 

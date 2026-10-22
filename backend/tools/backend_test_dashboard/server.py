@@ -214,7 +214,9 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 "Content-Security-Policy": (
                     f"default-src 'self'; script-src 'self'{maps_script}; "
                     f"style-src 'self' https://fonts.googleapis.com{maps_style}; "
-                    "font-src 'self' https://fonts.gstatic.com; "
+                    # Existing Signboard logo/motion uses CSS variables in style attributes.
+                    + ("style-src-attr 'unsafe-inline'; " if frontend is not None else "")
+                    + "font-src 'self' https://fonts.gstatic.com; "
                     f"connect-src 'self'{maps_connect}; "
                     f"img-src 'self' data: https://tile.openstreetmap.org{maps_img}; "
                     f"{maps_extra}frame-ancestors 'none'; "

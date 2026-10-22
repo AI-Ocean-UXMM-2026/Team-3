@@ -1,2 +1,3 @@
-// Static hosting is an explicitly simulated workspace. The local server overrides this route.
-globalThis.LANNPYA_RUNTIME={mode:'DEMO_SIMULATION'};
+// The secure server or configured static build replaces this public configuration.
+// No fallback to demo accounts on the main application. Use prototype.html explicitly.
+globalThis.LANNPYA_RUNTIME={mode:'CONFIG_REQUIRED'};

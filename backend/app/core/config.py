@@ -1,9 +1,11 @@
+import base64
+import json
 from pathlib import Path
 from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import AliasChoices, Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,6 +41,46 @@ class Settings(BaseSettings):
     routing_requests_per_minute: int = Field(default=10, ge=1, le=60)
     routing_plan_ttl_minutes: int = Field(default=15, ge=1, le=60)
     order_management_enabled: bool = False
+    supabase_auth_enabled: bool = False
+    supabase_url: str | None = None
+    supabase_publishable_key: str | None = None
+    buyer_rate_limit_secret: SecretStr | None = None
+
+    @model_validator(mode="after")
+    def auth_configuration(self):
+        if self.supabase_auth_enabled:
+            parsed = urlsplit(self.supabase_url or "")
+            if (
+                parsed.scheme != "https"
+                or not parsed.hostname
+                or parsed.username
+                or parsed.password
+                or parsed.path not in {"", "/"}
+                or parsed.query
+                or parsed.fragment
+                or not self.supabase_publishable_key
+            ):
+                raise ValueError(
+                    "Supabase Auth requires an HTTPS project origin and publishable key"
+                )
+            self.supabase_url = self.supabase_url.rstrip("/")
+            key = self.supabase_publishable_key
+            public = key.startswith("sb_publishable_")
+            if not public:
+                try:
+                    payload = key.split(".")[1]
+                    public = (
+                        json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))[
+                            "role"
+                        ]
+                        == "anon"
+                    )
+                except (ValueError, KeyError, IndexError):
+                    public = False
+            if not public:
+                raise ValueError("Supabase browser configuration requires a publishable/anon key")
+        return self
+
     database_url: SecretStr = Field(
         default=SecretStr("sqlite+pysqlite:///./data/lannpya_dev.sqlite3"),
         validation_alias=AliasChoices("LANNPYA_DATABASE_URL", "DATABASE_URL"),

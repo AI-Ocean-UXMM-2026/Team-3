@@ -62,8 +62,13 @@ class PrepareAssignment(BaseModel):
 
 
 @router.get("/session")
-def session_info(actor: RiderActor) -> dict:
-    return {"id": str(actor.id), "name": actor.name, "role": actor.role.value, "local_only": True}
+def session_info(request: Request, actor: RiderActor) -> dict:
+    return {
+        "id": str(actor.id),
+        "name": actor.name,
+        "role": actor.role.value,
+        "local_only": not request.app.state.settings.supabase_auth_enabled,
+    }
 
 
 @router.get("/routes")

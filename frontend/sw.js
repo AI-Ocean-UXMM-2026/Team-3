@@ -1,6 +1,6 @@
 /* Cache only this prototype's static shell. Never cache API or remote map data. */
-const CACHE='lannpya-static-v9-type';
-const FILES=['./prototype.html','./demo-config.js','./css/signboard.css?v=0.9.3','./vendor/lannpya-order-parser.js?v=0.1.0','./js/workflow-domain.js?v=0.9.3','./js/functional-app.js?v=0.9.3'];
+const CACHE='lannpya-static-v10-rider-gmail-password';
+const FILES=['./prototype.html','./demo-config.js','./css/signboard.css?v=0.9.3','./vendor/lannpya-order-parser.js?v=0.1.0','./js/workflow-domain.js?v=0.9.3','./js/demo-rider-auth.js','./js/functional-app.js?v=0.9.3'];
 const allowed=new Set(FILES.map(f=>new URL(f,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('lannpya-static-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

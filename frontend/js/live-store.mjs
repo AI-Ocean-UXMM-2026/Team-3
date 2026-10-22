@@ -44,7 +44,9 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       for(const q of queueRows){const pin=point(q.latitude,q.longitude);projected.set(q.order_id,{...(projected.get(q.order_id)||{}),id:q.order_id,version:q.order_version,name:q.customer_name||'',phone:q.customer_phone||'',street:q.street||'',landmark:q.landmark||'',note:q.delivery_instructions||'',floor:q.building_floor_unit||'',areaId:q.township,state:states[q.status],pin,anchor:null,location:q.coordinate_status,navigationUrl:q.navigation_ready?q.navigation_url:null,expected:q.cod_amount==null?null:Number(q.cod_amount),payment:Number(q.cod_amount)===0?'prepaid':'cod',time:q.delivery_time_window||W.ANY_TIME,date:'',attempts:[],confirmation:q.buyer_confirmation?.last_confirmed_at?{answer:({AVAILABLE:'At home',RESCHEDULE:'Rescheduled',LEAVE_WITH_SECURITY:'Leave with security'})[q.buyer_confirmation.availability]||'Location only; availability unconfirmed',time:q.delivery_time_window||W.ANY_TIME}:null});}
       state.orders=[...projected.values()];state.events=[];return;
     }
-    await connect('admin');const [orders,routes,riders]=await Promise.all([all('admin','/api/orders'),all('admin','/api/routes'),all('admin','/api/riders')]);
+    await connect('admin');
+    if(api.auth){const actual=api.connections.admin.actor;W.ACTORS.admin={id:actual.id,name:actual.name,role:'admin',hubId:'workspace'};}
+    const [orders,routes,riders]=await Promise.all([all('admin','/api/orders'),all('admin','/api/routes'),all('admin','/api/riders')]);
     state.riders=riders;state.riderPlans=[];
     state.plans=target.split('/')[0]==='routes'?await all('admin','/api/routes/plans'):[];
     remember(orders);state.routes=rows(routes);

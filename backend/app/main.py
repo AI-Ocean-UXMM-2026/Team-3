@@ -20,6 +20,7 @@ from app.api.routing import router as routing_router
 from app.api.workflow import router as workflow_router
 from app.core.access_logging import install_access_filter
 from app.core.config import Settings
+from app.core.database_security import check_browser_grants
 from app.core.order_errors import OrderAPIError
 from app.db.session import Database
 from app.parsing.places import LocationCatalog
@@ -49,7 +50,9 @@ def create_app(
     settings = settings if settings is not None else Settings()
     own_database = database is None
     active_database = None
-    if settings.order_management_enabled and settings.environment in {"local", "test"}:
+    if settings.order_management_enabled and (
+        settings.environment in {"local", "test"} or settings.supabase_auth_enabled
+    ):
         active_database = (
             database if database is not None else Database(settings.database_url.get_secret_value())
         )
@@ -57,6 +60,8 @@ def create_app(
     @asynccontextmanager
     async def lifespan(application):
         try:
+            if settings.supabase_auth_enabled and active_database is not None:
+                check_browser_grants(active_database)
             yield
         finally:
             if own_database and active_database is not None:

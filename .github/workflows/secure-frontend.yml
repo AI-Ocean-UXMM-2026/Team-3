@@ -1,0 +1,28 @@
+name: Build Supabase frontend
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run test:frontend
+      - run: |
+          node -e "for (const key of ['LANNPYA_SUPABASE_URL','LANNPYA_SUPABASE_PUBLISHABLE_KEY','LANNPYA_API_BASE_URL']) if (!process.env[key]) throw Error('Missing configured build input: '+key)"
+          npm run build
+        env:
+          LANNPYA_SUPABASE_URL: ${{ vars.LANNPYA_SUPABASE_URL }}
+          LANNPYA_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.LANNPYA_SUPABASE_PUBLISHABLE_KEY }}
+          LANNPYA_API_BASE_URL: ${{ vars.LANNPYA_API_BASE_URL }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: secure-frontend
+          path: frontend/dist
+          retention-days: 7

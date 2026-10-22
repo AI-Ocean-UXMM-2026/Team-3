@@ -1,5 +1,10 @@
 # LannPya AI - MTT local integration
 
+Supabase login/logout, email-code recovery, role provisioning, and secure deployment
+configuration: [authentication setup](docs/SUPABASE_AUTH_SETUP.md). The existing
+Signboard visual design is preserved. Live Supabase credentials and email delivery
+still need operator configuration; `npm start` remains the separate local sandbox.
+
 Development reference: `mtt`. This feature worktree connects MTT's Signboard
 dispatcher/customer/rider UI to the existing FastAPI/SQLAlchemy backend through the
 protected local BFF. Private credentials stay server-side. Real rules parsing;

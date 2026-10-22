@@ -14,7 +14,14 @@ def public_database(request: Request):
     settings = request.app.state.settings
     database = request.app.state.database
     if (
-        settings.environment not in {"local", "test"}
+        (
+            settings.environment not in {"local", "test"}
+            and not (
+                settings.supabase_auth_enabled
+                and settings.buyer_rate_limit_secret
+                and len(settings.buyer_rate_limit_secret.get_secret_value()) >= 32
+            )
+        )
         or not settings.order_management_enabled
         or database is None
     ):
@@ -32,7 +39,10 @@ def consume_rate_limit(request: Request, verify=False):
     scope = "verify" if verify else "public"
     peer = request.client.host if request.client else "unknown"
     # No plaintext IP is retained. Stable salted hashes work across app workers/restarts.
-    secret = request.app.state.settings.dev_access_token
+    secret = (
+        request.app.state.settings.buyer_rate_limit_secret
+        or request.app.state.settings.dev_access_token
+    )
     salt = secret.get_secret_value() if secret else "local-buyer-rate-limiter"
     key = hashlib.sha256(f"{salt}:{peer}:{scope}:{bucket}".encode()).hexdigest()
     settings = request.app.state.settings

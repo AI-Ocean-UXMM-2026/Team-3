@@ -36,6 +36,7 @@ test-results.xml
 
 .tmp-*.txt
 frontend/dist/
+frontend/vendor/supabase.mjs
 workspace_access.json
 test-results/
 playwright-report/
