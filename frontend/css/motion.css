@@ -69,7 +69,7 @@ body.signed-out .content{padding:0}
 .bi-field legend{display:flex;flex-direction:column;padding:0;margin-bottom:6px}
 .bi-field input{margin-top:6px}
 .pin-boxes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-.pin-boxes input{min-width:0;width:100%;height:60px;text-align:center;font:800 1.8rem/1 var(--display);border:var(--edge-strong);border-radius:var(--r-sm);background:#fff;color:var(--navy);transition:border-color .15s ease,transform 160ms var(--ease-out)}
+.pin-boxes input{min-width:0;width:100%;height:60px;text-align:center;font:700 1.6rem/1 var(--display);border:var(--edge-strong);border-radius:var(--r-sm);background:#fff;color:var(--navy);transition:border-color .15s ease,transform 160ms var(--ease-out)}
 .pin-boxes input.filled{transform:translateY(-2px)}
 .bi-label{display:flex;flex-direction:column;align-items:center;line-height:1.25}
 .bi-label .my{font:700 1.1rem/1.6 var(--my)}
@@ -106,7 +106,7 @@ body.pop-open{overflow:hidden}
 @keyframes pop-fade{from{opacity:0}}
 @keyframes pop-in{from{opacity:0;transform:translateY(16px) scale(.985)}}
 .pop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--navy);color:var(--cream)}
-.pop-head h2{margin:0;font:800 1.5rem/1 var(--display);text-transform:uppercase;letter-spacing:var(--sign-track)}
+.pop-head h2{margin:0;font:700 1.35rem/1.15 var(--display);letter-spacing:-.02em}
 .pop-head .btn{background:transparent;color:var(--cream);border-color:rgba(255,245,228,.45)}
 .pop-body{overflow:auto;padding:14px;display:grid;grid-auto-rows:max-content;gap:12px}
 .pop-body>.action-row:last-child{position:sticky;bottom:-14px;margin:0 -14px -14px;padding:12px 16px;background:var(--paper);border-top:var(--edge)}
@@ -256,7 +256,7 @@ main.lang-swap{animation:lang-swap 180ms var(--ease-out)}
 .hub-steps li.on i::after{transform:none}
 .hub-sign{background:var(--navy);color:var(--cream);border-radius:var(--r);padding:14px 16px;display:grid;gap:2px}
 .hub-sign .my{font:700 1.05rem/1.7 var(--my);color:var(--saffron)}
-.hub-sign h2{margin:0;font:800 1.6rem/1 var(--display);text-transform:uppercase;letter-spacing:var(--sign-track,0);color:var(--cream)}
+.hub-sign h2{margin:0;font:700 1.35rem/1.15 var(--display);letter-spacing:-.02em;color:var(--cream)}
 .hub-sign p{margin:6px 0 0;font-size:.88rem;color:#C9D1DC}
 .hub-sign .hub-demo{margin-top:2px;font-size:.78rem;color:#9FB0C4}
 body.lang-en .hub-sign .my,body.lang-en .map-sheet-card .my{display:block!important}
@@ -274,7 +274,7 @@ body.lang-en .hub-sign .my,body.lang-en .map-sheet-card .my{display:block!import
 .pick-text{display:grid;min-width:0}
 .pick-text strong{font-size:.92rem}
 .pick-text span{font-size:.8rem;color:var(--ink-2)}
-.pick-cash{margin-left:auto;font:800 1.1rem/1 var(--display);white-space:nowrap}
+.pick-cash{margin-left:auto;font:700 1rem/1 var(--display);white-space:nowrap}
 .hub-pickup .btn.go.tall{min-height:64px;font-size:1.05rem}
 .hub-pickup .btn.go[disabled]{opacity:.55;cursor:not-allowed}
 .stop-card.arrive{animation:lp-arrive 260ms var(--ease-out) 60ms both}
@@ -303,7 +303,7 @@ body.lang-en .hub-sign .my,body.lang-en .map-sheet-card .my{display:block!import
 .map-sheet-card{position:relative;z-index:500;margin-top:-24px;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--paper);border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(22,38,58,.16);display:grid;gap:4px;touch-action:none;cursor:grab;transform:translateY(16px);opacity:0;transition:transform 300ms var(--ease-out),opacity 200ms ease}
 .map-sheet.settled .map-sheet-card{transform:none;opacity:1;transition-delay:120ms}
 .map-sheet-card .grab{justify-self:center;width:36px;height:4px;border-radius:2px;background:#D9CDB8;margin-bottom:6px}
-.map-sheet-card strong{font:800 1.4rem/1 var(--display);text-transform:uppercase}
+.map-sheet-card strong{font:700 1.2rem/1.15 var(--display);letter-spacing:-.02em}
 .map-sheet-card .my{font:600 .9rem/1.7 var(--my);color:var(--ink-2)}
 .map-sheet-card p{margin:0;font-size:.88rem;color:var(--ink-2)}
 
@@ -338,7 +338,7 @@ body.lang-en .rider-add label .my{display:inline!important}
 @keyframes lp-flash{to{box-shadow:inset 0 0 0 2px transparent}}
 .invite-card{margin-top:16px;padding:16px;border-radius:var(--r);background:var(--navy);color:var(--cream);display:grid;gap:8px}
 .invite-card .eyebrow{font:700 .72rem/1.3 var(--body);text-transform:uppercase;letter-spacing:.06em;color:#C9D1DC}
-.invite-code{margin:0;display:flex;gap:4px;font:800 2.4rem/1 var(--display);letter-spacing:.04em;color:var(--saffron)}
+.invite-code{margin:0;display:flex;gap:4px;font:700 2rem/1 var(--display);letter-spacing:.04em;color:var(--saffron)}
 .invite-code span{display:inline-block}
 .invite-card.reveal .invite-code span{animation:lp-char 180ms var(--ease-out) both;animation-delay:calc(var(--i) * 30ms + 200ms)}
 @keyframes lp-char{from{opacity:0;transform:translateY(6px)}}
