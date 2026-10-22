@@ -1030,3 +1030,15 @@ body.role-customer .customer-card>*{margin-block:0}
 body.role-customer .customer-step{display:grid;gap:var(--s4)}
 body.role-customer .customer-primary,body.role-customer .customer-secondary{min-height:var(--s14)}
 :lang(my),.my,[lang="my"]{line-height:1.7}
+
+/* Rider pages (22 Oct): the ☰ menu and bottom bar share four pages */
+.rider-menu .rider-tab{display:flex;align-items:center;gap:12px;min-height:52px;text-decoration:none;color:inherit}
+.rider-menu .rider-tab .icon{flex-shrink:0;width:20px;height:20px}
+.rider-menu .rider-tab .bi{flex:1}
+.rider-bottom-nav{grid-template-columns:repeat(4,1fr)}
+.rider-bottom-nav a{font-size:.78rem;padding-inline:2px}
+.rider-empty{display:grid;justify-items:start;gap:var(--s3);padding:var(--s6)}
+.rider-empty>.icon{width:32px;height:32px;padding:6px;border-radius:50%;background:var(--cream-2);color:var(--ink-2)}
+.rider-empty h2,.rider-empty p{margin:0}
+.returns-list .pill{flex-shrink:0}
+.rider-menu .rider-tab:not(.active){color:var(--ink)}.rider-menu .rider-tab:not(.active) .icon{color:var(--ink-2)}body.night .rider-menu .rider-tab:not(.active){color:var(--cream)}

@@ -121,3 +121,8 @@ test('language switch shows one language at a time and is offered on every role'
  await e.action('lang','en');assert.ok(cls().includes('lang-en'));
  e.ctx.location.hash='#/ride';assert.ok(e.find('.rider-head [data-action="lang"]'));
 });
+test('rider menu opens four separate pages and an empty Returned page says so',async()=>{
+ const e=boot('#/ride',departed);const links=e.all('.rider-menu a.rider-tab').map(a=>a.attributes.href);assert.deepEqual(links,['#/ride','#/ride/returns','#/ride/handover','#/ride/history']);
+ e.ctx.location.hash='#/ride/returns';assert.match(e.root.textContent,/No returned orders/);assert.ok(!e.find('.stop-card'));assert.ok(!e.find('#local-ride-queue'));
+ const f=boot('#/ride/returns',s=>{departed(s);s.execute('fail',{id:'LP-2046',reason:W.REASONS[0],resolution:'return'},R);});assert.match(f.root.textContent,/LP-2046/);assert.doesNotMatch(f.root.textContent,/No returned orders/);
+});
