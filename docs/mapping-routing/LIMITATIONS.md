@@ -1,8 +1,11 @@
 # Remaining limitations and release boundaries
 
-- Routing is currently SIMULATED on an invented fixture graph. Google and ORS
-  adapters have mock HTTP tests only. Keys, owner approval for outbound/metered
-  calls, quotas, regional road quality and provider terms remain prerequisites.
+- Optimization remains SIMULATED on an invented fixture graph. One separately
+  authorized Google DRIVE request succeeded in Phase 27; this is not evidence for
+  matrix support, live traffic, regional coverage or production readiness. Phase 28
+  adds default-disabled single-order Google estimates with a durable global budget.
+  Phase 28 itself uses mock responses only; ORS remains mock-tested. Additional
+  live requests require separate owner approval. See GOOGLE_DISPATCHER_INTEGRATION.md.
 - No live traffic-aware ETA, independent geocoding accuracy, township boundaries,
   real-time rider tracking or guaranteed global route optimum is claimed.
 - A buyer/dispatcher-approved pin is not independently verified. GREEN remains

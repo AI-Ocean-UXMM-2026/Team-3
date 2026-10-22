@@ -65,6 +65,36 @@ class RoadRoute(StrictModel):
     attribution: str
 
 
+class GoogleEstimateQuery(StrictModel):
+    order_id: UUID
+    origin: Coordinate
+    request_id: UUID
+    authorize_external_request: Literal[True]
+
+    @field_validator("authorize_external_request", mode="before")
+    @classmethod
+    def explicit_boolean(cls, value):
+        if value is not True:
+            raise ValueError("Explicit boolean authorization is required")
+        return value
+
+
+class GoogleEstimate(StrictModel):
+    observation: Literal["GOOGLE_LIVE", "GOOGLE_MOCK"]
+    order_id: UUID
+    request_id: UUID
+    route: RoadRoute
+
+
+class GoogleEstimateStatus(StrictModel):
+    enabled: bool
+    maximum_requests: int
+    reserved_requests: int
+    remaining_requests: int
+    explicit_consent_required: Literal[True] = True
+    matrix_supported: Literal[False] = False
+
+
 class MatrixQuery(StrictModel):
     locations: list[Coordinate] = Field(min_length=2, max_length=51)
     mode: Mode = "DRIVE"
@@ -122,6 +152,7 @@ class PlanningOrder(StrictModel):
     order_id: UUID
     demand: int = Field(default=1, ge=1, le=200, strict=True)
     service_seconds: int = Field(default=180, ge=0, le=3600, strict=True)
+    priority: int = Field(default=0, ge=0, le=5, strict=True)
 
 
 class PlanQuery(StrictModel):
@@ -160,6 +191,8 @@ class PlannedStop(StrictModel):
     demand: int
     latitude: float
     longitude: float
+    priority: int = 0
+    delivery_window: TimeWindow | None = None
 
 
 class PlannedVehicle(StrictModel):
@@ -170,6 +203,8 @@ class PlannedVehicle(StrictModel):
     travel_seconds: int = Field(ge=0)
     geometry: Geometry | None = None
     geometry_warning: str | None = None
+    capacity: int | None = None
+    load: int | None = None
 
 
 class OptimizationResult(StrictModel):

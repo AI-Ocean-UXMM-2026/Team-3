@@ -7,6 +7,19 @@ Input supports one hub, up to 50 selected orders (configured default 25), up to
 service time, a timezone-aware operating period of at most 24 hours, distance or
 duration objective, and optional return to hub. Solver time is 1–10 seconds.
 
+Phase 30 adds optional per-order `priority` from 0 (normal) to 5 (urgent).
+Priority increases the penalty for leaving that stop unassigned; it influences
+selection under overload, not a promise to visit urgent stops first. Hard capacity,
+time-window, service and assignment constraints are never relaxed. Default 0
+preserves previous behavior. A bounded heuristic does not guarantee that every
+priority preference is globally optimal.
+
+Preview/saved output includes each vehicle's `capacity` and `load`, each stop's
+`priority` and resolved `delivery_window`. These are displayed in the dispatcher
+and rider plan cards. Old saved plans remain readable; missing historical capacity
+is explicitly shown as not recorded. Priorities are deliberate per-preview inputs,
+not an automatically inferred customer property or an order database schema change.
+
 Delivery windows come from the stored order, not an untrusted frontend override.
 Both approved ISO start/end windows and native MTT `HH:mm–HH:mm`/`HH:mm-HH:mm`
 windows anchored to the parcel's Yangon delivery day are supported. Unsupported

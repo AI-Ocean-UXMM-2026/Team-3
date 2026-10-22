@@ -26,6 +26,11 @@ class Settings(BaseSettings):
     environment: Literal["local", "test", "production"] = "local"
     routing_provider: Literal["disabled", "offline", "google", "ors"] = "offline"
     routing_external_requests_enabled: bool = False
+    google_demo_enabled: bool = False
+    google_demo_max_requests: int = Field(default=0, ge=0, le=10)
+    google_demo_budget_directory: Path = (
+        Path(__file__).resolve().parents[3] / ".tmp/google-dispatch-budget"
+    )
     google_routes_api_key: SecretStr | None = None
     ors_api_key: SecretStr | None = None
     routing_two_wheeler_enabled: bool = False

@@ -86,6 +86,7 @@
 
   // Read-only pin for the rider and the buyer. Without a key the node keeps its fallback text and link.
   async function view(node){
+    if(!node.dataset.lat?.trim()||!node.dataset.lng?.trim())return;
     const a=Number(node.dataset.lat),b=Number(node.dataset.lng);
     if(!valid(a,b))return;
     const g=await loadGoogle();
@@ -118,8 +119,9 @@
       if(!g){node.textContent='Google map unavailable. Route geometry is withheld; use the navigation link.';return;}
       const path=geometry.coordinates.map(([lng,lat])=>({lat,lng}));
       const map=new g.Map(node,{center:path[0],zoom:14,mapTypeControl:false,streetViewControl:false});
-      const line=new g.Polyline({path,map,strokeColor:'#D23F2E'}),bounds=new g.LatLngBounds();path.forEach(p=>bounds.extend(p));map.fitBounds(bounds);
-      mounted.push(()=>{line.setMap(null);g.event.clearInstanceListeners(map);node.replaceChildren();});return;
+      const line=new g.Polyline({path,map,strokeColor:'#D23F2E'}),bounds=new g.LatLngBounds();path.forEach(p=>bounds.extend(p));stops.forEach(s=>bounds.extend({lat:s.latitude,lng:s.longitude}));map.fitBounds(bounds);
+      const pins=[{position:path[0],title:'Road route start'},{position:path.at(-1),title:'Road route end'},...stops.map(s=>({position:{lat:s.latitude,lng:s.longitude},title:`Approved stop ${s.sequence}; geospatial accuracy unverified`}))].map(p=>new g.Marker({...p,map}));
+      mounted.push(()=>{pins.forEach(p=>p.setMap(null));line.setMap(null);g.event.clearInstanceListeners(map);node.replaceChildren();});return;
     }
     if(!globalThis.L){node.textContent='Map library unavailable. The ordered stop list remains available.';return;}
     const map=L.map(node),line=L.geoJSON(geometry,{style:{color:'#D23F2E',weight:4}}).addTo(map);

@@ -12,6 +12,9 @@ from app.domain.lifecycle import UserRole
 from app.routing.factory import provider_for
 from app.schemas.errors import ErrorResponse
 from app.schemas.routing import (
+    GoogleEstimate,
+    GoogleEstimateQuery,
+    GoogleEstimateStatus,
     MatrixQuery,
     PlanCommit,
     PlanPage,
@@ -22,6 +25,7 @@ from app.schemas.routing import (
     RouteQuery,
     RoutingStatus,
 )
+from app.services import google_estimates
 from app.services import route_planning as planning
 
 router = APIRouter(
@@ -37,6 +41,25 @@ router = APIRouter(
 def provider(request, allow_simulation):
     return getattr(request.app.state, "routing_provider_override", None) or provider_for(
         request.app.state.settings, allow_simulation
+    )
+
+
+@router.get("/routes/google-demo/status", response_model=GoogleEstimateStatus)
+def google_status(request: Request, actor: RiderActor):
+    google_estimates.permitted(actor)
+    return google_estimates.status(request.app.state.settings)
+
+
+@router.post("/routes/google-demo", response_model=GoogleEstimate)
+def google_estimate(
+    body: GoogleEstimateQuery, request: Request, session: SessionDep, actor: RiderActor
+):
+    return google_estimates.estimate(
+        session,
+        actor,
+        request.app.state.settings,
+        body,
+        transport=getattr(request.app.state, "google_demo_transport_override", None),
     )
 
 

@@ -16,6 +16,18 @@ closed. All new paths begin `/api`.
 | GET | `/routes/plans/{plan_id}` | Dispatcher/admin; current stale flag |
 | POST | `/routes/plans/{plan_id}/commit` | Dispatcher/admin; atomic, idempotent commit |
 | GET | `/riders/{rider_id}/route-plans` | Own rider or dispatcher/admin; latest 20 scoped plans |
+| GET | `/routes/google-demo/status` | Dispatcher/admin/rider; safe enablement and remaining global budget; no Google call |
+| POST | `/routes/google-demo` | Dispatcher/admin or actively assigned rider; explicit one-order external estimate; no assignment mutation |
+
+For the Phase 28 Google estimate request/response, guards, errors, privacy and local
+activation boundaries, see [Google dispatcher integration](GOOGLE_DISPATCHER_INTEGRATION.md).
+
+Phase 30 additive plan fields: `orders[].priority` is optional, strict integer 0–5
+(default 0). It weights unassigned penalties, not mandatory stop precedence.
+`result.vehicles[].capacity` and `load` are nullable for historical plans; new plans
+record both. Each planned stop includes `priority` and a nullable resolved
+`delivery_window`. Existing endpoints, hard constraints and assignment authorization
+are unchanged. See [final mapping release](MAPPING_FINAL_RELEASE.md) for acceptance evidence.
 
 Route request:
 

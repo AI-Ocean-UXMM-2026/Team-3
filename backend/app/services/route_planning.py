@@ -218,6 +218,7 @@ def preview(session, actor, settings, query, provider=None):
                 ),
                 "demand": selected.demand,
                 "service_seconds": selected.service_seconds,
+                "priority": selected.priority,
                 "window": window,
                 "rider_id": str(assignment.rider_id) if assignment else None,
             }

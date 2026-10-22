@@ -373,3 +373,9 @@ The local integration adds these role-protected native operations without renami
 - `POST /api/orders/{order_id}/prepare-assignment`
 
 See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.
+
+Phase 28 adds `GET /api/routes/google-demo/status` and `POST /api/routes/google-demo`.
+These use the existing private local BFF and role-bound access. Google estimates are
+default-disabled, require explicit consent and a durable server budget, and do not alter
+simulated optimization or assignments. Riders can estimate only their active assigned
+deliveries. See [Google dispatcher integration](mapping-routing/GOOGLE_DISPATCHER_INTEGRATION.md).

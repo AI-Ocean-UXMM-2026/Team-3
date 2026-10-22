@@ -49,7 +49,9 @@ def optimize(query, matrix, stops, available_riders):
     explanations = {}
     for k, stop in enumerate(stops, 1):
         index = manager.NodeToIndex(k)
-        routing.AddDisjunction([index], 1000000000000)
+        # Higher priority increases the penalty for leaving a parcel unassigned.
+        # This never relaxes capacity/windows or asserts visit-order precedence.
+        routing.AddDisjunction([index], 1000000000000 * (1 + stop.get("priority", 0)))
         lo, hi = 0, horizon - services[k]
         if stop.get("window"):
             window = stop["window"]
@@ -118,6 +120,8 @@ def optimize(query, matrix, stops, available_riders):
                             demand=stop["demand"],
                             latitude=matrix.locations[node].latitude,
                             longitude=matrix.locations[node].longitude,
+                            priority=stop.get("priority", 0),
+                            delivery_window=stop.get("window"),
                         )
                     )
                     previous = node
@@ -133,6 +137,8 @@ def optimize(query, matrix, stops, available_riders):
                         distance_meters=distance,
                         travel_seconds=travel,
                         duration_seconds=solution.Value(times.CumulVar(index)),
+                        capacity=rider.capacity,
+                        load=sum(s.demand for s in output),
                     )
                 )
     unassigned = [

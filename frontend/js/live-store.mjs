@@ -105,6 +105,8 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,
     routingStatus:()=>call('/api/routes/provider-status'),
     calculateRoute:body=>call('/api/routes/calculate','POST',body),
+    googleEstimateStatus:(side='admin')=>call('/api/routes/google-demo/status','GET',undefined,side),
+    googleEstimate:(body,side='admin')=>call('/api/routes/google-demo','POST',body,side),
     previewPlan:body=>call('/api/routes/optimize','POST',body),
     getPlan:id=>call(`/api/routes/plans/${id}`),
     commitPlan:(plan,body)=>call(`/api/routes/plans/${plan.id}/commit`,'POST',{expected_version:plan.version,...body}),

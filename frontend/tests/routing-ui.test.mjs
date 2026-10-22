@@ -22,3 +22,10 @@ test('simulation and return-to-hub are explicit request flags',()=>{
 for(const value of ['', 'NaN', '91'])test('invalid hub latitude is never invented: '+JSON.stringify(value),()=>{
   const f=form();f.set('latitude',value);assert.throws(()=>planningRequest(f,snapshot),/valid hub/);
 });
+test('explicit parcel priority is passed without changing the default request',()=>{
+  const f=form();f.set('priority-o1','5');
+  assert.equal(planningRequest(f,snapshot).orders[0].priority,5);
+});
+for(const priority of ['-1','6','1.5','invalid'])test('invalid delivery priority is rejected: '+priority,()=>{
+  const f=form();f.set('priority-o1',priority);assert.throws(()=>planningRequest(f,snapshot),/priority/);
+});
