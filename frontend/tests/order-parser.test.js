@@ -56,3 +56,15 @@ test('pasted batch creates orders with parser-filled fields',()=>{
  const ids=s.execute('create_batch',{records:[{raw:'Ko Min\n09 794 339 082\nသီရိမင်္ဂလာလမ်း ကမာရွတ်\n၃ သောင်း ၅ ထောင် ကျပ်'}],date:'2026-10-21'},A).value;
  const o=s.order(ids[0]);assert.equal(o.phone,'09794339082');assert.equal(o.areaId,'kamayut');assert.equal(o.expected,35000);assert.equal(o.payment,'cod');
 });
+test('unlabelled chats: name before the phone, name above the phone, cod after the amount',()=>{
+ const a=W.parse('Ma Thida 09 7943 39082\nဂါဝန် အနီ ၁ ထည်\nကမာရွတ်၊ လှည်းတန်း Junction Square နောက်ဘက်\nCOD ၂၈,၀၀၀');assert.equal(a.name,'Ma Thida');assert.equal(a.expected,28000);
+ const b=W.parse('Ko Min 09 451 228 190 Sanchaung, Baho Road near City Mart, phone case, 15000 cod');assert.equal(b.name,'Ko Min');assert.equal(b.expected,15000);
+ assert.equal(W.parse('Thiri Aung\n09 5123 4567\nHledan Road, Kamayut\n25000 Ks').name,'Thiri Aung');
+});
+test('dispatcher can delete an unrouted order and restore it',()=>{
+ const s=W.createStore(memory(),{initialState:W.seed()});
+ const [id]=s.execute('create_batch',{records:[{raw:'Ko Min\n09 794 339 082\nကမာရွတ်\n15000 ks'}],date:'2026-10-21'},A).value;
+ s.execute('delete',{id},A);assert.ok(!s.snapshot().orders.some(o=>o.id===id));
+ s.execute('restore',{orderId:id},A);assert.ok(s.snapshot().orders.some(o=>o.id===id));
+ const routed=s.snapshot().orders.find(o=>o.routeId);if(routed)assert.throws(()=>s.execute('delete',{id:routed.id},A),/not yet on a route/);
+});

@@ -55,6 +55,9 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   }
   // Controlled names, never fixture rectangles or township-centre coordinates.
   const places=['Hlaing','Kamaryut','Sanchaung','Bahan','Mayangon','Insein','Yankin','Tamwe','Thingangyun','South Okkalapa','North Okkalapa','North Dagon','South Dagon','East Dagon','Dagon Seikkan'];
+  // Keep the demo geodata so the dispatcher's address still drops a starting pin in live mode.
+  const geo=W.PLACES.map(p=>({...p}));
+  const autoPin=(township,street,landmark,text='')=>{const t=[township,text].join(' ').toLowerCase().replace(/kamaryut/g,'kamayut');const area=geo.find(g=>g.aliases?.some(x=>t.includes(String(x).toLowerCase())));return area?W.addressPoint(area.id,street,landmark,text,geo)?.point||null:null;};
   W.PLACES.splice(0,W.PLACES.length,...places.map(name=>({id:name,name,aliases:[name]})));state.policy.areas=[...places];
   const order=id=>{const o=state.orders.find(o=>o.id===id);if(!o)throw Error('Order unavailable in this workspace. Refresh before retrying.');return copy(o);};
   const row=id=>{const o=native.get(id);if(!o)throw Error('Refresh the dispatcher order before changing it.');return o;};
@@ -64,7 +67,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     if(type==='create_manual'){
       const f=p.fields;if(f.prep&&f.date<W.readyFrom(f.prep,W.day(Date.now())))throw Error('Delivery day precedes the selected shop preparation timeline.');
       const structured={customer_name:f.name,customer_phone:f.phone,township:f.areaId,street:f.street||null,landmark:f.landmark||null,floor:f.floor||null,cod_amount:f.payment==='prepaid'?'0':String(f.expected??''),delivery_instructions:f.note||null,delivery_time_window:f.time||W.ANY_TIME};
-      if(f.lat!==''&&f.lat!=null||f.lng!==''&&f.lng!=null){structured.latitude=f.lat;structured.longitude=f.lng;}
+      if(f.lat!==''&&f.lat!=null||f.lng!==''&&f.lng!=null){structured.latitude=f.lat;structured.longitude=f.lng;}else{const pt=autoPin(f.areaId,f.street,f.landmark);if(pt){structured.latitude=pt.lat.toFixed(7);structured.longitude=pt.lng.toFixed(7);}}
       const result=await call('/api/orders','POST',{structured,parcel:{item:f.item,sender:f.sender||null,reference:f.reference||null,delivery_day:f.date,hub_received:!!p.received}});value=result.id;
     }else if(type==='edit'){
       const r=row(p.id),f=p.fields,o=order(p.id);
@@ -73,7 +76,8 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     }else if(type==='create_batch'){
       value=[];
       for(const record of p.records){
-        try{const saved=await call('/api/orders','POST',{raw_text:record.raw,parcel:{item:p.item,delivery_day:p.date,hub_received:false}});value.push(saved.id);}
+        try{const saved=await call('/api/orders','POST',{raw_text:record.raw,parcel:{item:p.item,delivery_day:p.date,hub_received:false}});value.push(saved.id);
+          const f=W.parse(record.raw),pt=autoPin(f.areaId,f.street,f.landmark,record.raw);if(pt){try{await sync();await api.patch(row(saved.id),{latitude:pt.lat.toFixed(7),longitude:pt.lng.toFixed(7)});}catch{}}}
         catch(e){await sync();throw Error(`${value.length} order(s) persisted before this error: ${e.message}. Review the board before retrying to avoid duplicates.`);}
       }
     }else if(type==='issue_link'){

@@ -352,3 +352,24 @@ body.lang-en .rider-add label .my{display:inline!important}
   .stop-card.arrive,.invite-card.reveal .invite-code span{animation-name:lp-fade}
   .grow-wrap,.grow-wrap.enter{transition:none;animation:none}
 }
+
+/* Delete from the service board: the card steps back and fades, neighbours close the gap (FLIP), Undo restores it. */
+.card{position:relative}
+.card-del{position:absolute;top:6px;right:6px;width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--ink-2);cursor:pointer;transition:background-color 150ms ease,color 150ms ease,transform 140ms var(--ease-out)}
+.card-del::before{content:"";position:absolute;inset:-6px}
+.card-del .icon{width:18px;height:18px}
+.card-del:active{transform:scale(.97)}
+.card-del:focus-visible{outline:3px solid var(--saffron);outline-offset:1px}
+.card:has(.card-del) .card-top{padding-right:30px}
+@media (hover:hover) and (pointer:fine){.card-del{opacity:.55}.card:hover .card-del,.card-del:focus-visible{opacity:1}.card-del:hover{background:var(--bad-bg,#F8E1DC);color:var(--bad,#B3261E)}}
+.card.leaving{pointer-events:none;animation:lp-card-out 170ms var(--ease-out) both}
+.card.leaving-fade{animation:lp-out-fade 120ms ease both}
+@keyframes lp-out-fade{to{opacity:0}}
+@keyframes lp-in-fade{from{opacity:0}}
+@keyframes lp-card-out{to{opacity:0;transform:scale(.96) translateX(8px)}}
+.card.restored{animation:lp-card-in 240ms var(--ease-out) both}
+@keyframes lp-card-in{from{opacity:0;transform:scale(.97)}}
+.toast-undo{margin-left:12px;min-height:36px;padding:0 12px;border:1px solid currentColor;border-radius:8px;background:transparent;color:inherit;font:700 .9rem/1 var(--body);cursor:pointer}
+@media (prefers-reduced-motion:reduce){.card.leaving{animation:lp-out-fade 120ms ease both}.card.restored{animation:lp-in-fade 160ms ease both}}
+.toast.show:has(.toast-undo){pointer-events:auto;display:flex;align-items:center}
+.card-name{overflow-wrap:break-word;hyphens:auto}

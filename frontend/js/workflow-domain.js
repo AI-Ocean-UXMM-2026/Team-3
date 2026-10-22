@@ -53,8 +53,8 @@
   const validWindow = time => time===ANY_TIME||WINDOWS.includes(time);
   const distance = (a,b) => {const rad=x=>x*Math.PI/180;const h=Math.sin(rad(b.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));};
   // Auto pin: the closest point the address supports. Landmark beats street; a street we don't know falls back to the township centre.
-  function addressPoint(areaId,street,landmark,text=''){
-    const area=PLACES.find(a=>a.id===areaId);if(!area)return null;
+  function addressPoint(areaId,street,landmark,text='',places=PLACES){
+    const area=places.find(a=>a.id===areaId);if(!area)return null;
     const at=([lat,lng],precision)=>({point:{lat,lng},precision});
     const hay=[landmark,street,text].filter(Boolean).join(' ');
     const lm=(area.landmarks||[]).find(([re])=>re.test(hay));if(lm)return at(lm[1],'landmark');
@@ -213,6 +213,9 @@
         if(!['dispatched','in_progress'].includes(r.state))throw Error('The hub hasn’t sent this route yet.');if(r.pickedUpAt)return;
         r.pickedUpAt=now();r.pickedUp=r.orderIds.slice();event('route_picked_up',null,`${r.id}: ${r.orderIds.length} parcels collected`,actor);return;
       }
+      if(type==='restore'){
+        admin(actor);const t=(state.trash||[]).find(x=>x.order.id===p.orderId);if(!t)throw Error('This order can no longer be restored.');state.trash=state.trash.filter(x=>x!==t);state.orders.push(t.order);event('order_restored',t.order.id,'Restored after delete',actor);return t.order.id;
+      }
       if(type==='add_rider'){
         admin(actor);const name=String(p.name||'').trim(),phone=digits(p.phone||'').replace(/[^\d]/g,'').replace(/^95/,'0');
         if(!name)throw Error('Enter the rider’s name.');if(!/^09\d{7,9}$/.test(phone))throw Error('Enter a Myanmar mobile number that starts with 09.');
@@ -267,6 +270,9 @@
         admin(actor);const r=route(p.routeId);if(r.state!=='draft'||!['ready','held'].includes(o.state)||readiness(o).length||o.routeId||o.date!==r.date)throw Error('Order needs hub receipt, resolved fields and the same delivery day on an unassigned draft route.');o.routeId=r.id;r.orderIds.push(o.id);o.state='assigned';event('rider_assigned',o.id,r.id,actor);
       }else if(type==='unassign'){
         admin(actor);if(!o.routeId||route(o.routeId).state!=='draft')throw Error('Only draft assignments can be removed.');const r=route(o.routeId);r.orderIds=r.orderIds.filter(id=>id!==o.id);o.routeId=null;o.state='ready';event('rider_unassigned',o.id,p.reason||'Draft assignment removed',actor);
+      }else if(type==='delete'){
+        admin(actor);if(o.routeId||['out_for_delivery','delivered','returned','retry_pending','return_pending'].includes(o.state))throw Error('Only orders not yet on a route can be deleted. Take it off the route first.');
+        state.orders=state.orders.filter(x=>x.id!==o.id);state.trash=[{order:o,at:now()},...(state.trash||[])].slice(0,20);event('order_deleted',o.id,'Deleted from the service board',actor);return o.id;
       }else if(type==='cancel'){
         staff(actor,o);if(!p.reason?.trim()||['delivered','returned','cancelled'].includes(o.state))throw Error('Cancellation needs a reason and an open order.');if(!editable(o)){if(actor.role!=='admin')throw Error('Contact admin to coordinate a departed parcel return.');if(!p.acknowledged)throw Error('Confirm the rider has acknowledged return instructions.');o.state='return_pending';}else{if(o.routeId){const r=route(o.routeId);r.orderIds=r.orderIds.filter(id=>id!==o.id);o.routeId=null;}o.state='cancelled';}if(o.link)o.link.status='revoked';event('order_cancel_requested',o.id,p.reason,actor);
       }else if(type==='accept'){
