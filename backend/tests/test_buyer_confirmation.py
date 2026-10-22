@@ -12,6 +12,7 @@ from sqlalchemy.exc import OperationalError
 
 from app.core.access_logging import HideQueryString
 from app.core.config import Settings
+from app.core.order_errors import OrderAPIError
 from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User, utcnow
@@ -196,10 +197,37 @@ def test_otp_start_returns_only_safe_challenge_state(linked):
 
 
 @pytest.mark.parametrize(
-    "value", ["09791234567", "+959791234567", "959791234567"]
+    "value", ["09791234567", "0991234567", "+959791234567", "959791234567"]
 )
 def test_myanmar_phone_normalization(value):
-    assert normalize_phone(value) == "+959791234567"
+    expected = "+95991234567" if value == "0991234567" else "+959791234567"
+    assert normalize_phone(value) == expected
+
+
+@pytest.mark.parametrize("value", ["+14155552671", "09912345678", "not-a-phone"])
+def test_myanmar_phone_normalization_rejects_invalid_or_non_myanmar(value):
+    with pytest.raises(OrderAPIError):
+        normalize_phone(value)
+
+
+def test_otp_accepts_number_validated_by_order_phone_validator(env):
+    order = order_create(env)
+    changed = env["client"].patch(
+        f"/api/orders/{order['id']}",
+        headers=ADMIN,
+        json={"expected_version": order["version"], "customer_phone": "0991234567"},
+    )
+    assert changed.status_code == 200, changed.text
+    link = env["client"].post(
+        f"/api/orders/{order['id']}/confirmation-link", headers=ADMIN
+    )
+    assert link.status_code == 201, link.text
+    path = "/api" + link.json()["confirmation_url"]
+
+    started = env["client"].post(path + "/otp", json={})
+
+    assert started.status_code == 200, started.text
+    assert started.json()["mode"] == "DEMO"
 
 
 def test_otp_expiry_is_capped_by_confirmation_link(linked):
@@ -372,8 +400,7 @@ def test_twilio_resend_cancels_and_checks_the_stored_sid(linked, monkeypatch):
     calls = []
 
     class Response:
-        status_code = 200
-        def __init__(self, payload): self.payload = payload
+        def __init__(self, status_code, payload): self.status_code, self.payload = status_code, payload
         def json(self): return self.payload
 
     class Client:
@@ -383,10 +410,10 @@ def test_twilio_resend_cancels_and_checks_the_stored_sid(linked, monkeypatch):
         def post(self, url, data, auth):
             calls.append((url, data, auth))
             if url.endswith("/VerificationCheck"):
-                return Response({"status": "approved"})
+                return Response(200, {"status": "approved"})
             if url.endswith("/Verifications/VEold"):
-                return Response({"status": "canceled"})
-            return Response({"sid": "VEold" if len(calls) == 1 else "VEnew"})
+                return Response(404, {"code": 20404})
+            return Response(200, {"sid": "VEold" if len(calls) == 1 else "VEnew"})
 
     monkeypatch.setattr(otp.httpx, "Client", Client)
     assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 200
@@ -398,6 +425,78 @@ def test_twilio_resend_cancels_and_checks_the_stored_sid(linked, monkeypatch):
     assert any(url.endswith("/Verifications/VEold") and data == {"Status": "canceled"} for url, data, _ in calls)
     assert calls[-1][0].endswith("/VerificationCheck")
     assert calls[-1][1]["VerificationSid"] == "VEnew"
+    with linked["db"].sessions() as session:
+        replacement_challenge = session.get(BuyerOtpChallenge, UUID(replacement.json()["challenge_id"]))
+        assert replacement_challenge.verification_sid == "VEnew"
+
+
+@pytest.mark.parametrize(
+    "status_code,body", [(404, {"code": 60000}), (404, None), (500, {"code": 20404})]
+)
+def test_twilio_unrelated_or_malformed_cancel_error_fails_closed(
+    env, monkeypatch, status_code, body
+):
+    import app.services.buyer_otp as otp
+
+    settings = env["settings"]
+    settings.buyer_otp_external_sends_enabled = True
+    settings.buyer_twilio_account_sid = "ACtest"
+    settings.buyer_twilio_auth_token = SecretStr("test-token")
+    settings.buyer_twilio_verify_service_sid = "VAtest"
+
+    class Response:
+        def __init__(self, status_code, payload): self.status_code, self.payload = status_code, payload
+        def json(self):
+            if self.payload is None:
+                raise ValueError("not JSON")
+            return self.payload
+
+    class Client:
+        def __init__(self, **kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def post(self, url, data, auth):
+            return Response(status_code, body)
+
+    monkeypatch.setattr(otp.httpx, "Client", Client)
+    with pytest.raises(OrderAPIError):
+        otp._twilio(settings, "cancel", sid="VEold")
+
+
+def test_twilio_missing_resource_during_check_remains_fail_closed(linked, monkeypatch):
+    import app.services.buyer_otp as otp
+
+    linked["settings"].buyer_otp_mode = "twilio"
+    linked["settings"].buyer_otp_external_sends_enabled = True
+    linked["settings"].buyer_twilio_account_sid = "ACtest"
+    linked["settings"].buyer_twilio_auth_token = SecretStr("test-token")
+    linked["settings"].buyer_twilio_verify_service_sid = "VAtest"
+
+    class Response:
+        def __init__(self, status_code, payload): self.status_code, self.payload = status_code, payload
+        def json(self): return self.payload
+
+    class Client:
+        def __init__(self, **kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def post(self, url, data, auth):
+            if url.endswith("/VerificationCheck"):
+                return Response(404, {"code": 20404})
+            return Response(200, {"sid": "VEnew"})
+
+    monkeypatch.setattr(otp.httpx, "Client", Client)
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    assert started.status_code == 200
+
+    checked = linked["client"].post(linked["path"] + "/verify", json={"code": "123456"})
+
+    assert checked.status_code == 503
+    with linked["db"].sessions() as session:
+        challenge = session.get(BuyerOtpChallenge, UUID(started.json()["challenge_id"]))
+        link = session.scalar(select(ConfirmationLink))
+        assert challenge.status == "PENDING" and challenge.attempts == 0
+        assert link.failed_attempts == 0
 
 
 def test_twilio_expired_challenge_is_cancelled_before_replacement(linked, monkeypatch):

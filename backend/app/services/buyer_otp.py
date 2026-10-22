@@ -8,6 +8,8 @@ from datetime import timedelta
 from urllib.parse import quote
 
 import httpx2 as httpx
+import phonenumbers
+from phonenumbers import PhoneNumberFormat
 from sqlalchemy import select
 
 from app.core.order_errors import OrderAPIError
@@ -21,12 +23,26 @@ TWILIO_ORIGIN = "https://verify.twilio.com/v2"
 
 def normalize_phone(value):
     digits = re.sub(r"\D", "", value or "")
-    if digits.startswith("95") and len(digits) == 12:
-        return "+" + digits
-    if digits.startswith("09") and len(digits) == 11:
-        return "+95" + digits[1:]
-    if digits.startswith("9") and len(digits) == 10:
-        return "+95" + digits
+    if digits.startswith("9509"):
+        digits = "959" + digits[4:]
+    if digits.startswith("95"):
+        number_text = "+" + digits
+    elif digits.startswith("09"):
+        number_text = digits
+    elif digits.startswith("9") and len(digits) == 10:
+        number_text = "+95" + digits
+    else:
+        number_text = ""
+    try:
+        number = phonenumbers.parse(number_text, "MM") if number_text else None
+        if (
+            number is not None
+            and phonenumbers.is_valid_number_for_region(number, "MM")
+            and phonenumbers.number_type(number) == phonenumbers.PhoneNumberType.MOBILE
+        ):
+            return phonenumbers.format_number(number, PhoneNumberFormat.E164)
+    except phonenumbers.NumberParseException:
+        pass
     raise OrderAPIError(409, "BUYER_PHONE_UNAVAILABLE", "A valid Myanmar mobile number is required.")
 
 
@@ -49,6 +65,17 @@ def _twilio(settings, operation, *, sid=None, data=None):
                 auth=(account, token),
             )
         if response.status_code >= 400:
+            if operation == "cancel" and response.status_code == 404:
+                try:
+                    provider_error = response.json()
+                except Exception:
+                    provider_error = None
+                if (
+                    isinstance(provider_error, dict)
+                    and type(provider_error.get("code")) is int
+                    and provider_error["code"] == 20404
+                ):
+                    return {"status": "canceled"}
             raise ValueError("provider rejected request")
         return response.json()
     except Exception as exc:
