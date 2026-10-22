@@ -1,6 +1,6 @@
 /* Cache only this prototype's static shell. Never cache API or remote map data. */
-const CACHE='lannpya-static-v5-isolated-demo';
-const FILES=['./prototype.html','./styles.css','./extra.css','./interactions.css','./handoff.css','./delivery.css','./functional.css','./api.css?v=reference-theme-1','./vendor/lannpya-order-parser.js?v=0.1.0','./workflow-domain.js?v=0.7.1','./functional-app.js?v=0.7.1'];
+const CACHE='lannpya-static-v7-signboard';
+const FILES=['./prototype.html','./demo-config.js','./css/signboard.css?v=0.8.4','./vendor/lannpya-order-parser.js?v=0.1.0','./js/workflow-domain.js?v=0.8.4','./js/functional-app.js?v=0.8.4'];
 const allowed=new Set(FILES.map(f=>new URL(f,self.registration.scope).href));
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('lannpya-static-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));

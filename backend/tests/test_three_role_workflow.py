@@ -352,7 +352,9 @@ def test_frontend_allowlist_and_production_gate(workspace):
     with TestClient(app, base_url="http://127.0.0.1:8765", client=("127.0.0.1", 50000)) as client:
         assert client.get("/").status_code == 200
         assert (
-            client.get("/api-workspace.mjs").headers["content-type"].startswith("text/javascript")
+            client.get("/dev/api-workspace.mjs")
+            .headers["content-type"]
+            .startswith("text/javascript")
         )
         assert client.get("/vendor/lannpya-order-parser.js").status_code == 200
         for path in (

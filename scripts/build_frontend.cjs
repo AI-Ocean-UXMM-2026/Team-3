@@ -12,8 +12,9 @@ function walk(directory){
    const check=spawnSync(process.execPath,['--check',file],{encoding:'utf8'});
    if(check.status!==0)throw Error('JavaScript syntax check failed: '+path.relative(source,file));
   }
-  const links=[...text.matchAll(/(?:from\s*|import\s*)['"](\.[^'"]+)['"]|(?:src|href)=["']([^"'#]+)["']/g)].map(m=>m[1]||m[2]);
-  for(let target of links){if(target.includes('${'))continue;if(/^(https?:|data:|mailto:|tel:|\/)/.test(target))continue;target=target.split(/[?#]/)[0];if(target&&!fs.existsSync(path.resolve(path.dirname(file),target)))throw Error(`Missing frontend dependency: ${path.relative(source,file)} -> ${target}`);}
+  // Imports resolve from the module; src/href in markup a script renders resolve from the page at the frontend root.
+  const links=[...text.matchAll(/(?:from\s*|import\s*)['"](\.[^'"]+)['"]|(?:src|href)=["']([^"'#]+)["']/g)].map(m=>m[1]?[m[1],path.dirname(file)]:[m[2],/\.(js|mjs)$/.test(file)?source:path.dirname(file)]);
+  for(let [target,base] of links){if(target.includes('${'))continue;if(/^(https?:|data:|mailto:|tel:|\/)/.test(target))continue;target=target.split(/[?#]/)[0];if(target&&!fs.existsSync(path.resolve(base,target)))throw Error(`Missing frontend dependency: ${path.relative(source,file)} -> ${target}`);}
   const rel=path.relative(source,file),dest=path.join(output,rel);fs.mkdirSync(path.dirname(dest),{recursive:true});fs.copyFileSync(file,dest);
   manifest.push({file:rel.replaceAll('\\','/'),sha256:crypto.createHash('sha256').update(text).digest('hex')});
  }

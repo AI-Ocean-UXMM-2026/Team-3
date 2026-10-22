@@ -1,0 +1,185 @@
+{
+  "mtt_commit": "0e95c6a9970198a345622a145330749aaabca83f",
+  "business_api_operations": 35,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/health"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/parse"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/{order_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/orders/{order_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/orders/{order_id}/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/{order_id}/events"
+    },
+    {
+      "method": "GET",
+      "path": "/api/users"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/confirmation-link"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/confirmation-link/revoke"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/location-reference"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/{order_id}/buyer-requests"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/orders/{order_id}/buyer-requests/{request_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/confirm/{token}"
+    },
+    {
+      "method": "POST",
+      "path": "/api/confirm/{token}/verify"
+    },
+    {
+      "method": "GET",
+      "path": "/api/confirm/{token}/details"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/confirm/{token}/location"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/confirm/{token}/response"
+    },
+    {
+      "method": "POST",
+      "path": "/api/riders"
+    },
+    {
+      "method": "GET",
+      "path": "/api/riders"
+    },
+    {
+      "method": "GET",
+      "path": "/api/riders/{rider_id}"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/riders/{rider_id}"
+    },
+    {
+      "method": "GET",
+      "path": "/api/riders/{rider_id}/queue"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/assign"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/unassign"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/orders/{order_id}/assignment"
+    },
+    {
+      "method": "GET",
+      "path": "/api/orders/{order_id}/assignments"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/riders/{rider_id}/deliveries/{order_id}/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/session"
+    },
+    {
+      "method": "GET",
+      "path": "/api/routes"
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes"
+    },
+    {
+      "method": "POST",
+      "path": "/api/routes/{route_id}/actions"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/operations"
+    },
+    {
+      "method": "POST",
+      "path": "/api/orders/{order_id}/prepare-assignment"
+    }
+  ],
+  "schema_tables": [
+    "alembic_version",
+    "buyer_rate_limits",
+    "buyer_requests",
+    "buyer_sessions",
+    "confirmation_links",
+    "delivery_assignments",
+    "delivery_events",
+    "location_references",
+    "orders",
+    "rider_action_receipts",
+    "rider_profiles",
+    "users",
+    "workflow_routes"
+  ],
+  "postgresql_connection": "not configured; not attempted",
+  "external_ai": "not activated",
+  "configured_environment_names": [],
+  "migration_head": "0004_workflow_routes",
+  "postgresql_ddl_tables_compiled": 12,
+  "verification": {
+    "python_tests_passed": 873,
+    "frontend_node_tests_passed": 107,
+    "dashboard_node_tests_passed": 17,
+    "native_http_integration_tests_passed": 1,
+    "typescript_tests_passed": 141,
+    "chromium_tests_passed": 42,
+    "mtt_affected_chromium_rerun_passed": 8,
+    "final_failures": 0,
+    "real_process_restart": {
+      "result": "PASS",
+      "delivered_orders": 1,
+      "cod_collected": 25000,
+      "events_preserved": 11,
+      "external_ai_calls": 0
+    },
+    "production_database_modified": false,
+    "remote_pushed": false
+  }
+}

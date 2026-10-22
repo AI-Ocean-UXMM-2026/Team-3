@@ -15,7 +15,7 @@ const test=base.extend({
     const origin=`http://127.0.0.1:${port}`;
     const child=spawn(pythonPath(),['-m','tools.integrated_workspace','--port',String(port),'--temporary'],{
       cwd:path.join(root,'backend'),stdio:['ignore','ignore','pipe'],windowsHide:true,
-      env:{...process.env,LANNPYA_ENVIRONMENT:'test'},
+      env:{...process.env,LANNPYA_ENVIRONMENT:'test',LANNPYA_ROUTING_PROVIDER:'offline',LANNPYA_ROUTING_EXTERNAL_REQUESTS_ENABLED:'false',LANNPYA_GOOGLE_DEMO_ENABLED:'false',LANNPYA_GOOGLE_DEMO_MAX_REQUESTS:'0',LANNPYA_GOOGLE_MAPS_BROWSER_KEY:''},
     });
     let stderr='';child.stderr.on('data',b=>{stderr+=b.toString();});
     const exited=once(child,'exit');let cookie='',csrf;
@@ -37,8 +37,8 @@ const test=base.extend({
       if(stderr.includes('Traceback'))await testInfo.attach('server-errors',{body:sanitize(stderr),contentType:'text/plain'});
     }
   },
-  page:async({browser,app},use,testInfo)=>{
-    const context=await browser.newContext({baseURL:app.origin,viewport:testInfo.project.use.viewport||{width:1440,height:900},timezoneId:'Asia/Rangoon'});
+  page:async({browser,app,hasTouch},use,testInfo)=>{
+    const context=await browser.newContext({baseURL:app.origin,viewport:testInfo.project.use.viewport||{width:1440,height:900},timezoneId:'Asia/Rangoon',hasTouch});
     const activity=[],errors=[],network=[],starts=new WeakMap();
     context.on('page',p=>{
       p.on('pageerror',e=>errors.push(sanitize(e.message)));
@@ -63,13 +63,13 @@ const test=base.extend({
   },
 });
 async function enter(page,side='admin',id=''){
-  await page.goto('/#/'+side);
+  await page.goto('/api.html#/'+side);
   await expect(page.locator('#connect-form, #create-form, #rider-account').first()).toBeVisible();
   const form=page.locator('#connect-form');if(!await form.count())return;
   if(side==='rider'&&id)await form.locator('[name=actor_id]').fill(id);
   await form.locator('button[type=submit]').click();
   await expect(form).toHaveCount(0);
-  await expect(page.locator('#api-status')).not.toHaveClass(/error/);
+  await expect(page.locator('#api-status')).toContainText('Connected to the server-bound actor.');
 }
 async function inspect(page,apiPath){
   const response=await page.request.get('/dashboard/bootstrap');const {csrf}=await response.json();

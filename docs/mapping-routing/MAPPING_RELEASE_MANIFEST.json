@@ -1,0 +1,164 @@
+{
+  "branch": "feature/mtt-maps-database-integration",
+  "base_commit": "650e040990225e64dc195d776ffe6baa3c5bd3bc",
+  "suggested_commit_title": "Finish local mapping MVP and release acceptance suite",
+  "commit_created": false,
+  "push_performed": false,
+  "live_routing_requests_this_phase": 0,
+  "tests": {
+    "python_passed": 1003,
+    "frontend_node_passed": 117,
+    "dashboard_node_passed": 17,
+    "typescript_passed": 141,
+    "chromium_passed": 59,
+    "http_integration_passed": 1,
+    "restart_scenario_passed": true
+  },
+  "files": [
+    {
+      "path": "backend/.env.example",
+      "sha256": "12eb0c4b923e85f0dc881f25fb8dd1b6dffd9185a081352b57321057a8934f19"
+    },
+    {
+      "path": "backend/app/api/routing.py",
+      "sha256": "f3c00810c17c44d56dea195a4bfe5100e7c1f3ba17406ca4488d02c39e4cf2a4"
+    },
+    {
+      "path": "backend/app/core/config.py",
+      "sha256": "70d7bb687f4547bc1b42d8e6a764c3167afe858347bb33dfadbdde17e40b0f9b"
+    },
+    {
+      "path": "backend/app/routing/optimizer.py",
+      "sha256": "710f012f38643b8e81e54e90485fabfc33b6af82130c938e96b8316bedc53ece"
+    },
+    {
+      "path": "backend/app/schemas/routing.py",
+      "sha256": "1839bafd38179e291be605a7e0e0886bbe9e7635113a49cf883d4b58aac124bb"
+    },
+    {
+      "path": "backend/app/services/google_estimates.py",
+      "sha256": "bea76384374af91029d3f71e3b9a0fa57893f1ef83a94830cccfd2b5e07d28e4"
+    },
+    {
+      "path": "backend/app/services/route_planning.py",
+      "sha256": "6064352a44ad08f61228788be0a9bffd07bb0eef9608115c1ab8166ddff764b6"
+    },
+    {
+      "path": "backend/tests/test_api_contract.py",
+      "sha256": "b92a0313517a91a7d0efc1a91ae46d3826d14e472fb1bb426f01501af8eca6e5"
+    },
+    {
+      "path": "backend/tests/test_google_demo_route.py",
+      "sha256": "1f14cc4034ae99dcf9d0819908b8afabd4794a1adfa3e7efc3077e1ba9f40254"
+    },
+    {
+      "path": "backend/tests/test_google_estimates.py",
+      "sha256": "0caa6fb01a4aad155b19830361d43446be912b2a4fc2d4c10fa8ad452c275125"
+    },
+    {
+      "path": "backend/tests/test_mapping_release.py",
+      "sha256": "9b4f226bc9bd2fd2aa43031d914c6b18ebe32dc479aeed01daa61813c143b727"
+    },
+    {
+      "path": "backend/tools/backend_test_dashboard/server.py",
+      "sha256": "e097a55cf1a7feb9ad9e44602c2cc18bfa434641fc87146e238727435dbfeb77"
+    },
+    {
+      "path": "backend/tools/google_demo_route.py",
+      "sha256": "cdf6e43123eb5b5d9a2d65b645f683090cadddb5c677d7cbba963f5075cfcf1f"
+    },
+    {
+      "path": "docs/FRONTEND_HANDOFF.md",
+      "sha256": "b2dd3dc58b27e6cf0adceaec0408fd997d917f801beee86ff24401cce8f3b2da"
+    },
+    {
+      "path": "docs/OPENAPI.json",
+      "sha256": "ba7924aa2757b9de33cef32f79cf316efb3f76a55d6a743727b4a7b5043d2c00"
+    },
+    {
+      "path": "docs/integration/OPENAPI.json",
+      "sha256": "ba7924aa2757b9de33cef32f79cf316efb3f76a55d6a743727b4a7b5043d2c00"
+    },
+    {
+      "path": "docs/mapping-routing/API_CONTRACT.md",
+      "sha256": "deddd308cf077bb12e65320739a6694860e8c6c824e0b1d57d861a8f814a4466"
+    },
+    {
+      "path": "docs/mapping-routing/GOOGLE_DEMO_KEY_VERIFICATION.md",
+      "sha256": "bb2c2ff2713311db39fa4bcf3d227540e6b07425bc675a7bf008e63e8d5bb75f"
+    },
+    {
+      "path": "docs/mapping-routing/GOOGLE_DISPATCHER_INTEGRATION.md",
+      "sha256": "637c509eeaa1d180d8f43f0d8284686cec2c5ea4558deb4f512e5b427fe63aca"
+    },
+    {
+      "path": "docs/mapping-routing/GOOGLE_LIVE_TEST_RESULT.md",
+      "sha256": "197a27b24ac56c1626e1f0d3c0dacb057698155dc2cbd6b5abdc737f652a8011"
+    },
+    {
+      "path": "docs/mapping-routing/LIMITATIONS.md",
+      "sha256": "100a78b0ff9f81f55516f6648061624c35632204f286bbc58b2adf44ef89f07f"
+    },
+    {
+      "path": "docs/mapping-routing/MAPPING_ACCEPTANCE_CHECKLIST.md",
+      "sha256": "c3f62dab3c3aa8b732a758bd4815fba3e546272ca978394ba2c6b71845c306b5"
+    },
+    {
+      "path": "docs/mapping-routing/MAPPING_FINAL_RELEASE.md",
+      "sha256": "bda63ffc86c79d191fbeef8ca95c486df31f76e0fdcdc316acd4b32b0a94daf5"
+    },
+    {
+      "path": "docs/mapping-routing/ROUTE_OPTIMIZATION.md",
+      "sha256": "1e38a28e7c9e48172f34a82ff2959de59caa9d524e738002539c519c3436c8b3"
+    },
+    {
+      "path": "frontend/js/customer-map.js",
+      "sha256": "78e15745980946aaccf927aecbf3768cde4935c92ff589ad9fa3fb9c03bcaf20"
+    },
+    {
+      "path": "frontend/js/functional-app.js",
+      "sha256": "2f538f9780177eccbdbb09250b6ebf087c779760aed1d27d28de1873008025a8"
+    },
+    {
+      "path": "frontend/js/live-store.mjs",
+      "sha256": "ae7432f9d4b073039fd680522d379b55117486cd3f96d62f3731270187a2e243"
+    },
+    {
+      "path": "frontend/js/routing-ui.mjs",
+      "sha256": "13399829a21c65027d5f14d070b785d0c21343f0b1865fb54a46e654f3787642"
+    },
+    {
+      "path": "frontend/tests/routing-ui.test.mjs",
+      "sha256": "51405b7f1686b89388aa5326ceadb1cf47e4c96a988f514193434c5c7935ec8a"
+    },
+    {
+      "path": "package.json",
+      "sha256": "9c745d3c27aa37e16e007a09147370a2288f0ea1cb4e4c29249f99eb48c51a0f"
+    },
+    {
+      "path": "scripts/verify_mapping_restart.cjs",
+      "sha256": "27e27bb6290fe914609ef1d5e27d70eb4f48ea90513cf4a7eabb86c890023525"
+    },
+    {
+      "path": "tests/browser/fixtures.cjs",
+      "sha256": "7e9a15012cc0863879bc511293693307c61e590a1eb03882043f794b58a9e5d5"
+    },
+    {
+      "path": "tests/browser/google-route-display.spec.cjs",
+      "sha256": "0f99b590a625fa7f74d56232ed8be7a86b25430a23881dea4a8543b348419d5f"
+    },
+    {
+      "path": "tests/browser/google-workflow.spec.cjs",
+      "sha256": "fadec3714c92bd23af778905e169dabd78adf7cec9e0ed93f7ef1dd2ea048331"
+    },
+    {
+      "path": "tests/browser/mapping-release.spec.cjs",
+      "sha256": "98f54181078d8759d7997455e950be5b5dd4420e0ad8ed8779fae243d3ef1d10"
+    },
+    {
+      "path": "tests/browser/routing.spec.cjs",
+      "sha256": "dc04ad302ca407b65ffb50132d7dd72f4ba1f0e805e0cc07c0d76dd0ad283852"
+    }
+  ],
+  "self_hash_excluded": "docs/mapping-routing/MAPPING_RELEASE_MANIFEST.json"
+}

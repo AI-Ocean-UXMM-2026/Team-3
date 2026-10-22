@@ -1,0 +1,13 @@
+{
+  "id": "fictional-yangon-evaluation-v1",
+  "notice": "FICTIONAL TEST COORDINATES. Not customer homes, verified townships or known routable roads.",
+  "hub": {"latitude": 16.825, "longitude": 96.13},
+  "deliveries": [
+    {"id": "SYN-YGN-01", "point": {"latitude": 16.815, "longitude": 96.125}, "probe": "ordinary_test_point"},
+    {"id": "SYN-YGN-02", "point": {"latitude": 16.835, "longitude": 96.14}, "probe": "ordinary_test_point"},
+    {"id": "SYN-YGN-03", "point": {"latitude": 16.845, "longitude": 96.12}, "probe": "ordinary_test_point"},
+    {"id": "SYN-YGN-04", "point": {"latitude": 16.805, "longitude": 96.155}, "probe": "ordinary_test_point"},
+    {"id": "SYN-YGN-05", "point": {"latitude": 16.855, "longitude": 96.175}, "probe": "ordinary_test_point"},
+    {"id": "SYN-YGN-06", "point": {"latitude": 16.805, "longitude": 96.205}, "probe": "possible_off_road_probe_not_verified"}
+  ]
+}

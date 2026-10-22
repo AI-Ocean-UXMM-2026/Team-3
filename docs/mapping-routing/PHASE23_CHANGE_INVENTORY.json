@@ -1,0 +1,341 @@
+{
+  "starting_branch": "feature/mtt-maps-database-integration",
+  "starting_commit": "0e95c6a9970198a345622a145330749aaabca83f",
+  "starting_changed_or_untracked_files": [
+    {
+      "path": ".gitignore",
+      "sha256": "dec3697ccdaa187e32177dda355d09bc4a5d8cb540b262648f909c5e19fe1cd7"
+    },
+    {
+      "path": "README.md",
+      "sha256": "3bbcd0dfb311d5c300e1dfbe6ac5e1154962c2755de57ccdf07410e982b47a58"
+    },
+    {
+      "path": "backend/.env.example",
+      "sha256": "8652bba4b94336810c6e9753c9e58acd52ebe08ef5eefaa94f815dfea2da0274"
+    },
+    {
+      "path": "backend/app/api/routing.py",
+      "sha256": "9945e9a6ddae047a2fa42764c48d737898ac5b613cd217d87ba52322a9c96461"
+    },
+    {
+      "path": "backend/app/core/config.py",
+      "sha256": "951629cec19c761fff3ce0a5de13ee5c2631ea05dd8de5c6e787ff5fc1296859"
+    },
+    {
+      "path": "backend/app/data/routing_fixture.json",
+      "sha256": "936b4183b18cde3ff518837922ddbf392b0970d00c8f74c8648bc75054ccf2c3"
+    },
+    {
+      "path": "backend/app/db/routing_models.py",
+      "sha256": "76de2c868a5f35effda0cc386da3c68943da3e1a87232b7a303d854c665b5588"
+    },
+    {
+      "path": "backend/app/main.py",
+      "sha256": "b3336cac7b716409d5bc5a6e9e59820ea27ed4d0e495ac082cc90d4236eec97e"
+    },
+    {
+      "path": "backend/app/routing/__init__.py",
+      "sha256": "e9e2d8279c5347bec04ccf5e3427a6672174913a1a18d812a2d713eb9e95f0f5"
+    },
+    {
+      "path": "backend/app/routing/base.py",
+      "sha256": "f39c176001caf5f361fabb7d613bf528e01f93277d2b84cfcf026e8a2678641f"
+    },
+    {
+      "path": "backend/app/routing/factory.py",
+      "sha256": "b6c4511932987dc5f0ed5c7dd9cc1c4a8ff5c424044a2f011de7f6d60ed61721"
+    },
+    {
+      "path": "backend/app/routing/http.py",
+      "sha256": "549295c8254194d27694382c09f5fd2ce337bceaf6f4565c0d1bcb7f170ed204"
+    },
+    {
+      "path": "backend/app/routing/offline.py",
+      "sha256": "322cd6190f5ae00b289f3d1c85c953ec069bd93fe74ec853e757dea95dfe4d70"
+    },
+    {
+      "path": "backend/app/routing/optimizer.py",
+      "sha256": "5bde66388f21874323768c697d1cccb3e5c29a895c5fb72603f5fd621e555106"
+    },
+    {
+      "path": "backend/app/schemas/routing.py",
+      "sha256": "7b885831c85127e3b83744ca47aa660ca3dcab4bb8705421c6908f7a00059316"
+    },
+    {
+      "path": "backend/app/services/riders.py",
+      "sha256": "ec6fb54b46b82eb0c487110bbbd94c17592e454998b466967a906f3e8d1d22e8"
+    },
+    {
+      "path": "backend/app/services/route_planning.py",
+      "sha256": "f56b5a8b8f91dbd921ce3b11c2fc508dbccdcb74c5858991e807e0d5bfda4cd5"
+    },
+    {
+      "path": "backend/app/services/workflow.py",
+      "sha256": "f715afd75c90a8c6396a7acc83721e2934a608665ad89d546c23790cb9f66d4d"
+    },
+    {
+      "path": "backend/migrations/env.py",
+      "sha256": "b796155f1d2cee103f30f8d36bfe705718d1def4c37fea8f9407247045b73bc9"
+    },
+    {
+      "path": "backend/migrations/versions/0005_routing_plans.py",
+      "sha256": "9453051ba91964b07aa329a9ba652858cac2f35134a964c9598eb86b8a233702"
+    },
+    {
+      "path": "backend/pyproject.toml",
+      "sha256": "323796ff21dfa9e7f2ccc08cad226d8415fc9889f75626774761a9ee1a58a9e1"
+    },
+    {
+      "path": "backend/requirements-dev.lock",
+      "sha256": "364876d2214e4408f1609fac6088f64dd6352ac66696a5b9ed23ed4aea6e11f0"
+    },
+    {
+      "path": "backend/tests/test_api_contract.py",
+      "sha256": "b96868e88a839bbcb308e7639ce24751c4ee9f43c7a0f67a953964032c85188b"
+    },
+    {
+      "path": "backend/tests/test_mtt_runtime.py",
+      "sha256": "f5c4f5ffa6ce2a2f592122f31bdd0c1a827d815f2746bf760e32cb921def1a6b"
+    },
+    {
+      "path": "backend/tests/test_order_management.py",
+      "sha256": "c473b920d68e79378ba68b1fd45c11f140e093d274b2fe633bf573e20d90cc09"
+    },
+    {
+      "path": "backend/tests/test_routing.py",
+      "sha256": "4a65ea49bb84b7d4b668b50c51ce62b8e0fc922ef2c879d17d2aa12b5f8ccd1a"
+    },
+    {
+      "path": "backend/tools/api_workspace/api-workspace.mjs",
+      "sha256": "045804102d844baccffb3c40a3e8005d8b16d9a80023e4495061fe7cd40dbb85"
+    },
+    {
+      "path": "backend/tools/backend_test_dashboard/server.py",
+      "sha256": "eab4e4921ce5afd7645c3604fe94fb13a1acd26387bae4c7864048236e562a86"
+    },
+    {
+      "path": "backend/tools/routing_benchmark.py",
+      "sha256": "57fe688cd6612672aa7c76d8de3be283e4fb815e21abc7ecf5ab8199ec6dd8ca"
+    },
+    {
+      "path": "docs/API_CONTRACT.md",
+      "sha256": "308eedd9be5f59b57935acd4597e735c6c939e10ab0ef753e75d4cc4d4def379"
+    },
+    {
+      "path": "docs/FRONTEND_HANDOFF.md",
+      "sha256": "198808da85837834e7dd9467193630a50cb8ce82a9e1016b21a538e6f076c760"
+    },
+    {
+      "path": "docs/OPENAPI.json",
+      "sha256": "deed61e3e0fc818901419cf221ff4f6503a41ea707d98f11010c3d697ee7f03d"
+    },
+    {
+      "path": "docs/integration/OPENAPI.json",
+      "sha256": "deed61e3e0fc818901419cf221ff4f6503a41ea707d98f11010c3d697ee7f03d"
+    },
+    {
+      "path": "docs/mapping-routing/API_CONTRACT.md",
+      "sha256": "53f5909cc36e3a45b31405025a94a8fce51833c3c5fa05c4080cba6094f57caf"
+    },
+    {
+      "path": "docs/mapping-routing/ARCHITECTURE.md",
+      "sha256": "eb9b3f331bd6564ccdca222c3ddf4a238f5c0125188275b7fd51f372ad6168d3"
+    },
+    {
+      "path": "docs/mapping-routing/BENCHMARK.json",
+      "sha256": "eb88147ff636f64500924652c3489dcdc5f1a34fc3a32b5cac688ecb49519f11"
+    },
+    {
+      "path": "docs/mapping-routing/CUSTOMER_PINNING.md",
+      "sha256": "514444d0ae40b16fe688ceb17b8a3dba7fcc7c7c8a067671a28d8982e1127a9e"
+    },
+    {
+      "path": "docs/mapping-routing/EXAMPLE_PREVIEW.json",
+      "sha256": "9f79ef05d0d0ddca7714b49800ee72864156e60275ef13d6a54c6e478d605489"
+    },
+    {
+      "path": "docs/mapping-routing/GOOGLE_ROUTES_SETUP.md",
+      "sha256": "0bad304afe4a5c74225f5d3d2756fee276cd400946199328a269e509923e76a7"
+    },
+    {
+      "path": "docs/mapping-routing/LIMITATIONS.md",
+      "sha256": "df56e19d574718c84cef7af69f9713438dcf8454512f602ffbd675d8b39adc61"
+    },
+    {
+      "path": "docs/mapping-routing/RIDER_WORKFLOW.md",
+      "sha256": "95a0dcf76a942c19add9a6f3eced0410e2daa27141064999981363701f17196c"
+    },
+    {
+      "path": "docs/mapping-routing/ROUTE_OPTIMIZATION.md",
+      "sha256": "74f88fd1bd66f77b102ab1373c36c6194e673792dd81f3d6c4c7383eca01316c"
+    },
+    {
+      "path": "docs/mapping-routing/ROUTING_PROVIDERS.md",
+      "sha256": "57844d873f37303419d76de0f68c028dc13fc676b22d56b3b4e97872036dd84b"
+    },
+    {
+      "path": "docs/mapping-routing/TEST_RESULTS.md",
+      "sha256": "8f4e8a0538696c6a1ada7077b757d02323703f16976f1cea83bec2bb415e2bc8"
+    },
+    {
+      "path": "docs/mapping-routing/screenshots/dispatcher-planning-mobile.png",
+      "sha256": "2f58e829f859304890757a52f760431690df3066ba8291a3bab1a650a1885ef4"
+    },
+    {
+      "path": "docs/mapping-routing/screenshots/dispatcher-preview-desktop.png",
+      "sha256": "ddc38dede9623faeba970ee58a0b4a452a7fea9cddadfab3d35d89f9f9d6cfc2"
+    },
+    {
+      "path": "docs/mtt-integration/API_KEYS_AND_SERVICES.md",
+      "sha256": "c6f97372cec81dd8ad3a75fb5cf6ab5a9ab34f512193c7eb5c6f07edf71c6abb"
+    },
+    {
+      "path": "docs/mtt-integration/AUDIT_EVIDENCE.json",
+      "sha256": "1a90dde8eee1aa3a601212169fc1a1ca672be15cb8125a04069f0e2af9c536ff"
+    },
+    {
+      "path": "docs/mtt-integration/DATABASE_ARCHITECTURE.md",
+      "sha256": "c8f5dfc6e03dd5ae64612ad3fea1bb06b21be6c017e68377d5696b43396daade"
+    },
+    {
+      "path": "docs/mtt-integration/MTT_BASELINE_AUDIT.md",
+      "sha256": "df210a74e61935c75a9ed2c4d5cd0bf0d67cfaa4e2d95812f0744c2941c0052e"
+    },
+    {
+      "path": "docs/mtt-integration/OPENAPI.json",
+      "sha256": "deed61e3e0fc818901419cf221ff4f6503a41ea707d98f11010c3d697ee7f03d"
+    },
+    {
+      "path": "docs/mtt-integration/PHASE19_VERIFICATION.md",
+      "sha256": "fdf8d3df5ca5b9cb970d21470070eaa52525cd3ad27a6f0f0e2c52db65302ba0"
+    },
+    {
+      "path": "docs/mtt-integration/WORKFLOWS_AND_STARTUP.md",
+      "sha256": "b69d4f71de2fea8d713db574a48fe11eaf6f0b0821648cf0cdd6f73d49179d74"
+    },
+    {
+      "path": "frontend/css/live.css",
+      "sha256": "504b950ce86d0e39a48937b4b2008c5e02b3f4d79d52bf8513b7d42ed94c1934"
+    },
+    {
+      "path": "frontend/demo-config.js",
+      "sha256": "db2cfaeb4ddac6f4fd766a41926f51dd2ec943f0be4a36e8a272913ff578075a"
+    },
+    {
+      "path": "frontend/index.html",
+      "sha256": "a46dc5b22648f447ae5aaca66b39f21280d8695ec366916b2610b891138fd777"
+    },
+    {
+      "path": "frontend/js/customer-map.js",
+      "sha256": "89ac0134dcd1bd25f1ed507e5b37c9cde17c937cd38bd684ef87e294ceb40d0d"
+    },
+    {
+      "path": "frontend/js/functional-app.js",
+      "sha256": "04b2f138b829a417886b66b21d447de69b21a826b1449aa9df2d8c6908c0b84c"
+    },
+    {
+      "path": "frontend/js/live-bootstrap.js",
+      "sha256": "53e7b1735eba49f104c433ea91c00982bb592b804d63d1c74934aadd2b9168d7"
+    },
+    {
+      "path": "frontend/js/live-store.mjs",
+      "sha256": "f95efa58bca8f46318cf5d228104e152635dd44173af6441ec0d25d4cd2ca39c"
+    },
+    {
+      "path": "frontend/js/local-api.mjs",
+      "sha256": "27af3b359ad31a08dfcb6cb29e2ad3bb6fd522625dc71660b33ee8e17cb973a5"
+    },
+    {
+      "path": "frontend/js/routing-ui.mjs",
+      "sha256": "54fa0824d9216bdb12129004c52bda823d583563161ddd20ccdfabea8b364e70"
+    },
+    {
+      "path": "frontend/prototype.html",
+      "sha256": "4b1d4135699e7503e211b9f4babd038db24ee5e05737aee85f24e1f15365859c"
+    },
+    {
+      "path": "frontend/runtime-config.js",
+      "sha256": "b9cc59601dfddcee15cddcfb4942c08733716a15d2a6914d8380d75f8a910277"
+    },
+    {
+      "path": "frontend/sw.js",
+      "sha256": "26947cc4d75bf582418683743f77511ea2c1aa2a4dd9ed9aae55937c1cbab2fe"
+    },
+    {
+      "path": "frontend/tests/live-store.test.mjs",
+      "sha256": "1dbe0b9f5455529b6f2a6f2340169e39ff1d1c753d45bdfaaa31e4b4b5a5c993"
+    },
+    {
+      "path": "frontend/tests/routing-ui.test.mjs",
+      "sha256": "1ce7edcf54429fb5658586c65c843bdfecc7f2cf09da40e4c9b116452571257b"
+    },
+    {
+      "path": "frontend/tests/test-dom.js",
+      "sha256": "5c3d440eeaad98d5614b720a50c01c7725397b35480ae85568b00c76a8a79622"
+    },
+    {
+      "path": "package.json",
+      "sha256": "dc6d0e701c4f9c89bd9eb599c88d8d00260955d766b1487fb5d143a52b08b9b2"
+    },
+    {
+      "path": "scripts/verify_mtt_restart.cjs",
+      "sha256": "25f26596f065347723618561875233e92e5e5af56359ff67443686484eba2f38"
+    },
+    {
+      "path": "scripts/verify_routing_restart.cjs",
+      "sha256": "94f6865fd6a44a064d435687214da784563d7b6041e1ef2e3f77b492f6e24a82"
+    },
+    {
+      "path": "tests/browser/fixtures.cjs",
+      "sha256": "9db6c7875f5f40da4709db8bb4f2abc2856e2f9470502ed18fb72ebfdf3d037e"
+    },
+    {
+      "path": "tests/browser/mtt-live.spec.cjs",
+      "sha256": "91956ea5fbc321b19cc0461cb00e83b367a87dcbcc0b1f9614b3a5e862a29f89"
+    },
+    {
+      "path": "tests/browser/routing.spec.cjs",
+      "sha256": "b1bdba6166dad989b3f4d2dfd1b5d66ed3a2ba013e5e3d3546339b44959fdc90"
+    },
+    {
+      "path": "tests/browser/website.spec.cjs",
+      "sha256": "9a02e498c168935cf7c062a254249dc409c348c01d1af0c37651915842697e21"
+    }
+  ],
+  "prerequisite_commit": "74cd058643675bb1fb8e64b4dee07d2361f3fa8e",
+  "phase22_commit": "fb8ceece79f9f0db9fc2f74e54a8cdfccbbedde4",
+  "prerequisite_paths": [
+    ".gitignore",
+    "backend/tests/test_mtt_runtime.py",
+    "backend/tools/api_workspace/api-workspace.mjs",
+    "backend/tools/backend_test_dashboard/server.py",
+    "docs/API_CONTRACT.md",
+    "docs/mtt-integration/API_KEYS_AND_SERVICES.md",
+    "docs/mtt-integration/AUDIT_EVIDENCE.json",
+    "docs/mtt-integration/DATABASE_ARCHITECTURE.md",
+    "docs/mtt-integration/MTT_BASELINE_AUDIT.md",
+    "docs/mtt-integration/OPENAPI.json",
+    "docs/mtt-integration/PHASE19_VERIFICATION.md",
+    "docs/mtt-integration/WORKFLOWS_AND_STARTUP.md",
+    "frontend/css/live.css",
+    "frontend/demo-config.js",
+    "frontend/index.html",
+    "frontend/js/customer-map.js",
+    "frontend/js/functional-app.js",
+    "frontend/js/live-bootstrap.js",
+    "frontend/js/live-store.mjs",
+    "frontend/prototype.html",
+    "frontend/runtime-config.js",
+    "frontend/sw.js",
+    "frontend/tests/live-store.test.mjs",
+    "frontend/tests/test-dom.js",
+    "package.json",
+    "README.md",
+    "scripts/verify_mtt_restart.cjs",
+    "tests/browser/fixtures.cjs",
+    "tests/browser/mtt-live.spec.cjs",
+    "tests/browser/website.spec.cjs"
+  ],
+  "note": "Snapshot hashes precede re-verification; generated screenshots were refreshed during tests. No unrelated modifications were identified. No environment/database files were staged."
+}

@@ -1,20 +1,28 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="referrer" content="no-referrer">
-  <meta name="robots" content="noindex,nofollow">
-  <title>LannPya · Delivery, connected</title>
-  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="functional.css">
-  <link rel="stylesheet" href="api.css?v=efficient-workflow-2">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LannPya · deliveries from your chats</title>
+  <meta name="theme-color" content="#16263A" />
+  <link rel="icon" href="assets/brand/icon-dark.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&family=Manrope:wght@400..800&family=Noto+Sans+Myanmar:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/signboard.css?v=0.8.4" />
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
+  <link rel="stylesheet" href="css/live.css" />
 </head>
 <body>
-  <div id="app"><main class="api-main"><h1>LannPya API workspace</h1><p>Loading… JavaScript and the local backend are required. Start the backend, then open <a href="http://127.0.0.1:8000/api.html">the HTTP workspace</a>. Opening this file directly is not supported.</p></main></div>
+  <div id="app"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="vendor/lannpya-order-parser.js?v=0.1.0"></script>
+  <script src="js/workflow-domain.js?v=0.8.4"></script>
+  <script src="runtime-config.js"></script>
+  <script src="maps-config.js"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
-  <script src="customer-map.js"></script>
-  <script type="module" src="api-workspace.mjs?v=0.7.0-workflow2"></script>
+  <script src="js/customer-map.js"></script>
+  <script src="js/live-bootstrap.js"></script>
+  <script src="js/functional-app.js?v=0.9.0-live"></script>
 </body>
 </html>

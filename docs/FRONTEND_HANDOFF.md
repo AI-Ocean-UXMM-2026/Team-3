@@ -58,6 +58,20 @@ CORS is a browser policy, not authentication; production management/buyer APIs r
 
 ## Complete endpoint list
 
+Phase 22 adds the following protected routing operations. Detailed schemas,
+examples, preview/commit boundaries and provider configuration are in
+[mapping-routing/API_CONTRACT.md](mapping-routing/API_CONTRACT.md). Existing
+order, buyer and rider contracts are preserved. Real routing is not activated.
+
+- `GET /api/routes/provider-status`
+- `POST /api/routes/calculate`
+- `POST /api/routes/matrix`
+- `POST /api/routes/optimize`
+- `GET /api/routes/plans`
+- `GET /api/routes/plans/{plan_id}`
+- `POST /api/routes/plans/{plan_id}/commit`
+- `GET /api/riders/{rider_id}/route-plans`
+
 Names in braces are runtime UUIDs/tokens, not literal strings. Examples use aliases:
 `v` = latest order version, `rv` = latest rider profile version, `u` = new request UUID,
 `m/r` = existing merchant/rider UUID. All examples are JSON descriptions, not hardcoded
@@ -359,3 +373,9 @@ The local integration adds these role-protected native operations without renami
 - `POST /api/orders/{order_id}/prepare-assignment`
 
 See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.
+
+Phase 28 adds `GET /api/routes/google-demo/status` and `POST /api/routes/google-demo`.
+These use the existing private local BFF and role-bound access. Google estimates are
+default-disabled, require explicit consent and a durable server budget, and do not alter
+simulated optimization or assignments. Riders can estimate only their active assigned
+deliveries. See [Google dispatcher integration](mapping-routing/GOOGLE_DISPATCHER_INTEGRATION.md).

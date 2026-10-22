@@ -1,0 +1,358 @@
+{
+  "status": "PLAN_ONLY",
+  "dataset": {
+    "id": "fictional-yangon-evaluation-v1",
+    "notice": "FICTIONAL TEST COORDINATES. Not customer homes, verified townships or known routable roads.",
+    "hub": {
+      "latitude": 16.825,
+      "longitude": 96.13
+    },
+    "deliveries": [
+      {
+        "id": "SYN-YGN-01",
+        "point": {
+          "latitude": 16.815,
+          "longitude": 96.125
+        },
+        "probe": "ordinary_test_point"
+      },
+      {
+        "id": "SYN-YGN-02",
+        "point": {
+          "latitude": 16.835,
+          "longitude": 96.14
+        },
+        "probe": "ordinary_test_point"
+      },
+      {
+        "id": "SYN-YGN-03",
+        "point": {
+          "latitude": 16.845,
+          "longitude": 96.12
+        },
+        "probe": "ordinary_test_point"
+      },
+      {
+        "id": "SYN-YGN-04",
+        "point": {
+          "latitude": 16.805,
+          "longitude": 96.155
+        },
+        "probe": "ordinary_test_point"
+      },
+      {
+        "id": "SYN-YGN-05",
+        "point": {
+          "latitude": 16.855,
+          "longitude": 96.175
+        },
+        "probe": "ordinary_test_point"
+      },
+      {
+        "id": "SYN-YGN-06",
+        "point": {
+          "latitude": 16.805,
+          "longitude": 96.205
+        },
+        "probe": "possible_off_road_probe_not_verified"
+      }
+    ]
+  },
+  "quote": {
+    "planned_http_requests": 7,
+    "route_requests": 6,
+    "matrix_requests": 1,
+    "matrix_elements": 49,
+    "stops": 6,
+    "estimated_cost": null,
+    "currency": null,
+    "billing_warning": "Configured estimate only, not an invoice or free-tier guarantee; failures may count."
+  },
+  "execution_blockers": [
+    "CLI_LIVE_OPT_IN_REQUIRED",
+    "EVALUATION_LIVE_DISABLED",
+    "EXTERNAL_ROUTING_DISABLED",
+    "EVALUATION_REQUEST_LIMIT",
+    "EVALUATION_MATRIX_ELEMENT_LIMIT",
+    "REVIEWED_PRICING_REQUIRED",
+    "ROUTING_KEY_MISSING"
+  ],
+  "http_requests_attempted": 0,
+  "network": "NONE",
+  "live_verified": false,
+  "simulation": {
+    "SYN-YGN-01": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 1326,
+      "duration_seconds": 266,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 3,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    },
+    "SYN-YGN-02": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 4400,
+      "duration_seconds": 753,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 6,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    },
+    "SYN-YGN-03": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 4400,
+      "duration_seconds": 753,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 6,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    },
+    "SYN-YGN-04": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 6742,
+      "duration_seconds": 1136,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 8,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    },
+    "SYN-YGN-05": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 10030,
+      "duration_seconds": 1666,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 11,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    },
+    "SYN-YGN-06": {
+      "provider": "yangon-synthetic-grid-v1",
+      "quality": "SIMULATED",
+      "distance_meters": 12062,
+      "duration_seconds": 1986,
+      "traffic_aware": false,
+      "geometry_available": true,
+      "geometry_points": 13,
+      "geometry_endpoint_offsets_meters": {
+        "origin": 0.0,
+        "destination": 0.0
+      },
+      "warnings": [
+        "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+      ]
+    }
+  },
+  "simulation_matrix": {
+    "provider": "yangon-synthetic-grid-v1",
+    "locations": [
+      {
+        "latitude": 16.825,
+        "longitude": 96.13
+      },
+      {
+        "latitude": 16.815,
+        "longitude": 96.125
+      },
+      {
+        "latitude": 16.835,
+        "longitude": 96.14
+      },
+      {
+        "latitude": 16.845,
+        "longitude": 96.12
+      },
+      {
+        "latitude": 16.805,
+        "longitude": 96.155
+      },
+      {
+        "latitude": 16.855,
+        "longitude": 96.175
+      },
+      {
+        "latitude": 16.805,
+        "longitude": 96.205
+      }
+    ],
+    "mode": "DRIVE",
+    "distances": [
+      [
+        0,
+        1326,
+        4400,
+        4400,
+        6742,
+        10030,
+        12062
+      ],
+      [
+        1326,
+        0,
+        4614,
+        4614,
+        6956,
+        10244,
+        12276
+      ],
+      [
+        4400,
+        4614,
+        0,
+        3240,
+        7902,
+        6742,
+        13222
+      ],
+      [
+        4400,
+        4614,
+        3240,
+        0,
+        10030,
+        8870,
+        15350
+      ],
+      [
+        6742,
+        6956,
+        7902,
+        10030,
+        0,
+        9276,
+        6860
+      ],
+      [
+        10030,
+        10244,
+        6742,
+        8870,
+        9276,
+        0,
+        12468
+      ],
+      [
+        12062,
+        12276,
+        13222,
+        15350,
+        6860,
+        12468,
+        0
+      ]
+    ],
+    "durations": [
+      [
+        0,
+        266,
+        753,
+        753,
+        1136,
+        1666,
+        1986
+      ],
+      [
+        266,
+        0,
+        796,
+        796,
+        1178,
+        1708,
+        2028
+      ],
+      [
+        753,
+        796,
+        0,
+        563,
+        1326,
+        1136,
+        2176
+      ],
+      [
+        753,
+        796,
+        563,
+        0,
+        1666,
+        1476,
+        2516
+      ],
+      [
+        1136,
+        1178,
+        1326,
+        1666,
+        0,
+        1558,
+        1158
+      ],
+      [
+        1666,
+        1708,
+        1136,
+        1476,
+        1558,
+        0,
+        2068
+      ],
+      [
+        1986,
+        2028,
+        2176,
+        2516,
+        1158,
+        2068,
+        0
+      ]
+    ],
+    "quality": "SIMULATED",
+    "traffic_aware": false,
+    "warnings": [
+      "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic."
+    ],
+    "attribution": "LannPya synthetic test graph"
+  },
+  "provider_results": [],
+  "limitations": [
+    "Fictional coordinates; missing roads/reachability have no verified ground truth.",
+    "No raw geometry persisted; inspect transient geometry only under provider terms.",
+    "Static travel estimates, not live traffic or observed rider travel times."
+  ],
+  "config_sha256": "1330f4ca913da7d72e2ee852c79c204d7451438a7717dd067d42218da01e96b1"
+}
