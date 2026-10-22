@@ -3,7 +3,7 @@ from typing import Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import AliasChoices, Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,7 +39,10 @@ class Settings(BaseSettings):
     routing_requests_per_minute: int = Field(default=10, ge=1, le=60)
     routing_plan_ttl_minutes: int = Field(default=15, ge=1, le=60)
     order_management_enabled: bool = False
-    database_url: SecretStr = SecretStr("sqlite+pysqlite:///./data/lannpya_dev.sqlite3")
+    database_url: SecretStr = Field(
+        default=SecretStr("sqlite+pysqlite:///./data/lannpya_dev.sqlite3"),
+        validation_alias=AliasChoices("LANNPYA_DATABASE_URL", "DATABASE_URL"),
+    )
     dev_access_token: SecretStr | None = None
     dev_actor_id: UUID | None = None
     rider_max_active_assignments: int = Field(default=100, ge=1, le=200)
