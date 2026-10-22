@@ -981,55 +981,8 @@ body.lang-my .bi>[lang="my"]~span{display:none!important}
 body.lang-my .my,body.lang-my .bi>[lang="my"]{font-size:1em!important;font-weight:inherit;line-height:1.6}
 body.experience .prototype-bar .lang-switch{display:none}
 
-/* ==== Signpaint type (22 Oct): condensed sign capitals for headings and money, Public Sans for reading ==== */
-:root{
-  --display:'Big Shoulders Display','Noto Sans Myanmar',Impact,'Arial Narrow',sans-serif;
-  --body:'Public Sans','Noto Sans Myanmar',system-ui,sans-serif;
-  --sign-track:.025em;
-  /* spacing scale, 4 px base */
-  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;--s10:40px;--s12:48px;--s14:56px;
-}
-body{font-family:var(--body)}
-/* Sign capitals only where a shop sign would be: page titles, lane signs, counts, money */
-h1,.sign .en,.sign-count,.metric-value,.status-sign .now strong,.route-tile strong,.cash-total,.cod-amount,.collect strong,.check-head .cash strong,.handover-facts dd,.customer-details .pay dd,.customer-parcel .num,.handover-amount,.card-cash{font-family:var(--display);font-variation-settings:normal;letter-spacing:var(--sign-track);font-weight:800}
-h1{font-size:clamp(2rem,1.5rem + 1.8vw,2.9rem);line-height:1;text-transform:uppercase;font-weight:900}
-h1:lang(my),h1 [lang="my"],h1 .my{text-transform:none;letter-spacing:0}
-.board-head h1 .my{font-family:var(--my)}
-.sign .en{text-transform:uppercase;font-size:1.15rem;line-height:1.1}
-.sign-count{font-size:2.4rem;line-height:.9}
-.route-tile strong{font-size:1.7rem;line-height:1.05;text-transform:uppercase}
-.cash-total,.cod-amount{font-size:2.6rem;line-height:1}
-.collect strong{font-size:2.2rem;line-height:1}
-.check-head .cash strong{font-size:2.3rem;line-height:1}
-.card-cash{font-size:1.1rem}
-.rider-head h1,.customer-sign h1{font-size:1.5rem;text-transform:uppercase}
-/* Sentences and names read in Public Sans */
-h2,h3,.card-name,.rider-queue-row strong,.shop-bar strong,.customer-parcel strong,.form-section h2,.form-section legend,.brand-word,.shop-mark{font-family:var(--body);letter-spacing:-.01em;font-variation-settings:normal}
-h2{font-weight:750}h3{font-weight:700}
-.card-name{font-weight:700}
-.stop-name h2{font-weight:800;letter-spacing:-.015em}
-.tab,.btn,button,label,summary{font-family:var(--body)}
-.tab .en{letter-spacing:.01em}
-.kicker,.sheet-label,.handover-list-title .sheet-copy,.route-tile .route-id{font-family:var(--body);letter-spacing:.06em}
-
-/* Spacing, by role. Dispatcher: dense desk. Rider: big targets. Buyer: one calm column. */
-body.role-admin .lanes{gap:var(--s4)}
-body.role-admin .lane{gap:var(--s2)}
-body.role-admin .card{padding:var(--s3) var(--s4);gap:var(--s2)}
-body.role-admin .panel{padding:var(--s5)}
-body.role-admin .btn{min-height:40px}
-body.role-admin .board-tools{margin-block:var(--s4) var(--s6)}
-body.role-rider .rider-body{display:grid;gap:var(--s6)}
-body.role-rider .rider-body>*{margin-block:0}
-body.role-rider .stop-card{padding:var(--s5);gap:var(--s3)}
-body.role-rider .btn{min-height:var(--s12)}
-body.role-rider .stop-actions .btn{min-height:var(--s14)}
-body.role-rider .rider-queue-row{min-height:var(--s14);padding:var(--s3) var(--s4)}
-body.role-customer .customer-card{padding:var(--s5);display:grid;gap:var(--s8)}
-body.role-customer .customer-card>*{margin-block:0}
-body.role-customer .customer-step{display:grid;gap:var(--s4)}
-body.role-customer .customer-primary,body.role-customer .customer-secondary{min-height:var(--s14)}
-:lang(my),.my,[lang="my"]{line-height:1.7}
+/* Spacing scale (4 px base) kept for newer components; type is back to Inter + Manrope (22 Oct). */
+:root{--sign-track:0;--s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;--s10:40px;--s12:48px;--s14:56px}
 
 /* Rider pages (22 Oct): the ☰ menu and bottom bar share four pages */
 .rider-menu .rider-tab{display:flex;align-items:center;gap:12px;min-height:52px;text-decoration:none;color:inherit}

@@ -49,10 +49,10 @@ export async function mountPlanner({container,store,afterCommit}){
 }
 export async function mountRiderPlan({container,store}){
   const plan=store.snapshot().riderPlans.find(p=>p.result.vehicles.length);
-  if(!plan){container.innerHTML='<p>No committed optimization plan. Follow the existing dispatcher stop order and refresh for updates.</p>';await mountGoogleEstimate({container,store,side:'rider'});return;}
+  if(!plan){container.innerHTML='<p>No committed optimization plan. Follow the existing dispatcher stop order and refresh for updates.</p>';return;}
   container.innerHTML=`<h2>Assigned route plan</h2>${plan.stale?'<p class="live-notice">Plan is stale after an order/queue change. Estimates need dispatcher review; follow the current queue and navigation pin.</p>':''}`+resultHTML(plan);
   maps(container,plan);
-  await mountGoogleEstimate({container,store,side:'rider'});
+  
 }
 
 export async function mountGoogleEstimate({container,store,side='admin'}){

@@ -49,6 +49,7 @@ const WALLETS: [RegExp, WalletMethod][] = [
 ];
 const PAID_RE = /prepaid|(?<!\b(?:to\s+be|not|be|yet|unless)\s+)\bpaid\b(?!\s+(?:on|at|upon|when|after)\b)|(?:လွှဲ|ချေ|ရှင်း)(?:ထား)?ပြီး/i;
 const LABEL_RE = /(?:cod|total|amount|ငွေ|စုစုပေါင်း|ကောက်ရန်|ကျသင့်ငွေ)\s*[:=-]?\s*$/i;
+const LABEL_AFTER_RE = /^\s*(?:ks\b|kyats?\b|mmk\b|ကျပ်)?\s*(?:cod\b|ငွေချေ|ကောက်ရန်)/i;
 const CURRENCY_RE = /^\s*(?:ks\b|kyats?\b|mmk\b|ကျပ်|ကျ)/i;
 const UNIT_VALUES: Record<string, number> = { "သိန်း": 100_000, "သောင်း": 10_000, "ထောင်": 1_000 };
 const UNIT_GROUP_RE = /(?:\d+(?:\.\d+)?\s*(?:သိန်း|သောင်း|ထောင်)\s*)+/g;
@@ -94,7 +95,7 @@ export function extractPayment(text: string): Payment {
     const span = { start: m.index, end: m.index + m[0].length };
     if (overlaps(span)) continue;
     const currency = norm.slice(span.end).match(CURRENCY_RE);
-    const labelled = labelledAt(m.index);
+    const labelled = labelledAt(m.index) || LABEL_AFTER_RE.test(norm.slice(span.end));
     if (!currency && !labelled) continue;
     candidates.push({
       start: span.start,
@@ -128,14 +129,32 @@ const HONORIFIC_RE = /^\s*((?:(?:Ma|Ko|Daw|U|Mg|Maung|Saya)\s+\S|(?:ကို|�
 const ORDER_NUMBER_RE = /^\s*(?:\d+|[၀-၉]+)\s*[.)။]\s*/;
 const PLACE_WORD_RE = /လမ်း|road|street|\bst\b|မြို့နယ်|ရပ်ကွက်|township|\d/i;
 
+/** Text before the first phone number or separator on a line, e.g. "Ma Thida" in "Ma Thida 09 7943 39082". */
+function nameHead(line: string): { head: string; beforePhone: boolean } {
+  const norm = toAsciiDigits(line);
+  const phone = extractPhones(norm)[0];
+  const cut = phone ? phone.start : norm.length;
+  const head = line.slice(0, cut).split(/[,၊|/]|\s[-–]\s/)[0].trim();
+  return { head, beforePhone: !!phone && line.slice(0, cut).trim() === head };
+}
+const PLAIN_NAME_RE = /^(?:[A-Za-z][A-Za-z.'-]*(?:\s+[A-Za-z][A-Za-z.'-]*){0,3}|[က-႟]+(?:\s+[က-႟]+){0,2})$/;
+
 export function extractName(text: string): NameMatch | null {
   let offset = 0;
-  for (const fullLine of text.split("\n")) {
+  const lines = text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const fullLine = lines[i];
     const line = fullLine.replace(ORDER_NUMBER_RE, "");
     const labelled = line.match(NAME_LABEL_RE);
-    const honorific = !labelled && line.length <= 40 && !PLACE_WORD_RE.test(line) ? line.match(HONORIFIC_RE) : null;
-    const value = labelled?.[1] ?? honorific?.[1];
-    // The span covers the whole line, so redaction also drops the label.
+    let value = labelled ? nameHead(labelled[1]).head || labelled[1] : undefined;
+    if (!value) {
+      const { head, beforePhone } = nameHead(line);
+      const nextIsPhone = !!lines[i + 1] && extractPhones(lines[i + 1]).length > 0 && extractPhones(line).length === 0;
+      if (head && head.length <= 40 && !PLACE_WORD_RE.test(head)) {
+        const honorific = head.match(HONORIFIC_RE)?.[1];
+        value = honorific ?? ((beforePhone || nextIsPhone) && PLAIN_NAME_RE.test(head) ? head : undefined);
+      }
+    }
     if (value) return { value, start: offset, end: offset + fullLine.length };
     offset += fullLine.length + 1;
   }

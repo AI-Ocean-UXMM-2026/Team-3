@@ -115,3 +115,11 @@ describe("Layer 1: street and house number", () => {
     expect(extractStreet("အဆွေတော်နား")).toEqual({ houseNo: null, street: null });
   });
 });
+
+describe("extractName without labels", () => {
+  it("takes the name before a phone or above a phone line", () => {
+    expect(extractName("Ma Thida 09 7943 39082")?.value).toBe("Ma Thida");
+    expect(extractName("Thiri Aung\n09 5123 4567")?.value).toBe("Thiri Aung");
+    expect(extractName("Hledan Road 09 5123 4567")).toBeNull();
+  });
+});
