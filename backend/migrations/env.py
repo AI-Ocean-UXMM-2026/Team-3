@@ -15,7 +15,16 @@ target_metadata = Base.metadata
 
 
 def database_url():
-    return config.attributes.get("database_url") or Settings().database_url.get_secret_value()
+    x_args = context.get_x_argument(as_dictionary=True)
+    raw = (
+        config.attributes.get("database_url")
+        or x_args.get("database_url")
+        or config.get_main_option("sqlalchemy.url")
+        or Settings().database_url.get_secret_value()
+    )
+    from app.db.session import normalize_database_url
+
+    return normalize_database_url(raw).render_as_string(hide_password=False)
 
 
 if context.is_offline_mode():
