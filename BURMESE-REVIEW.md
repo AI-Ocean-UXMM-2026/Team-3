@@ -107,3 +107,4 @@ Any future Burmese wording changes need another review. Refresh source reference
 | ထွက်မည် | Sign out | Rider menu |
 | ဤဖုန်းမှ ထွက်မည်လား | Sign out of this phone? | Rider sign-out confirm |
 | ပို့ဆောင်သူ {name} က သင့်ပါဆယ် {ref} ကို လက်ခံပြီးပါပြီ။ | Rider {name} accepted your parcel {ref}. | Buyer text-message banner |
+| သင့်ဆီ ရောက်လာတော့မည် | You're the next stop (wording given by the project owner) | Buyer page heading when the rider's next stop is the buyer |
