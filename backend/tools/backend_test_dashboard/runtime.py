@@ -1,4 +1,5 @@
 import hashlib
+import hmac
 import logging
 import re
 import secrets
@@ -15,10 +16,11 @@ from sqlalchemy import select, update
 from app.core.config import Settings
 from app.db.buyer_models import BuyerOtpChallenge, BuyerSession, ConfirmationLink
 from app.db.migrations import upgrade_database
-from app.db.models import User
+from app.db.models import Order, User
 from app.db.session import Database
-from app.domain.lifecycle import ALLOWED_TRANSITIONS, UserRole
+from app.domain.lifecycle import ALLOWED_TRANSITIONS, OrderStatus, UserRole
 from app.main import create_app
+from app.services.buyer_confirmation import phone_binding
 
 
 class NoHTTPClientLogs(logging.Filter):
@@ -176,13 +178,34 @@ class Sandbox:
         if link_id is None:
             return None
         with self.database.sessions() as session:
+            now = datetime.now(UTC)
+            link = session.get(ConfirmationLink, link_id)
+            if link is None:
+                return None
+            order = session.get(Order, link.order_id)
+            if (
+                order is None
+                or link.revoked_at is not None
+                or link.locked_at is not None
+                or link.expires_at <= now
+                or order.status not in {
+                    OrderStatus.NEEDS_REVIEW,
+                    OrderStatus.AWAITING_CONFIRMATION,
+                    OrderStatus.CONFIRMED,
+                }
+                or not hmac.compare_digest(
+                    link.phone_binding, phone_binding(link.token_hash, order.customer_phone)
+                )
+            ):
+                return None
             challenge = session.scalar(
                 select(BuyerOtpChallenge)
                 .where(
                     BuyerOtpChallenge.link_id == link_id,
+                    BuyerOtpChallenge.generation == link.generation,
                     BuyerOtpChallenge.status == "PENDING",
                     BuyerOtpChallenge.provider == "DEMO",
-                    BuyerOtpChallenge.expires_at > datetime.now(UTC),
+                    BuyerOtpChallenge.expires_at > now,
                     BuyerOtpChallenge.demo_code.is_not(None),
                 )
                 .order_by(BuyerOtpChallenge.created_at.desc())

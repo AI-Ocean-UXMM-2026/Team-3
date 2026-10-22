@@ -202,6 +202,44 @@ def test_myanmar_phone_normalization(value):
     assert normalize_phone(value) == "+959791234567"
 
 
+def test_otp_expiry_is_capped_by_confirmation_link(linked):
+    link_expiry = utcnow() + timedelta(minutes=1)
+    with linked["db"].sessions.begin() as session:
+        session.scalar(
+            select(ConfirmationLink).where(ConfirmationLink.id == UUID(linked["link"]["link_id"]))
+        ).expires_at = link_expiry
+
+    response = linked["client"].post(linked["path"] + "/otp", json={})
+    assert response.status_code == 200, response.text
+    with linked["db"].sessions() as session:
+        challenge = session.get(BuyerOtpChallenge, UUID(response.json()["challenge_id"]))
+        assert challenge.expires_at == link_expiry
+
+
+def test_otp_start_locks_coordinator_before_order(linked, monkeypatch):
+    import app.services.automatic_assignment as allocation
+    import app.services.buyer_otp as otp
+
+    locks = []
+    lock_coordinator = allocation.lock_allocator
+    lock_order = otp.lock_order
+
+    def record_coordinator(session):
+        locks.append("coordinator")
+        return lock_coordinator(session)
+
+    def record_order(session, order_id):
+        locks.append("order")
+        return lock_order(session, order_id)
+
+    monkeypatch.setattr(allocation, "lock_allocator", record_coordinator)
+    monkeypatch.setattr(otp, "lock_order", record_order)
+
+    response = linked["client"].post(linked["path"] + "/otp", json={})
+    assert response.status_code == 200, response.text
+    assert locks[:2] == ["coordinator", "order"]
+
+
 def test_last_four_is_not_accepted_as_public_verification(linked):
     response = linked["client"].post(linked["path"] + "/verify", json={"last_four": "4567"})
     assert response.status_code == 422
@@ -237,6 +275,25 @@ def test_otp_expires_rejects_replay_and_is_link_bound(linked, monkeypatch):
     with linked["db"].sessions() as session:
         assert session.scalar(select(BuyerOtpChallenge).where(BuyerOtpChallenge.status == "CONSUMED"))
     assert linked["client"].post(linked["path"] + "/verify", json={"code": "000000"}).status_code in {403, 423}
+
+
+def test_otp_from_one_link_cannot_verify_another_link(linked):
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    assert started.status_code == 200
+    with linked["db"].sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(started.json()["challenge_id"])).demo_code
+
+    other_order = order_create(linked)
+    other_link = linked["client"].post(
+        f"/api/orders/{other_order['id']}/confirmation-link", headers=ADMIN
+    )
+    assert other_link.status_code == 201
+    other_path = "/api" + other_link.json()["confirmation_url"]
+    rejected = linked["client"].post(other_path + "/verify", json={"code": code})
+    assert rejected.status_code == 403
+
+    accepted = linked["client"].post(linked["path"] + "/verify", json={"code": code})
+    assert accepted.status_code == 200
 
 
 def test_otp_is_invalid_after_link_revocation_or_phone_change(linked):

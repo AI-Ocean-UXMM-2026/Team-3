@@ -73,6 +73,14 @@ def delivery_link_policy(session, order):
             .values(delivered_view_until=until, generation=ConfirmationLink.generation + 1)
         )
     elif order.status == OrderStatus.CANCELLED:
+        active_link_ids = select(ConfirmationLink.id).where(
+            ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None)
+        )
+        session.execute(
+            update(BuyerOtpChallenge)
+            .where(BuyerOtpChallenge.link_id.in_(active_link_ids), BuyerOtpChallenge.status == "PENDING")
+            .values(status="REVOKED", demo_code=None)
+        )
         session.execute(
             update(ConfirmationLink)
             .where(ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None))

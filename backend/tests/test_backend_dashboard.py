@@ -17,6 +17,7 @@ from sqlalchemy import event, func, select
 from sqlalchemy.exc import OperationalError
 
 from app.ai.extraction import AddressExtractionProvider, ExtractionUnavailableError
+from app.db.buyer_models import BuyerOtpChallenge
 from app.db.models import DeliveryEvent, Order
 from app.db.session import BACKEND_ROOT, Database
 from tools.backend_test_dashboard.server import STATIC, create_dashboard
@@ -400,6 +401,34 @@ def test_expired_link_session_and_real_lockout(dashboard):
         buyer(client, handle, "POST", "/verify", {"last_four": "1111"}, expected)
     assert buyer(client, handle)["state"] == "LOCKED"
     buyer(client, handle, "POST", "/verify", {"last_four": "0000"}, 423)
+
+
+@pytest.mark.parametrize("invalidation", ["cancel", "expire"])
+def test_dashboard_demo_code_is_hidden_after_parent_link_invalidation(dashboard, invalidation):
+    client, box, boot = dashboard
+    identifier = order(client, boot)["id"]
+    handle = link(client, identifier)["buyer_handle"]
+    started = call(client, "POST", "/api/confirm/@buyer/otp", {}, buyer_handle=handle)
+    assert "challenge_id" in started
+    demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
+    assert demo.status_code == 200
+
+    if invalidation == "cancel":
+        transition(client, identifier, "CANCELLED")
+    else:
+        expired = client.post("/dashboard/expire", json={"buyer_handle": handle, "kind": "LINK"})
+        assert expired.status_code == 200
+
+    unavailable = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
+    assert unavailable.status_code == 404
+    with box.database.sessions() as session:
+        challenge = session.scalar(
+            select(BuyerOtpChallenge).where(BuyerOtpChallenge.link_id == UUID(box.buyers[handle]["link_id"]))
+        )
+        if invalidation == "cancel":
+            assert challenge.status == "REVOKED" and challenge.demo_code is None
+        else:
+            assert challenge.demo_code == demo.json()["code"]
 
 
 def test_buyer_handle_cannot_cross_browser_sessions(dashboard):

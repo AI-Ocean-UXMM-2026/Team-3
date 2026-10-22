@@ -81,3 +81,31 @@ Output: `13 passed, 3 warnings in 13.09s`. The warnings were dependency deprecat
 ## Review limits
 
 The exact predecessor shell logs are unavailable, and only the focused OTP/dashboard set above was rerun. The browser prototype flow and combined rider/customer gate remain for the frontend task. No push, merge, deployment, or real SMS was performed.
+
+## Review round 1 fixes (2026-10-23)
+
+Addressed all three important findings from `task-2-review.md`:
+
+- Order cancellation now revokes pending challenges and clears demo codes in the same transaction as confirmation-link revocation. New challenge expiry is capped at the parent link expiry. The local demo-code lookup now checks the live parent link, order state, revocation, lockout, phone binding, generation, and link expiry before returning a code.
+- OTP start now acquires the existing allocation coordinator before `_link()` acquires the order lock, matching allocation's coordinator-then-order order. A focused TestClient regression wraps the real lock helpers and asserts the observed order. SQLite cannot reproduce PostgreSQL deadlocks; this integration assertion verifies the acquisition sequence used by both backends.
+- Added an explicit same-phone cross-link test: code from link A is rejected at link B and remains usable at link A.
+
+Covering tests were added in `backend/tests/test_buyer_confirmation.py` and `backend/tests/test_backend_dashboard.py`. Run from `backend/`; the focused command (unique temporary base directory generated from a GUID) was:
+
+```powershell
+$runId = [guid]::NewGuid().ToString('N')
+$baseTemp = Join-Path $env:TEMP "pytest-otp-review1-$runId"
+& 'C:/Users/minth/Downloads/Ai ocean/lannpya-mtt/backend/.venv/Scripts/python.exe' -m pytest -q --basetemp="$baseTemp" `
+  tests/test_buyer_confirmation.py::test_otp_expiry_is_capped_by_confirmation_link `
+  tests/test_buyer_confirmation.py::test_otp_start_locks_coordinator_before_order `
+  tests/test_buyer_confirmation.py::test_otp_from_one_link_cannot_verify_another_link `
+  tests/test_buyer_confirmation.py::test_otp_start_returns_only_safe_challenge_state `
+  tests/test_buyer_confirmation.py::test_otp_is_invalid_after_link_revocation_or_phone_change `
+  tests/test_buyer_confirmation.py::test_phone_change_revokes_pending_otp `
+  tests/test_buyer_confirmation.py::test_concurrent_first_challenges_for_same_phone_serialize `
+  tests/test_backend_dashboard.py::test_dashboard_demo_code_is_hidden_after_parent_link_invalidation `
+  tests/test_backend_dashboard.py::test_buyer_handle_cannot_cross_browser_sessions `
+  tests/test_backend_dashboard.py::test_expired_link_session_and_real_lockout
+```
+
+Output: `11 passed, 3 warnings in 14.59s`. The three warnings are the same third-party SWIG deprecations recorded above; they were not suppressed. No broad suite was run.

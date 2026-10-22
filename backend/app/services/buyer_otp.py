@@ -8,12 +8,11 @@ from datetime import timedelta
 from urllib.parse import quote
 
 import httpx2 as httpx
-from sqlalchemy import select, update
+from sqlalchemy import select
 
 from app.core.order_errors import OrderAPIError
 from app.db.buyer_models import BuyerOtpChallenge, ConfirmationLink
 from app.db.models import DeliveryEvent, Order, utcnow
-from app.db.rider_models import AllocationCoordinator
 from app.domain.lifecycle import OrderStatus
 from app.services.buyer_confirmation import digest, lock_order
 
@@ -95,12 +94,12 @@ class BuyerOtpService:
         ))
 
     def start(self, token):
+        # Allocation and OTP start share this coordinator; always acquire it
+        # before the order lock taken by _link().
+        from app.services.automatic_assignment import lock_allocator
+
+        lock_allocator(self.session)
         link, order = self._link(token)
-        # A durable singleton row serializes first challenges for the same phone too;
-        # there may be no challenge row to lock yet.
-        self.session.execute(
-            update(AllocationCoordinator).where(AllocationCoordinator.id == 1).values(id=1)
-        )
         phone = normalize_phone(order.customer_phone)
         phone_binding = hashlib.sha256(phone.encode()).hexdigest()
         now = utcnow()
@@ -162,7 +161,7 @@ class BuyerOtpService:
             verification_sid=sid,
             status="PENDING",
             attempts=0,
-            expires_at=now + timedelta(minutes=5),
+            expires_at=min(now + timedelta(minutes=5), link.expires_at),
             resend_after=now + timedelta(seconds=60),
         )
         self.session.add(challenge)
