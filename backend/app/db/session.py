@@ -33,8 +33,10 @@ class Database:
                 path.parent.mkdir(parents=True, exist_ok=True)
                 parsed = parsed.set(database=str(path.resolve()))
         elif parsed.get_backend_name() == "postgresql":
-            options.setdefault("pool_size", 10)
-            options.setdefault("max_overflow", 20)
+            # Adjust connection pool for Supabase Free tier (conservative on direct port 5432)
+            is_direct_port = parsed.port == 5432
+            options.setdefault("pool_size", 5 if is_direct_port else 10)
+            options.setdefault("max_overflow", 5 if is_direct_port else 15)
             options.setdefault("pool_recycle", 300)
             options.setdefault("pool_timeout", 30)
         self.engine = create_engine(parsed, **options)

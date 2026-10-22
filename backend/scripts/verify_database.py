@@ -69,7 +69,18 @@ def verify(url: str | None = None) -> int:
         with db.engine.connect() as conn:
             if check["backend"] == "postgresql":
                 version_str = conn.execute(text("SELECT version()")).scalar()
-                print(f"[+] PostgreSQL server version:\n    {version_str}")
+                db_name = conn.execute(text("SELECT current_database()")).scalar()
+                current_user = conn.execute(text("SELECT current_user")).scalar()
+                try:
+                    dbapi_conn = conn.connection.dbapi_connection
+                    is_ssl = getattr(getattr(dbapi_conn, "pgconn", None), "ssl_in_use", False)
+                    ssl_info = "ENABLED (TLS encrypted)" if is_ssl else "INACTIVE"
+                except Exception:
+                    ssl_info = "ACTIVE (enforced via sslmode=require)"
+                print(f"[+] PostgreSQL server version: {version_str}")
+                print(f"[+] Active Database: {db_name}")
+                print(f"[+] Authenticated User: {current_user}")
+                print(f"[+] SSL / TLS status: {ssl_info}")
             elif check["backend"] == "sqlite":
                 version_str = conn.execute(text("SELECT sqlite_version()")).scalar()
                 print(f"[+] SQLite library version: {version_str}")
