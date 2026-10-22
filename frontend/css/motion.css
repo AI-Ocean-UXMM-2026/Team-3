@@ -1,0 +1,235 @@
+/* Motion, sign-in and status (22 Oct). Extends the tokens in signboard.css: --ease-out, --ease-drawer, Signpaint type.
+   Durations: press 140ms, swaps 160-260ms, moves 900ms ease-in-out, loops linear. Reduced motion keeps fades, drops movement. */
+:root{--ease-in-out:cubic-bezier(.77,0,.175,1)}
+
+/* ---- Buttons: press dip, working dots, done ---- */
+.btn,.customer-primary,.customer-secondary{position:relative}
+.btn:active,.customer-primary:active,.customer-secondary:active{transform:scale(.97)}
+.btn-dots{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:6px;opacity:0;transform:translateY(6px);pointer-events:none;transition:opacity 160ms var(--ease-out),transform 200ms var(--ease-out)}
+.btn-dots i{width:7px;height:7px;border-radius:50%;background:var(--saffron);display:block;animation:btn-march 900ms var(--ease-in-out) infinite}
+.btn.go .btn-dots i{background:var(--navy)}
+.btn-dots i:nth-child(2){animation-delay:120ms}.btn-dots i:nth-child(3){animation-delay:240ms}.btn-dots i:nth-child(4){animation-delay:360ms}
+@keyframes btn-march{0%,100%{opacity:.25;transform:translateY(0)}40%{opacity:1;transform:translateY(-3px)}}
+.btn .btn-label{transition:opacity 160ms var(--ease-out),transform 200ms var(--ease-out)}
+.btn.loading{pointer-events:none}
+.btn.loading .btn-label{opacity:0;transform:translateY(-6px)}
+.btn.loading .btn-dots{opacity:1;transform:none}
+.btn.done{background:var(--good,#1C6A45);border-color:var(--good,#1C6A45);color:#fff}
+.shake{animation:shake 320ms var(--ease-out)}
+@keyframes shake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+
+/* ---- Sign out ---- */
+.topbar .sign-out{min-height:36px;padding:4px 12px;font-size:.85rem;background:transparent;color:var(--cream);border-color:rgba(255,245,228,.45);white-space:nowrap}
+.sign-out .icon{width:16px;height:16px;transition:transform 160ms var(--ease-out)}
+@media (hover:hover) and (pointer:fine){.topbar .sign-out:hover{background:var(--navy-2);border-color:var(--cream)}.sign-out:hover .icon{transform:translateX(2px)}}
+.rider-menu-foot{border-top:1px solid var(--line);margin-top:8px;padding-top:8px}
+.rider-menu-foot .sign-out{width:100%;justify-content:space-between;min-height:48px}
+
+/* ---- Sign-in pages ---- */
+body.signed-out .content{padding:0}
+.signin{display:grid;min-height:min(640px,calc(100vh - 60px));background:var(--paper);border:var(--edge);border-radius:var(--r);overflow:hidden;max-width:980px;margin:24px auto}
+.hub-signin{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}
+.signin-brand{background:var(--navy);color:var(--cream);padding:32px 28px;display:flex;flex-direction:column;gap:8px}
+.signin-brand .lp-mark{width:96px;height:96px;--mark:var(--cream)}
+.signin-brand .brand-word{font-size:2rem}
+.motto{margin:0;display:flex;flex-direction:column}
+.motto .my{font:600 1.05rem/1.75 var(--my);color:var(--cream)}
+.motto .en{font:500 .9rem/1.4 var(--body);color:#B6C5D8}
+.signin-facts{margin:auto 0 0;padding:24px 0 0;list-style:none;display:grid;gap:8px;font-size:.85rem;color:#B6C5D8}
+.signin-facts li{display:flex;gap:8px;align-items:baseline}
+.signin-facts li::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--saffron);flex:none;transform:translateY(-2px)}
+.signin-form{padding:28px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.signin-form label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.9rem}
+.signin-form label>.my{font-weight:400;font-size:.82rem;color:var(--ink-2);line-height:1.6}
+.signin-form input:not([type=checkbox]){min-height:48px;font-size:16px}
+.signin-form .inline-check{flex-direction:row;align-items:center;font-weight:500}
+.signin-form .form-error:empty{display:none}
+.signin-go{min-height:56px;font-size:1.05rem;width:100%}
+.signin-tabs{position:relative;display:flex;border-bottom:var(--edge)}
+.signin-tabs button{flex:1;background:none;border:0;padding:10px 4px;font:700 .95rem/1.2 var(--body);color:var(--ink-2);cursor:pointer}
+.signin-tabs button[aria-selected="true"]{color:var(--navy)}
+.signin-tabs .tab-bar{position:absolute;left:0;bottom:-1px;width:50%;height:3px;border-radius:3px;background:var(--saffron);transition:transform 220ms var(--ease-out)}
+.signin-tabs[data-at="1"] .tab-bar{transform:translateX(100%)}
+.signin-pane{display:grid;gap:14px;animation:pane-in 220ms var(--ease-out)}
+@keyframes pane-in{from{opacity:0;transform:translateX(8px)}}
+.demo-hint{margin:0;font-size:.8rem;color:var(--ink-2)}
+/* Rider: Burmese first, English under it, roomy targets */
+.rider-signin{max-width:420px;grid-template-columns:1fr;margin:16px auto}
+.rider-signin .signin-brand{align-items:center;text-align:center;padding:28px 20px 24px}
+.rider-signin .lp-mark{width:84px;height:84px}
+.role-chip{display:inline-flex;gap:6px;align-items:center;margin-top:4px;padding:2px 10px;border:1px solid rgba(255,245,228,.35);border-radius:999px;font-size:.78rem;font-weight:600;color:#B6C5D8}
+.role-chip .my{color:var(--cream);line-height:1.6}
+.rider-signin .signin-form{padding:20px}
+.bi-title{display:flex;flex-direction:column;margin:0;font:inherit;text-transform:none;letter-spacing:0}
+.bi-title .my{font:700 1.45rem/1.6 var(--my);color:var(--ink)}
+.bi-title .en{font:600 .95rem/1.3 var(--body);color:var(--ink-2)}
+.bi-field{display:flex;flex-direction:column;gap:2px;border:0;margin:0;padding:0;min-width:0}
+.bi-field>.my,.bi-field legend .my{font:600 1rem/1.7 var(--my);color:var(--ink)}
+.bi-field>.en,.bi-field legend .en{font:500 .8rem/1.3 var(--body);color:var(--ink-2)}
+.bi-field legend{display:flex;flex-direction:column;padding:0;margin-bottom:6px}
+.bi-field input{margin-top:6px}
+.pin-boxes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.pin-boxes input{min-width:0;width:100%;height:60px;text-align:center;font:800 1.8rem/1 var(--display);border:var(--edge-strong);border-radius:var(--r-sm);background:#fff;color:var(--navy);transition:border-color .15s ease,transform 160ms var(--ease-out)}
+.pin-boxes input.filled{transform:translateY(-2px)}
+.bi-label{display:flex;flex-direction:column;align-items:center;line-height:1.25}
+.bi-label .my{font:700 1.1rem/1.6 var(--my)}
+.bi-label span:last-child{font-size:.8rem}
+.rider-signin .signin-go{min-height:64px}
+@media (max-width:760px){.hub-signin{grid-template-columns:1fr;margin:12px 0}.signin-brand{padding:24px 20px}.signin-facts{display:none}.signin-form{padding:20px}}
+
+/* Logo builds itself on the sign-in page (rare: once a day) */
+.lp-mark .p{transform-box:fill-box;transform-origin:center}
+.lp-mark .lp-ring{opacity:0}
+.play .lp-loop{animation:lp-loop 320ms var(--ease-out) both}
+.play .lp-handle{stroke-dasharray:120;animation:lp-draw 300ms var(--ease-out) 140ms both}
+.play .lp-eye{animation:lp-pop 260ms var(--ease-out) 260ms both}
+.play .lp-parcel{animation:lp-drop 420ms var(--ease-drawer) 180ms both}
+.play .lp-dot{animation:lp-dot 220ms var(--ease-out) both;animation-delay:calc(380ms + var(--i) * 45ms)}
+.play .lp-pin{transform-origin:50% 100%;animation:lp-pin 380ms var(--ease-drawer) 820ms both}
+.play .lp-ring{animation:lp-ring 700ms var(--ease-out) 1180ms both}
+.play .brand-word,.play .motto{animation:lp-rise 360ms var(--ease-out) both}
+.play .brand-word{animation-delay:520ms}.play .motto{animation-delay:620ms}
+@keyframes lp-loop{from{opacity:0;transform:scale(.94)}}
+@keyframes lp-draw{from{stroke-dashoffset:120}}
+@keyframes lp-pop{from{opacity:0;transform:scale(.4)}}
+@keyframes lp-drop{0%{opacity:0;transform:translateY(-70%)}70%{opacity:1;transform:translateY(4%)}100%{transform:none}}
+@keyframes lp-dot{from{opacity:0;transform:translateX(-60%)}}
+@keyframes lp-pin{0%{opacity:0;transform:translateY(-60%)}75%{opacity:1;transform:scaleY(.92)}100%{transform:none}}
+@keyframes lp-ring{0%{opacity:.7;transform:scale(.6)}100%{opacity:0;transform:scale(2.4)}}
+@keyframes lp-rise{from{opacity:0;transform:translateY(8px)}}
+
+/* ---- Read the orders: the checked orders open in a pop-up ---- */
+body.pop-open{overflow:hidden}
+.parse-pop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px}
+.pop-scrim{position:absolute;inset:0;background:rgba(22,38,58,.45);animation:pop-fade 200ms ease-out both}
+.pop-sheet{position:relative;width:min(1080px,100%);max-height:calc(100vh - 32px);display:flex;flex-direction:column;background:var(--cream);border-radius:var(--r);box-shadow:0 2px 6px rgba(22,38,58,.1),0 18px 48px rgba(22,38,58,.2);overflow:hidden;animation:pop-in 260ms var(--ease-out) both}
+@keyframes pop-fade{from{opacity:0}}
+@keyframes pop-in{from{opacity:0;transform:translateY(16px) scale(.985)}}
+.pop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:var(--navy);color:var(--cream)}
+.pop-head h2{margin:0;font:800 1.5rem/1 var(--display);text-transform:uppercase;letter-spacing:var(--sign-track)}
+.pop-head .btn{background:transparent;color:var(--cream);border-color:rgba(255,245,228,.45)}
+.pop-body{overflow:auto;padding:14px;display:grid;grid-auto-rows:max-content;gap:12px}
+.pop-body>.action-row:last-child{position:sticky;bottom:-14px;margin:0 -14px -14px;padding:12px 16px;background:var(--paper);border-top:var(--edge)}
+.preview-record.enter{animation:rec-in 260ms var(--ease-out) both;animation-delay:calc(var(--i,0) * 40ms)}
+@keyframes rec-in{from{opacity:0;transform:translateY(10px)}}
+.preview-record{transition:border-color 900ms ease}
+.preview-record.saved{border-color:var(--saffron)}
+.saved-tick{display:inline-flex;align-items:center;gap:4px;color:var(--good,#1C6A45);font-size:.85rem;font-weight:600;animation:lp-rise 220ms var(--ease-out) both}
+.saved-tick .icon{width:16px;height:16px}
+.edit-wrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows 240ms var(--ease-out)}
+.preview-record.editing .edit-wrap{grid-template-rows:1fr}
+.edit-wrap>div{overflow:hidden;min-height:0}
+.row-edit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:4px 0 14px;border-bottom:var(--edge);margin-bottom:12px}
+.row-edit label{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.85rem}
+.row-edit .wide{grid-column:1/-1}
+@media (max-width:640px){.parse-pop{padding:0;place-items:end stretch}.pop-sheet{max-height:92vh;border-radius:var(--r) var(--r) 0 0;animation-name:pop-up}.row-edit{grid-template-columns:1fr}}
+@keyframes pop-up{from{transform:translateY(100%)}}
+
+/* ---- Accept: text-message banner on the buyer's screen ---- */
+.sms-banner{position:fixed;left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));top:calc(10px + env(safe-area-inset-top,0px));z-index:120;max-width:440px;margin:0 auto;background:rgba(255,253,248,.98);color:var(--ink);border-radius:16px;padding:10px 40px 10px 12px;box-shadow:0 2px 6px rgba(22,38,58,.1),0 18px 48px rgba(22,38,58,.22);display:grid;grid-template-columns:auto 1fr;gap:2px 10px;transform:translateY(calc(-100% - 24px));transition:transform 360ms var(--ease-drawer);touch-action:pan-x}
+.sms-banner.show{transform:none}
+.sms-app{grid-row:span 2;width:34px;height:34px;border-radius:8px;background:var(--navy);display:grid;place-items:center}
+.sms-app .lp-mark{width:26px;height:26px}
+.sms-from{display:flex;justify-content:space-between;font-size:.78rem;font-weight:600;color:var(--ink-2)}
+.sms-msg{grid-column:2;display:flex;flex-direction:column;font-size:.86rem;line-height:1.5}
+.sms-msg .my{line-height:1.75}
+.sms-close{position:absolute;top:6px;right:6px;width:32px;height:32px;border:0;background:transparent;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.sms-close .icon{width:16px;height:16px}
+
+/* ---- Buyer status: the mark rides as a bicycle ---- */
+.ride-track{margin:16px 0;display:grid;gap:10px}
+.ride-road{position:relative;height:124px;border-radius:var(--r);background:var(--navy);overflow:hidden;container-type:inline-size;--pad-l:16px;--pad-r:46px;--bike:72px}
+.ride-ends{position:absolute;inset:12px 14px auto;display:flex;justify-content:space-between;font:700 .68rem/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:#B6C5D8}
+.ride-dots,.ride-done{position:absolute;left:var(--pad-l);right:var(--pad-r);bottom:24px;height:6px;background-image:radial-gradient(circle,var(--saffron) 2.5px,transparent 3px);background-size:14px 6px;background-repeat:repeat-x}
+.ride-dots{opacity:.35}
+.ride-done{clip-path:inset(0 calc((1 - var(--at,0)) * 100%) 0 0);transition:clip-path 900ms var(--ease-in-out)}
+.ride-home{position:absolute;right:10px;bottom:20px;color:var(--red)}
+.ride-home .ride-pin{width:30px;height:30px;fill:var(--red);stroke:var(--cream)}
+.ride-rider{position:absolute;left:var(--pad-l);bottom:24px;width:var(--bike);transform:translateX(calc((100cqw - var(--pad-l) - var(--pad-r) - var(--bike) + 8px) * var(--at,0)));transition:transform 900ms var(--ease-in-out)}
+.ride-bike{display:block;width:100%;height:auto;overflow:visible}
+.ride-spokes{stroke:var(--saffron);stroke-width:5;stroke-linecap:round;opacity:.85;transform-box:fill-box;transform-origin:center}
+.ride-frame,.ride-parcel{transform-box:fill-box;transform-origin:center bottom}
+.ride-lines{stroke:var(--saffron);stroke-width:10;stroke-linecap:round;fill:none;opacity:0}
+.riding .ride-spokes{animation:ride-spin 700ms linear infinite}
+.riding .ride-frame{animation:ride-bob 350ms var(--ease-in-out) infinite alternate}
+.riding .ride-parcel{animation:ride-jig 350ms var(--ease-in-out) 120ms infinite alternate}
+.riding .ride-lines{opacity:1}
+.riding .ride-lines path{animation:ride-whoosh 700ms linear infinite}
+.riding .ride-lines path:nth-child(2){animation-delay:230ms}.riding .ride-lines path:nth-child(3){animation-delay:460ms}
+@keyframes ride-spin{to{transform:rotate(360deg)}}
+@keyframes ride-bob{to{transform:translateY(-3%)}}
+@keyframes ride-jig{to{transform:translateY(-5%) rotate(-3deg)}}
+@keyframes ride-whoosh{from{transform:translateX(0);opacity:1}to{transform:translateX(-40%);opacity:0}}
+.ride-line{margin:0;font-weight:600}
+.ride-steps{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;font-size:.74rem;font-weight:600;color:var(--ink-2);text-align:center}
+.ride-steps li{display:grid;gap:6px;justify-items:center}
+.ride-steps i{display:block;width:100%;height:4px;border-radius:2px;background:var(--cream-2);position:relative;overflow:hidden}
+.ride-steps i::after{content:"";position:absolute;inset:0;background:var(--navy);transform:scaleX(0);transform-origin:left;transition:transform 400ms var(--ease-out)}
+.ride-steps li.on{color:var(--ink)}
+.ride-steps li.on i::after{transform:none}
+
+@media (prefers-reduced-motion:reduce){
+  .play .lp-mark *,.play .brand-word,.play .motto{animation:lp-fade 200ms ease both!important}
+  @keyframes lp-fade{from{opacity:0}}
+  .play .lp-ring{animation:none!important}
+  .btn-dots i,.riding .ride-spokes,.riding .ride-frame,.riding .ride-parcel,.riding .ride-lines path{animation:none}
+  .pop-sheet,.preview-record.enter{animation:pop-fade 160ms ease both}
+  .ride-rider,.ride-done{transition-duration:200ms;transition-timing-function:ease}
+  .riding .ride-lines{opacity:0}
+  .sms-banner{transition:opacity 200ms ease;transform:none;opacity:0}.sms-banner.show{opacity:1}
+  .shake{animation:none}
+}
+
+/* Sign-in keeps its Burmese in English mode: the motto, role chip and rider labels are the brand and the rider's first language */
+body.lang-en .signin .my{display:revert!important}
+
+/* ---- Language switch: the pill slides to the chosen language, the page text crossfades ---- */
+.lang-switch{position:relative;display:inline-grid;grid-template-columns:1fr 1fr;isolation:isolate}
+.lang-switch .lang-pill{position:absolute;inset:0 auto 0 0;width:50%;border-radius:999px;background:var(--navy);transform:translateX(calc(var(--at,0) * 100%));transition:transform 220ms var(--ease-out);z-index:-1}
+.lang-switch[data-at="1"]{--at:1}
+.lang-switch button{position:relative;background:transparent!important;transition:color 180ms var(--ease-out),transform 140ms var(--ease-out)}
+.lang-switch button[aria-pressed="true"]{color:var(--cream)}
+.lang-switch button:active{transform:scale(.97)}
+.shop-bar .lang-switch .lang-pill,.rider-head .lang-switch .lang-pill{background:var(--cream)}
+.shop-bar .lang-switch button[aria-pressed="true"],.rider-head .lang-switch button[aria-pressed="true"]{color:var(--navy)}
+main.lang-swap{animation:lang-swap 180ms var(--ease-out)}
+@keyframes lang-swap{from{opacity:.35}}
+@media (prefers-reduced-motion:reduce){.lang-switch .lang-pill{transition:none}main.lang-swap{animation-duration:120ms}}
+
+/* Top bar keeps Sign out on the first row in both languages: the shift sign gives up its second line first */
+@media (min-width:1101px){
+  .topbar{flex-wrap:nowrap;column-gap:20px}
+  .topbar .tab{padding-inline:12px}
+  .topbar .status-sign{min-width:0;flex-shrink:1}
+  .topbar .status-sign .msg{min-width:0}
+  .topbar .status-sign .msg>*{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .topbar .sign-out,.topbar .brand,.topbar .tabs{flex-shrink:0}
+  .topbar .tabs{flex-wrap:nowrap}
+  .topbar .tab{white-space:nowrap}
+}
+
+/* ---- Buyer map swap: grows out of the road card, shrinks back into it ---- */
+.ride-map-btn{width:100%}
+.ride-map-btn .icon{width:18px;height:18px}
+.ride-map{position:fixed;inset:0;z-index:90;display:flex;flex-direction:column;background:#E9E4D8;clip-path:inset(var(--ct,0) var(--cr,0) var(--cb,0) var(--cl,0) round var(--cround,0px));visibility:hidden}
+.ride-map.open{visibility:visible}
+.ride-map.anim{transition:clip-path 380ms var(--ease-drawer)}
+.ride-map.closing{transition:clip-path 300ms var(--ease-drawer)}
+.ride-map-canvas{flex:1;min-height:0}
+.ride-map-top{position:absolute;top:calc(10px + env(safe-area-inset-top,0px));left:10px;z-index:500;display:flex;justify-content:space-between;align-items:center;gap:8px;opacity:0;transform:translateY(-6px);transition:opacity 200ms ease,transform 260ms var(--ease-out)}
+.ride-map.settled .ride-map-top{opacity:1;transform:none;transition-delay:180ms}
+.ride-map .seg{position:relative;display:grid;grid-template-columns:1fr 1fr;padding:3px;background:var(--paper);border-radius:999px;box-shadow:0 2px 10px rgba(22,38,58,.18);isolation:isolate}
+.ride-map .seg button{min-height:40px;padding:0 16px;border:0;background:transparent;border-radius:999px;font:700 .85rem/1 var(--body);color:var(--ink-2);cursor:pointer;transition:color 180ms ease,transform 140ms var(--ease-out)}
+.ride-map .seg button:active{transform:scale(.97)}
+.ride-map .seg button[aria-pressed="true"]{color:var(--cream)}
+.ride-map .seg-pill{position:absolute;top:3px;bottom:3px;left:3px;width:calc(50% - 3px);border-radius:999px;background:var(--navy);transform:translateX(100%);transition:transform 200ms var(--ease-out);z-index:-1}
+.ride-map .seg[data-at="road"] .seg-pill{transform:none}
+.ride-map-est{display:inline-block;margin-right:4px;padding:1px 8px;border-radius:999px;background:var(--cream-2);font-size:.72rem;font-weight:700;color:var(--ink)}
+.ride-map-card{position:relative;z-index:500;margin:-24px 0 0;padding:10px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--paper);border-radius:16px 16px 0 0;box-shadow:0 -6px 24px rgba(22,38,58,.16);display:grid;gap:4px;touch-action:none;cursor:grab;transform:translateY(16px);opacity:0;transition:transform 300ms var(--ease-out),opacity 200ms ease}
+.ride-map.settled .ride-map-card{transform:none;opacity:1;transition-delay:120ms}
+.ride-map-card .grab{justify-self:center;width:36px;height:4px;border-radius:2px;background:var(--line,#D9CFBD);margin-bottom:6px}
+.ride-map-card strong{font-size:1.05rem}
+.ride-map-card p{margin:0;font-size:.85rem;color:var(--ink-2)}
+.ride-map .map-tiles{position:absolute;left:50%;bottom:120px;transform:translateX(-50%);z-index:500}
+.rider-map-dot i{display:block;width:24px;height:24px;border-radius:50%;background:var(--saffron);border:3px solid var(--navy);box-sizing:border-box;box-shadow:0 0 0 6px rgba(240,160,50,.28)}
+@media (prefers-reduced-motion:reduce){.ride-map.anim,.ride-map.closing{transition:opacity 200ms ease}.ride-map.anim{clip-path:none}.ride-map-top,.ride-map-card{transition:opacity 200ms ease;transform:none}}

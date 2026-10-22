@@ -131,5 +131,29 @@
     button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>button.textContent='Tiles unavailable; route geometry remains visible.');button.disabled=true;};
     mounted.push(()=>{map.remove();button.remove();});
   }
-  globalThis.LannPyaCustomerMap={mount,destroy,routeView,googleEnabled:()=>!!key()};
+  // Buyer's map while the parcel is out: their delivery point and the rider's position. Returns its own cleanup.
+  async function riderView(node,{dest,rider}){
+    const none=()=>{};
+    if(!node?.isConnected||!valid(dest?.lat,dest?.lng)||!valid(rider?.lat,rider?.lng))return none;
+    const g=await loadGoogle();
+    if(!node.isConnected)return none;
+    if(g){
+      const map=new g.Map(node,{center:rider,zoom:14,disableDefaultUI:true,zoomControl:true,zoomControlOptions:{position:g.ControlPosition.RIGHT_TOP},clickableIcons:false,gestureHandling:'greedy'});
+      const home=new g.Marker({map,position:dest,title:'Your delivery point'});
+      const bike=new g.Marker({map,position:rider,title:'Your rider',icon:{path:g.SymbolPath.CIRCLE,scale:9,fillColor:'#F0A032',fillOpacity:1,strokeColor:'#16263A',strokeWeight:3}});
+      const bounds=new g.LatLngBounds();bounds.extend(dest);bounds.extend(rider);map.fitBounds(bounds,72);
+      return ()=>{home.setMap(null);bike.setMap(null);g.event.clearInstanceListeners(map);node.replaceChildren();};
+    }
+    if(!globalThis.L){node.textContent='Map unavailable. The road view still shows where your rider is.';return none;}
+    node.replaceChildren();
+    const map=L.map(node,{zoomControl:false});L.control.zoom({position:'topright'}).addTo(map);
+    L.marker([dest.lat,dest.lng],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Your delivery point'}).addTo(map);
+    L.marker([rider.lat,rider.lng],{icon:L.divIcon({className:'rider-map-dot',html:'<i></i>',iconSize:[24,24],iconAnchor:[12,12]}),title:'Your rider'}).addTo(map);
+    map.fitBounds([[dest.lat,dest.lng],[rider.lat,rider.lng]],{padding:[72,72],maxZoom:16});
+    const button=document.createElement('button');button.type='button';button.className='btn sm map-tiles';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
+    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>{button.textContent='Tiles unavailable; the pins remain.';});button.disabled=true;};
+    map.whenReady(()=>map.invalidateSize());
+    return ()=>{map.remove();button.remove();};
+  }
+  globalThis.LannPyaCustomerMap={mount,destroy,routeView,riderView,googleEnabled:()=>!!key()};
 })();
