@@ -99,12 +99,14 @@ def test_migrated_schema_and_no_drift(store):
         "delivery_assignments",
         "rider_action_receipts",
         "workflow_routes",
+        "routing_plans",
+        "routing_rate_limits",
     }
     with database.engine.connect() as connection:
         assert connection.scalar(text("PRAGMA foreign_keys")) == 1
         assert (
             connection.scalar(text("select version_num from alembic_version"))
-            == "0004_workflow_routes"
+            == "0005_routing_plans"
         )
         assert (
             compare_metadata(

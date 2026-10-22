@@ -542,9 +542,17 @@ class RiderService:
                 updated_at=order.updated_at,
             )
             items.append((item, assignment.assigned_at, order.created_at))
+        planned_ids = {
+            order.id
+            for assignment, order in rows
+            if order.parsing_metadata.get("parcel", {}).get("routing", {}).get("assignment_id")
+            == str(assignment.id)
+        }
         items.sort(
             key=lambda row: (
                 0 if row[0].status == OrderStatus.OUT_FOR_DELIVERY else 1,
+                0 if row[0].order_id in planned_ids else 1,
+                (row[0].stop_sequence or 10001) if row[0].order_id in planned_ids else 0,
                 row[0].confirmed_window_start is None,
                 row[0].confirmed_window_start or datetime.max.replace(tzinfo=UTC),
                 row[0].stop_sequence is None,

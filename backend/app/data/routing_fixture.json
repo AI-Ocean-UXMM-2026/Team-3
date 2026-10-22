@@ -1,0 +1,14 @@
+{
+  "id": "yangon-synthetic-grid-v1",
+  "notice": "SIMULATED / TEST DATA. An invented rectangular graph, not Yangon roads or traffic.",
+  "latitude_min": 16.75,
+  "latitude_max": 16.95,
+  "longitude_min": 96.05,
+  "longitude_max": 96.25,
+  "step_degrees": 0.01,
+  "north_south_edge_meters": 1112,
+  "east_west_edge_meters": 1064,
+  "north_south_edge_seconds": 180,
+  "east_west_edge_seconds": 170,
+  "connector_speed_meters_per_second": 5
+}

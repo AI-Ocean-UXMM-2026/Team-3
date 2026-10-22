@@ -1,0 +1,883 @@
+{
+  "source_commit": "5ede5716245e55809d3c4a291bb31bc78a496322",
+  "target_original_commit": "b57f15f32f96581138b19461995e5cf9934c4b70",
+  "entries": [
+    {
+      "status": "M",
+      "paths": [
+        ".gitignore"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        ".impeccable/design.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        ".impeccable/surfaces/index-html.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "BURMESE-REVIEW.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "DESIGN.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "HANDOFF-UI.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "PRODUCT.md"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "README.md"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/.env.example"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/api/routing.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/app/core/config.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/data/routing_fixture.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/db/routing_models.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/app/main.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/__init__.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/base.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/factory.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/http.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/offline.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/routing/optimizer.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/schemas/routing.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/services/google_estimates.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/app/services/riders.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/app/services/route_planning.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/app/services/workflow.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/migrations/env.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/migrations/versions/0005_routing_plans.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/pyproject.toml"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/requirements-dev.lock"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/tests/test_api_contract.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_google_demo_route.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_google_estimates.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_mapping_release.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_mtt_runtime.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/tests/test_order_management.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_routing.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tests/test_routing_evaluation.py"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/tests/test_three_role_workflow.py"
+      ]
+    },
+    {
+      "status": "R087",
+      "paths": [
+        "frontend/api-workspace.mjs",
+        "backend/tools/api_workspace/api-workspace.mjs"
+      ]
+    },
+    {
+      "status": "R098",
+      "paths": [
+        "frontend/api.css",
+        "backend/tools/api_workspace/api.css"
+      ]
+    },
+    {
+      "status": "R068",
+      "paths": [
+        "frontend/api.html",
+        "backend/tools/api_workspace/api.html"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/functional.css",
+        "backend/tools/api_workspace/functional.css"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/styles.css",
+        "backend/tools/api_workspace/styles.css"
+      ]
+    },
+    {
+      "status": "R098",
+      "paths": [
+        "frontend/api-workspace.test.mjs",
+        "backend/tools/api_workspace/tests/api-workspace.test.mjs"
+      ]
+    },
+    {
+      "status": "R095",
+      "paths": [
+        "frontend/integration-http.test.mjs",
+        "backend/tools/api_workspace/tests/integration-http.test.mjs"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "backend/tools/backend_test_dashboard/server.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/google_demo_route.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_benchmark.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/__init__.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/config.schema.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/evaluate.py"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/google-drive.example.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/google-modes.example.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/ors-drive.example.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "backend/tools/routing_evaluation/yangon_points.json"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "docs/API_CONTRACT.md"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "docs/FRONTEND_HANDOFF.md"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "docs/OPENAPI.json"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "docs/integration/OPENAPI.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/API_CONTRACT.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/ARCHITECTURE.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/BENCHMARK.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/CUSTOMER_PINNING.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/EXAMPLE_PREVIEW.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/GOOGLE_DEMO_KEY_VERIFICATION.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/GOOGLE_DISPATCHER_INTEGRATION.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/GOOGLE_LIVE_TEST_RESULT.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/GOOGLE_ROUTES_SETUP.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/LIMITATIONS.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/LIVE_PROVIDER_READINESS.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/MAPPING_ACCEPTANCE_CHECKLIST.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/MAPPING_FINAL_RELEASE.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/MAPPING_RELEASE_MANIFEST.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/PHASE23_CHANGE_INVENTORY.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/RIDER_WORKFLOW.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/ROUTE_OPTIMIZATION.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/ROUTING_COST_CONTROLS.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/ROUTING_PROVIDERS.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/TEST_RESULTS.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/YANGON_GOOGLE_DRIVE_DRY_RUN.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/YANGON_GOOGLE_MODES_DRY_RUN.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/YANGON_ORS_DRIVE_DRY_RUN.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/YANGON_ROUTE_EVALUATION_PLAN.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/screenshots/dispatcher-planning-mobile.png"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mapping-routing/screenshots/dispatcher-preview-desktop.png"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/API_KEYS_AND_SERVICES.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/AUDIT_EVIDENCE.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/DATABASE_ARCHITECTURE.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/MTT_BASELINE_AUDIT.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/OPENAPI.json"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/PHASE19_VERIFICATION.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "docs/mtt-integration/WORKFLOWS_AND_STARTUP.md"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/assets/brand/icon-dark.svg"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/assets/brand/mark-dark.svg"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/assets/brand/mark-light.svg"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/delivery.css",
+        "frontend/css/delivery.css"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/extra.css",
+        "frontend/css/extra.css"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/handoff.css",
+        "frontend/css/handoff.css"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/interactions.css",
+        "frontend/css/interactions.css"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/css/live.css"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/css/signboard.css"
+      ]
+    },
+    {
+      "status": "D",
+      "paths": [
+        "frontend/customer-map.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/demo-config.js"
+      ]
+    },
+    {
+      "status": "D",
+      "paths": [
+        "frontend/functional-app.js"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "frontend/index.html"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/api-model.mjs",
+        "frontend/js/api-model.mjs"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/app.js",
+        "frontend/js/app.js"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/backend-client.mjs",
+        "frontend/js/backend-client.mjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/js/customer-map.js"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/delivery-store.js",
+        "frontend/js/delivery-store.js"
+      ]
+    },
+    {
+      "status": "R100",
+      "paths": [
+        "frontend/experiences.js",
+        "frontend/js/experiences.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/js/functional-app.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/js/live-bootstrap.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/js/live-store.mjs"
+      ]
+    },
+    {
+      "status": "R094",
+      "paths": [
+        "frontend/local-api.mjs",
+        "frontend/js/local-api.mjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/js/routing-ui.mjs"
+      ]
+    },
+    {
+      "status": "R091",
+      "paths": [
+        "frontend/workflow-domain.js",
+        "frontend/js/workflow-domain.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/maps-config.js"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "frontend/prototype.html"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/runtime-config.js"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "frontend/sw.js"
+      ]
+    },
+    {
+      "status": "R099",
+      "paths": [
+        "frontend/api-model.test.mjs",
+        "frontend/tests/api-model.test.mjs"
+      ]
+    },
+    {
+      "status": "R097",
+      "paths": [
+        "frontend/delivery-store.test.js",
+        "frontend/tests/delivery-store.test.js"
+      ]
+    },
+    {
+      "status": "R096",
+      "paths": [
+        "frontend/functional-app.test.js",
+        "frontend/tests/functional-app.test.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/tests/live-store.test.mjs"
+      ]
+    },
+    {
+      "status": "R095",
+      "paths": [
+        "frontend/local-api.test.mjs",
+        "frontend/tests/local-api.test.mjs"
+      ]
+    },
+    {
+      "status": "R096",
+      "paths": [
+        "frontend/order-parser.test.js",
+        "frontend/tests/order-parser.test.js"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "frontend/tests/routing-ui.test.mjs"
+      ]
+    },
+    {
+      "status": "R098",
+      "paths": [
+        "frontend/test-dom.js",
+        "frontend/tests/test-dom.js"
+      ]
+    },
+    {
+      "status": "R094",
+      "paths": [
+        "frontend/workflow-domain.test.js",
+        "frontend/tests/workflow-domain.test.js"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "package.json"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "scripts/build_frontend.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "scripts/verify_mapping_restart.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "scripts/verify_mtt_restart.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "scripts/verify_routing_restart.cjs"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "tests/browser/fixtures.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "tests/browser/google-route-display.spec.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "tests/browser/google-workflow.spec.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "tests/browser/mapping-release.spec.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "tests/browser/mtt-live.spec.cjs"
+      ]
+    },
+    {
+      "status": "A",
+      "paths": [
+        "tests/browser/routing.spec.cjs"
+      ]
+    },
+    {
+      "status": "M",
+      "paths": [
+        "tests/browser/website.spec.cjs"
+      ]
+    }
+  ]
+}

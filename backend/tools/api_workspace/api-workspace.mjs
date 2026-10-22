@@ -10,7 +10,7 @@ const button=(label,action,id='',green=false)=>`<button type="button" class="btn
 const submit=(label)=>`<button type="submit" class="btn green">${esc(label)}</button>`;
 const json=body=>({method:'POST',body});
 const money=value=>value==null?'Unknown':`${BigInt(value).toLocaleString()} MMK`;
-let page='',generation=0,locked=false,orders=[],riders=[],routes=[],queue=[],current=null,requests=[],buyerCard=null,buyerDetails=null,linkURL='',notice='',undoTimer=null;
+let page='',generation=0,locked=false,pendingLoad=false,orders=[],riders=[],routes=[],queue=[],current=null,requests=[],buyerCard=null,buyerDetails=null,linkURL='',notice='',undoTimer=null;
 let eventHistory=[],historyError='';
 let buyerBase=location.protocol==='http:'?location.origin:'http://127.0.0.1:8000';
 const baseFor=side=>api.connections[side]?.baseUrl||(side==='rider'?location.origin:(location.protocol==='http:'?location.origin:'http://127.0.0.1:8000'));
@@ -135,6 +135,7 @@ function customerView(){
 }
 
 async function load(){
+  if(locked){pendingLoad=true;return;}
   const g=++generation;page=location.hash.replace(/^#\/?/,'')||'admin';clearTimeout(undoTimer);document.querySelector('dialog')?.remove();current=null;linkURL='';
   shell('<p>Loading API data…</p>',true);
   try{
@@ -166,12 +167,13 @@ async function run(work,refresh=true){
   const buttons=[...document.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
   try{const text=await work();if(g!==generation)return;if(refresh){notice=typeof text==='string'?text:'Saved in the backend database.';await load();}else if(text)message(text);}
   catch(error){if(g===generation)message(errorText(error),true);}
-  finally{locked=false;buttons.forEach(b=>b.disabled=false);}
+  finally{buttons.forEach(b=>b.disabled=false);await releaseLock();}
 }
+async function releaseLock(){locked=false;if(pendingLoad){pendingLoad=false;await load();}}
 function dialog(title,body,handler,label='Confirm'){
   document.querySelector('dialog')?.remove();const d=document.createElement('dialog');d.className='functional-dialog';d.innerHTML=`<div class="api-main"><h2>${esc(title)}</h2><form>${body}<p class="error" role="alert" hidden></p><button type="button" class="btn" data-cancel>Cancel</button>${submit(label)}</form></div>`;document.body.append(d);d.showModal();
   d.querySelector('[data-cancel]').onclick=()=>d.close();d.onclose=()=>{d.remove();};
-  const form=d.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(locked)return;locked=true;form.querySelectorAll('button').forEach(b=>b.disabled=true);try{const text=await handler(new FormData(form));d.close();notice=typeof text==='string'?text:'Saved in backend database.';await load();}catch(error){const el=d.querySelector('[role="alert"]');el.hidden=false;el.textContent=errorText(error);}finally{locked=false;form.querySelectorAll('button').forEach(b=>b.disabled=false);}};return d;
+  const form=d.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(locked)return;locked=true;form.querySelectorAll('button').forEach(b=>b.disabled=true);try{const text=await handler(new FormData(form));d.close();notice=typeof text==='string'?text:'Saved in backend database.';await load();}catch(error){const el=d.querySelector('[role="alert"]');el.hidden=false;el.textContent=errorText(error);}finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);await releaseLock();}};return d;
 }
 function bindForm(id,handler,refresh=true){const f=document.querySelector('#'+id);if(f)f.onsubmit=e=>{e.preventDefault();return run(()=>handler(new FormData(f),f),refresh);};}
 function wire(){

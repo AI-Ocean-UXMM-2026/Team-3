@@ -16,12 +16,14 @@ from app.api.buyer_confirmation import protected_router, public_router
 from app.api.order_management import router as order_router
 from app.api.riders import router as rider_router
 from app.api.routes import router
+from app.api.routing import router as routing_router
 from app.api.workflow import router as workflow_router
 from app.core.access_logging import install_access_filter
 from app.core.config import Settings
 from app.core.order_errors import OrderAPIError
 from app.db.session import Database
 from app.parsing.places import LocationCatalog
+from app.routing.base import RoutingFailure
 from app.services.buyer_policy import TownshipBoundaryResolver
 
 logger = logging.getLogger(__name__)
@@ -142,6 +144,14 @@ def create_app(
             502, "AI_PROVIDER_ERROR", "Address provider could not process the request."
         )
 
+    @application.exception_handler(RoutingFailure)
+    async def routing_error(request: Request, exc: RoutingFailure):
+        return error_response(
+            exc.status,
+            exc.code,
+            "Routing could not be completed. Check provider configuration or request constraints.",
+        )
+
     @application.exception_handler(HTTPException)
     async def http_error(request: Request, exc: HTTPException):
         response = error_response(exc.status_code, "HTTP_ERROR", str(exc.detail))
@@ -183,6 +193,7 @@ def create_app(
     application.include_router(public_router)
     application.include_router(rider_router)
     application.include_router(workflow_router)
+    application.include_router(routing_router)
     return application
 
 

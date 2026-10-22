@@ -1,27 +1,34 @@
-# LannPya AI - integrated local application
+# LannPya AI - MTT local integration
 
-The hardened backend, selected ZLH admin/customer/rider UI and native route/cash workflows
-share one authoritative database. Private credentials stay server-side. Real rules parsing;
+Development reference: `mtt`. This feature worktree connects MTT's Signboard
+dispatcher/customer/rider UI to the existing FastAPI/SQLAlchemy backend through the
+protected local BFF. Private credentials stay server-side. Real rules parsing;
 AI enrichment remains MOCK. No final AI provider is selected.
 
 ```powershell
-npm.cmd start
+npm.cmd start -- --port 8781 --state mtt-local
 ```
 
-Open http://127.0.0.1:8780. [Startup](docs/final-integration/LOCAL_STARTUP_GUIDE.md),
-[architecture](docs/final-integration/FINAL_ARCHITECTURE.md),
-[branch review](docs/branch-integration/BRANCH_COMPARISON.md),
-[demo](docs/final-integration/DEMO_WORKFLOW.md),
-[tests](docs/final-integration/TEST_RESULTS.md),
-[blockers](docs/final-integration/REMAINING_BLOCKERS.md).
+Open http://127.0.0.1:8781 (loopback only).
+[Mapping/routing MVP](docs/mapping-routing/ARCHITECTURE.md) adds explicit simulated
+route previews, OR-Tools multi-rider optimization and separate assignment commits.
+Live routing remains disabled pending approved server credentials and provider verification.
+[MTT startup and workflows](docs/mtt-integration/WORKFLOWS_AND_STARTUP.md),
+[baseline audit](docs/mtt-integration/MTT_BASELINE_AUDIT.md),
+[database](docs/mtt-integration/DATABASE_ARCHITECTURE.md),
+[services and keys](docs/mtt-integration/API_KEYS_AND_SERVICES.md),
+[verification](docs/mtt-integration/PHASE19_VERIFICATION.md).
 
-- frontend/: styled vanilla-JS application; prototype.html is DEMO_SIMULATION.
+- frontend/: preserved MTT Signboard; root is LIVE_BACKEND under the local launcher,
+  prototype.html is DEMO_SIMULATION; static-only hosting is explicitly simulation.
 - backend/: FastAPI, migrations, buyer/rider services and preserved QA tools.
 - order-parser/: optional TypeScript AI/parser research; not the live API.
 - scripts/: local startup, Python environment selection and static frontend build.
 - docs/: contracts, source provenance and final verification.
 
-Local use only. No public deployment or remote push.
+The advanced developer API UI remains at `/api.html`. Earlier final-integration and
+phase reports below describe their original snapshots. Production authorization,
+live PostgreSQL and trusted geospatial validation remain blockers. Local use only.
 
 ## Previous backend notes (historical)
 
