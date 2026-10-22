@@ -48,6 +48,7 @@ class BuyerActionResult(BaseModel):
     submitted_at: datetime
     confirmed_at: datetime | None
     resolution: Literal["APPROVE", "REJECT"] | None
+    editing_policy: dict = Field(default_factory=dict)
 
 
 class BuyerDetailsResult(BaseModel):
@@ -61,6 +62,8 @@ class BuyerDetailsResult(BaseModel):
     longitude: Decimal | None
     delivery_time_window: str | None
     delivery_instructions: str | None
+    proposed_latitude: Decimal | None = None
+    proposed_longitude: Decimal | None = None
     initial_pin_requires_review: bool
     policy: dict
 
@@ -158,6 +161,33 @@ class BuyerResponse(BaseModel):
         if self.action == "INSTRUCTIONS" and not self.instructions:
             raise ValueError("Instructions action requires instructions")
         return self
+
+
+class BuyerRequestSubmission(BaseModel):
+    """One atomic buyer save containing location and requested delivery details."""
+
+    model_config = ConfigDict(extra="forbid")
+    request_id: UUID
+    latitude: Decimal = Field(ge=-90, le=90, decimal_places=7, allow_inf_nan=False)
+    longitude: Decimal = Field(ge=-180, le=180, decimal_places=7, allow_inf_nan=False)
+    initial_pin_acknowledged: bool = Field(default=False, strict=True)
+    action: Literal["AVAILABLE", "RESCHEDULE", "LEAVE_WITH_SECURITY", "INSTRUCTIONS"]
+    time_window: DeliveryWindow
+    instructions: str | None = Field(default=None, min_length=1, max_length=2000, strict=True)
+
+    @field_validator("latitude", "longitude", mode="before")
+    @classmethod
+    def no_boolean_coordinates(cls, value):
+        if isinstance(value, bool):
+            raise ValueError("Coordinates must be decimal numbers")
+        return value
+
+    @field_validator("instructions")
+    @classmethod
+    def nonblank_instruction(cls, value):
+        if value is not None and (not value.strip() or "\x00" in value):
+            raise ValueError("Instructions must be nonblank")
+        return value.strip() if value else value
 
 
 class SetLocationReference(BuyerLocation):

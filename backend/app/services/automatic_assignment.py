@@ -113,6 +113,13 @@ def customer_response(session, order):
 
 
 def require_current_authorization(session, order, assignment):
+    pending = session.scalar(select(BuyerRequest.id).where(
+        BuyerRequest.order_id == order.id,
+        BuyerRequest.decision == "REVIEW_REQUIRED",
+        BuyerRequest.resolution.is_(None),
+    ).limit(1))
+    if pending:
+        raise OrderAPIError(409, "RECONFIRMATION_REQUIRED", "Resolve pending customer requests before continuing delivery.")
     if assignment.allocation_cycle is None:
         return
     allocation = session.get(AutomaticAllocation, order.id)

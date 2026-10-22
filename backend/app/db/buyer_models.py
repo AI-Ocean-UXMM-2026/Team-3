@@ -123,3 +123,46 @@ class BuyerRateLimit(Base):
     key: Mapped[str] = mapped_column(String(64), primary_key=True)
     count: Mapped[int] = mapped_column(Integer)
     expires_at: Mapped[datetime] = mapped_column(UTCDateTime(), index=True)
+
+
+class BuyerEditPolicy(Base):
+    """Durable order-scoped buyer edit allowance and permanent deadline."""
+
+    __tablename__ = "buyer_edit_policies"
+    __table_args__ = (
+        CheckConstraint("edit_count BETWEEN 0 AND 3", name="ck_buyer_edit_count"),
+    )
+    order_id: Mapped[UUID] = mapped_column(
+        ForeignKey("orders.id", ondelete="RESTRICT"), primary_key=True
+    )
+    edit_count: Mapped[int] = mapped_column(Integer, default=0)
+    initial_submitted_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    cutoff_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    closed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class BuyerSubmissionReceipt(Base):
+    __tablename__ = "buyer_submission_receipts"
+    __table_args__ = (Index("ux_buyer_receipt_order_request", "order_id", "request_id", unique=True),)
+    order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), primary_key=True)
+    request_id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
+    link_id: Mapped[UUID] = mapped_column(ForeignKey("confirmation_links.id", ondelete="RESTRICT"))
+    payload_hash: Mapped[str] = mapped_column(String(64))
+    response_body: Mapped[dict] = mapped_column(JSON_VALUE)
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
+class BuyerReminderOutbox(Base):
+    __tablename__ = "buyer_reminder_outbox"
+    __table_args__ = (
+        CheckConstraint("status IN ('PENDING','SENDING','ACCEPTED','UNKNOWN','SIMULATION','SKIPPED','DISABLED')", name="ck_buyer_reminder_status"),
+    )
+    order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), primary_key=True)
+    scheduled_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    cutoff_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    status: Mapped[str] = mapped_column(String(16), default="PENDING")
+    provider_sid: Mapped[str | None] = mapped_column(String(64))
+    message_body: Mapped[str | None] = mapped_column(String(1000))
+    outcome_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)

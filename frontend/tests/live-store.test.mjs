@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createLiveStore,projectOrder} from '../js/live-store.mjs';
 const original={id:'synthetic-order',version:1,customer_name:'Fictional buyer',customer_phone:'09790000000',status:'DRAFT',confidence_level:'AMBER',confidence_reasons:[{message:'Location not verified'}],latitude:null,longitude:null,cod_amount:'25000',ai_availability_status:'mock',parsing_metadata:{parcel:{item:'Test shirt',delivery_day:'2026-10-23'}},field_sources:{}};
-const W=()=>({ACTORS:{admin:{id:'dispatch',role:'admin'},rider:{id:'old-demo-id',role:'rider'}},PLACES:[],ANY_TIME:'Any time',day:()=> '2026-10-23',addDays:()=> '2026-10-24'});
+const W=()=>({ACTORS:{admin:{id:'dispatch',role:'admin'},rider:{id:'old-demo-id',role:'rider'}},PLACES:[],ANY_TIME:'Any time',WINDOWS:['10:00–12:00','12:00–14:00','14:00–16:00','16:00–18:00'],day:()=> '2026-10-23',addDays:()=> '2026-10-24'});
 function apiFixture(){
   const calls=[];
   const api={connections:{},async connect(side,origin,actorId){api.connections[side]={actor:{id:actorId||(side==='admin'?'dispatch':'rider'),name:'Fictional actor'}};},async all(side,path){calls.push({side,path});return path==='/api/orders'?[structuredClone(original)]:path==='/api/riders'?[{id:'rider',name:'Fictional rider'},{id:'other',name:'Other fictional rider'}]:[];},async call(side,path,options){calls.push({side,path,...options});if(path.endsWith('/queue'))return {items:[]};return {id:'created'};},openBuyer(){api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED',order_reference:'public-reference'})};}};
@@ -22,6 +22,11 @@ test('entering buyer view clears private dispatcher projections',async()=>{
 test('unavailable backend cannot create a local fake order',async t=>{
  const {api,store}=await setup();t.mock.getter(globalThis,'navigator',()=>({onLine:true}));api.call=async()=>{throw Error('Synthetic DB unavailable');};
  await assert.rejects(store.execute('create_manual',{fields:{name:'Fictional',phone:'09790000000',areaId:'Hlaing',payment:'prepaid',item:'Shirt',date:'2026-10-23'}}),/DB unavailable/);assert.equal(store.snapshot().orders.length,1);
+});
+test('manual live order creation leaves coordinates for the buyer to submit',async t=>{
+ const {api,calls,store}=await setup();t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
+ await store.execute('create_manual',{fields:{name:'Fictional',phone:'09790000000',areaId:'Hlaing',street:'Hledan Road',landmark:'Near Junction Square',payment:'prepaid',item:'Shirt',date:'2026-10-23'}});
+ const request=calls.find(c=>c.method==='POST'&&c.path==='/api/orders');assert.ok(request);assert.equal('latitude'in request.body.structured,false);assert.equal('longitude'in request.body.structured,false);assert.equal(store.snapshot().orders[0].pin,null);
 });
 test('unsupported live operations and offline mutations fail explicitly',async t=>{
  const {store}=await setup();t.mock.getter(globalThis,'navigator',()=>({onLine:true}));await assert.rejects(store.execute('clock'),/Unsupported in LIVE_BACKEND/);
@@ -131,12 +136,14 @@ test('live buyer OTP preview is separate from the public challenge and is cleare
  await store.verify(token,'123456');assert.equal(store.customer(token).verified,true);assert.equal(store.customer(token).otpPreview,null);assert.equal(store.customer(token).simulationOnly,false);
 });
 
-test('buyer confirmation keeps submitted values only after both writes succeed',async t=>{
+test('buyer confirmation uses one atomic request with a concrete ETA window',async t=>{
  t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const f=apiFixture(),token='a'.repeat(43);let failResponse=false;
- f.api.openBuyer=()=>{f.api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED'}),verify:async()=>{},details:async()=>({order_reference:'buyer-ref',status:'NEEDS_REVIEW',initial_pin_requires_review:true}),location:async()=>({decision:'REVIEW_REQUIRED'}),respond:async()=>{if(failResponse)throw Error('Response rejected');return {decision:'REVIEW_REQUIRED'};}};};
+ let submitted;
+ f.api.openBuyer=()=>{f.api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED'}),verify:async()=>{},details:async()=>({order_reference:'buyer-ref',status:'NEEDS_REVIEW',initial_pin_requires_review:true,policy:{editable:true}}),request:async body=>{submitted=body;if(failResponse)throw Error('Request rejected');return {decision:'REVIEW_REQUIRED'};}};};
  const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'track/'+token});await store.verify(token,'0000');
- const request={pin:{lat:16.82,lng:96.13},answer:'At home',time:'Any time',note:'Call at the gate',date:'2026-10-23',acknowledged:true};
- failResponse=true;await assert.rejects(store.confirm(token,request),/availability was not saved/);assert.equal(store.customer(token).order.confirmation,null);
+ const request={pin:{lat:16.82,lng:96.13},answer:'At home',time:W().WINDOWS.find(x=>x!==W().ANY_TIME),note:'Call at the gate',date:'2026-10-23',acknowledged:true};
+ failResponse=true;await assert.rejects(store.confirm(token,request),/Request rejected/);assert.equal(store.customer(token).order.confirmation,null);
  failResponse=false;await store.confirm(token,request);
+ assert.equal(submitted.action,'AVAILABLE');assert.equal(submitted.time_window.start,'2026-10-23T'+request.time.split('–')[0]+':00+06:30');assert.equal(submitted.instructions,'Call at the gate');
  assert.equal(store.customer(token).order.confirmation.note,'Call at the gate');assert.deepEqual(store.customer(token).order.confirmation.pin,request.pin);assert.equal(store.customer(token).order.confirmation.date,request.date);
 });

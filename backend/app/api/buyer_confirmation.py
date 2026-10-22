@@ -15,6 +15,7 @@ from app.schemas.buyer import (
     BuyerOtpChallengeResult,
     BuyerLocation,
     BuyerResponse,
+    BuyerRequestSubmission,
     BuyerReviewResult,
     LinkResult,
     LocationReferenceResult,
@@ -149,3 +150,14 @@ def response(
     authorization: Authorization = None,
 ):
     return service(request, session).response(token, credential(authorization), body)
+
+
+@public_router.patch("/{token}/request", response_model=BuyerActionResult)
+def request_submission(
+    token: str,
+    body: BuyerRequestSubmission,
+    request: Request,
+    session: PublicSession,
+    authorization: Authorization = None,
+):
+    return service(request, session).request_submission(token, credential(authorization), body)

@@ -61,7 +61,9 @@ def create_app(
     @asynccontextmanager
     async def lifespan(application):
         recovery_task = None
+        reminder_task = None
         recovery_stop = asyncio.Event()
+        reminder_stop = asyncio.Event()
         try:
             if settings.supabase_auth_enabled and active_database is not None:
                 check_browser_grants(active_database)
@@ -76,8 +78,16 @@ def create_app(
                         active_database, settings, application.state.location_catalog, recovery_stop
                     )
                 )
+                from app.services.buyer_reminders import reminder_worker
+
+                reminder_task = asyncio.create_task(
+                    reminder_worker(active_database, settings, reminder_stop)
+                )
             yield
         finally:
+            if reminder_task is not None:
+                reminder_stop.set()
+                await reminder_task
             if recovery_task is not None:
                 recovery_stop.set()
                 await recovery_task

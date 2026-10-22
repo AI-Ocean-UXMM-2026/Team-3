@@ -7,6 +7,11 @@ const {environment}=require('./test-dom');
 const source=fs.readFileSync(require.resolve('../js/functional-app.js'),'utf8');
 const A=W.ACTORS.admin,R=W.ACTORS.rider;
 function boot(hash='#/dispatch',prepare,empty=false){const data=new Map(),storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};const store=W.createStore(storage,{initialState:empty?W.seed():W.fixtures()});prepare?.(store);const e=environment(storage,hash);e.ctx.window.Workflow=W;vm.runInNewContext(source,e.ctx);return {...e,store:()=>{const s=W.createStore(storage);s.refresh();return s;}};}
+async function bootLive(hash='#/manual'){
+ const data=new Map(),storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)},e=environment(storage,hash);
+ e.ctx.window.Workflow=W;e.ctx.window.LANNPYA_RUNTIME.mode='LIVE_BACKEND';e.ctx.window.LannPyaLiveStore={create:async()=>({refresh(){},sync:async()=>{},now:()=>Date.now(),persistent:()=>true,snapshot:()=>({orders:[],routes:[],outbox:[],clockMode:'live',policy:{areas:W.PLACES.map(p=>p.id),cutoff:900,enforceCutoff:true}})})};
+ vm.runInNewContext(source,e.ctx);await new Promise(resolve=>setImmediate(resolve));return e;
+}
 function departed(s){for(const [t,p]of [['receive',{id:'LP-2046'}],['assign',{id:'LP-2046',routeId:'RT-001'}],['dispatch',{routeId:'RT-001'}],['clock',{value:'2026-10-20T10:00:00+06:30'}]])s.execute(t,p,A);}
 async function verify(e,code){if(!e.find('#verify-form'))await e.action('request-otp',e.ctx.location.hash.split('/').at(-1));await e.submit('#verify-form',{digits:code});}
 
@@ -28,7 +33,21 @@ test('record edit action shares the disposition row with its dropdown',async()=>
  assert.ok(controls.querySelector('[data-choice="0"]'));assert.ok(controls.querySelector('[data-action="edit-row"]'));
 });
 test('all workspace routes render actual controls without runtime errors',()=>{
- const e=boot();for(const path of ['dispatch','new','order/LP-2045','routes','buyers','exceptions','closeout','analytics','settings','scenarios','ride','track/demo-2045','track/invalid']){e.ctx.location.hash='#/'+path;assert.doesNotMatch(e.root.textContent,/Unable to open this view/,path);assert.ok(e.root.textContent.length>100,path);}
+ const e=boot();for(const path of ['dispatch','create','new','manual','order/LP-2045','routes','buyers','exceptions','closeout','analytics','settings','scenarios','ride','track/demo-2045','track/invalid']){e.ctx.location.hash='#/'+path;assert.doesNotMatch(e.root.textContent,/Unable to open this view/,path);assert.ok(e.root.textContent.length>100,path);}
+});
+test('Create order chooser routes to the original paste and manual forms',()=>{
+ const e=boot('#/create');assert.match(e.root.textContent,/Create order/);assert.match(e.root.textContent,/Paste order/);assert.match(e.root.textContent,/Form \(enter manually\)/);
+ const createTab=e.find('.tabs a');assert.equal(createTab.querySelector('.en').textContent,'Create order');assert.equal(createTab.attributes.href,'#/create');assert.equal(createTab.attributes['aria-current'],'page');
+ const options=e.all('.create-options a');assert.deepEqual(options.map(a=>a.attributes.href),['#/new','#/manual']);
+ e.ctx.location.hash=options[0].attributes.href;assert.ok(e.find('#batch-raw'));assert.equal(e.find('#batch-raw').value,'');
+ e.ctx.location.hash=options[1].attributes.href;assert.ok(e.find('#manual-form'));
+});
+test('manual delivery address has no dispatcher pin controls and live adaptation renders cleanly',async()=>{
+ const e=await bootLive();assert.doesNotMatch(e.root.textContent,/Unable to open this view/);assert.ok(e.find('#manual-form'),e.root.textContent);
+ const form=e.find('#manual-form'),where=[...form.querySelectorAll('section')].find(s=>s.querySelector('h2')?.textContent==='Where to deliver');
+ assert.ok(where);assert.ok(where.querySelector('[name="areaId"]'));assert.ok(where.querySelector('[name="street"]'));assert.ok(where.querySelector('[name="landmark"]'));assert.ok(where.querySelector('[name="floor"]'));
+ assert.equal(where.querySelector('[name="lat"]'),null);assert.equal(where.querySelector('[name="lng"]'),null);assert.equal(where.querySelector('[name="locationReviewed"]'),null);assert.equal(where.querySelector('details'),null);
+ e.ctx.location.hash='#/create';assert.doesNotMatch(e.root.textContent,/Unable to open this view/);
 });
 test('customer verifies and saves one response through real form handlers',async()=>{
  const e=boot('#/track/demo-2045');assert.doesNotMatch(e.root.textContent,/SIMULATION ONLY/);await e.action('request-otp','demo-2045');assert.match(e.root.textContent,/SIMULATION ONLY/);assert.match(e.root.textContent,/123456/);assert.doesNotMatch(e.root.textContent,/last four/i);await e.submit('#verify-form',{digits:'123456'});assert.ok(e.find('#customer-form'));
@@ -111,18 +130,18 @@ test('empty workspace has exactly three app sides, manual entry and a useful cus
 test('manual order → buyer reviews → dispatcher approval → accepted offer → departure and delivery',async()=>{
  const e=boot('#/manual',null,true);
  await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true,prep:'ready_now',date:W.day(e.store().now())});
- let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.ok(order.link.token);assert.match(e.ctx.location.hash,/manual/);assert.match(e.find('dialog').textContent,/Order LP-0001 created/);
+ let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.equal(order.pin,null);assert.equal(order.anchor,null);assert.equal(order.location,'unresolved');assert.ok(order.link.token);assert.match(e.ctx.location.hash,/manual/);assert.match(e.find('dialog').textContent,/Order LP-0001 created/);
  e.ctx.location.hash='#/customer';assert.match(e.root.textContent,/Document envelope/);
  await e.submit('#customer-link-form',{link:`file:///prototype/index.html#/track/${order.link.token}`});
  await verify(e,'123456');assert.ok(e.find('[name="latitude"]'));
- await e.action('preview-location','kamayut');await e.submit('#customer-form',{answer:'At home',time:W.ANY_TIME,note:'Ring the bell'});
+ await e.action('preview-location','kamayut');await e.submit('#customer-form',{answer:'At home',time:W.WINDOWS[0],note:'Ring the bell'});
  order=e.store().order(order.id);assert.equal(order.state,'held');assert.equal(order.location,'buyer_submitted');assert.equal(order.confirmation.note,'Ring the bell');assert.match(e.root.textContent,/The shop is checking your pin/);
  e.ctx.location.hash='#/order/'+order.id;await e.action('approve-location',order.id);await e.submit('dialog form',{reason:'Admin checked the delivery point'});assert.equal(e.store().order(order.id).state,'ready');
  e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{acknowledge:true});order=e.store().order(order.id);const route=order.routeId;assert.equal(order.responseStatus,'PENDING');
  e.ctx.location.hash='#/ride';assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='delivered'));await e.action('accept',order.id);assert.equal(e.store().order(order.id).responseStatus,'ACCEPTED');
  e.ctx.location.hash='#/routes/'+route;await e.action('dispatch-route',route);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
  e.ctx.location.hash='#/ride';assert.ok(e.find('.hub-pickup'));assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='delivered'));assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
- await e.action('pick',route+'|'+order.id);await e.action('picked-up',route);assert.match(e.root.textContent,/Delivery stop: Test customer/);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
+ await e.action('pick',route+'|'+order.id);await e.action('picked-up',route);assert.match(e.root.textContent,/Delivery stop: Test customer/);e.store().execute('clock',{value:order.date+'T10:00:00+06:30'},A);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
  e.ctx.location.hash='#/track/'+order.link.token;assert.match(e.root.textContent,/Your parcel was delivered/);
 });
 test('customer action buttons cannot accidentally submit a location form',async()=>{

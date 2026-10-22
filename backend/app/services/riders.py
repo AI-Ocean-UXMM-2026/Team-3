@@ -373,6 +373,10 @@ class RiderService:
         from app.services.workflow import record_collection, validate_delivery_route
 
         validate_delivery_route(self.session, self.actor, order, body.action)
+        if body.action in {"START", "DELIVERED"}:
+            from app.services.automatic_assignment import require_current_authorization
+
+            require_current_authorization(self.session, order, assignment)
         target = (
             OrderStatus.OUT_FOR_DELIVERY if body.action == "START" else OrderStatus(body.action)
         )

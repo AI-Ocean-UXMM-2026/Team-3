@@ -78,6 +78,7 @@ export function createBuyerApi({ baseUrl, linkToken }) {
     details: (signal) => call("/details", { signal }),
     location: (body) => call("/location", { method: "PATCH", body }),
     respond: (body) => call("/response", { method: "PATCH", body }),
+    request: (body) => call("/request", { method: "PATCH", body }),
     clear: () => { authorization = undefined; },
   };
 }

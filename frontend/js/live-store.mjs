@@ -2,6 +2,7 @@
 import {LocalWorkspaceApi} from './local-api.mjs';
 const copy=x=>structuredClone(x);
 const point=(a,b)=>a!=null&&b!=null&&Number.isFinite(Number(a))&&Number.isFinite(Number(b))?{lat:Number(a),lng:Number(b)}:null;
+const windowLabel=value=>{if(!value||!value.includes('/'))return value||'Any time';const [start,end]=value.split('/').map(x=>new Date(x).toLocaleTimeString('en-GB',{timeZone:'Asia/Rangoon',hour:'2-digit',minute:'2-digit',hour12:false}));return start+'–'+end;};
 const states={DRAFT:'held',NEEDS_REVIEW:'held',AWAITING_CONFIRMATION:'awaiting_customer',CONFIRMED:'ready',READY_FOR_DISPATCH:'ready',ASSIGNED:'assigned',OUT_FOR_DELIVERY:'out_for_delivery',DELIVERED:'delivered',FAILED:'return_pending',CANCELLED:'cancelled'};
 export function projectOrder(row){
   const p=row.parsing_metadata?.parcel||{},pin=point(row.latitude,row.longitude);
@@ -57,7 +58,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   }
   // Controlled names, never fixture rectangles or township-centre coordinates.
   const places=['Hlaing','Kamaryut','Sanchaung','Bahan','Mayangon','Insein','Yankin','Tamwe','Thingangyun','South Okkalapa','North Okkalapa','North Dagon','South Dagon','East Dagon','Dagon Seikkan'];
-  // Keep the demo geodata so the dispatcher's address still drops a starting pin in live mode.
+  // Keep address parsing for pasted orders; manual order entry is buyer-pinned.
   const geo=W.PLACES.map(p=>({...p}));
   const autoPin=(township,street,landmark,text='')=>{const t=[township,text].join(' ').toLowerCase().replace(/kamaryut/g,'kamayut');const area=geo.find(g=>g.aliases?.some(x=>t.includes(String(x).toLowerCase())));return area?W.addressPoint(area.id,street,landmark,text,geo)?.point||null:null;};
   W.PLACES.splice(0,W.PLACES.length,...places.map(name=>({id:name,name,aliases:[name]})));state.policy.areas=[...places];
@@ -69,7 +70,6 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     if(type==='create_manual'){
       const f=p.fields;if(f.prep&&f.date<W.readyFrom(f.prep,W.day(Date.now())))throw Error('Delivery day precedes the selected shop preparation timeline.');
       const structured={customer_name:f.name,customer_phone:f.phone,township:f.areaId,street:f.street||null,landmark:f.landmark||null,floor:f.floor||null,cod_amount:f.payment==='prepaid'?'0':String(f.expected??''),delivery_instructions:f.note||null,delivery_time_window:f.time||W.ANY_TIME};
-      if(f.lat!==''&&f.lat!=null||f.lng!==''&&f.lng!=null){structured.latitude=f.lat;structured.longitude=f.lng;}else{const pt=autoPin(f.areaId,f.street,f.landmark);if(pt){structured.latitude=pt.lat.toFixed(7);structured.longitude=pt.lng.toFixed(7);}}
       const result=await call('/api/orders','POST',{structured,parcel:{item:f.item,sender:f.sender||null,reference:f.reference||null,delivery_day:f.date,hub_received:!!p.received}});value=result.id;
     }else if(type==='edit'){
       const r=row(p.id),f=p.fields,o=order(p.id);
@@ -146,16 +146,17 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     linkStatus:id=>links.has(id)?Date.now()<links.get(id).expires?'active':'expired':linkStates.get(id)||'not_loaded',
     queue:actor=>actor.id===api.connections.rider?.actor.id?copy(queueRows.map(q=>state.orders.find(o=>o.id===q.order_id)).filter(Boolean)):[],
     closeoutBlockers:id=>routeRows.get(id)?.blockers||[],
-    customer:token=>{const b=buyerStates.get(token);if(!b)return {available:false,status:'unavailable'};const d=b.details;const o=d?{id:d.order_reference,version:1,state:states[d.status],street:d.street||'',landmark:d.landmark||'',pin:point(d.latitude,d.longitude),anchor:null,location:d.initial_pin_requires_review?'unknown':'buyer_selected',time:d.delivery_time_window||W.ANY_TIME,note:d.delivery_instructions||'',date:W.day(Date.now()),confirmation:b.confirmation||null}:{};return {...b,simulationOnly:b.otpPreview?.simulation===true,order:o,verified:!!d,state:states[b.card?.delivery_status],sender:b.card?.shop_display_name||'LannPya',reference:b.card?.order_reference,item:'Delivery confirmation',payment:'unknown',expected:null,remaining:'up to 3',editable:!!d&&!['DELIVERED','CANCELLED','OUT_FOR_DELIVERY','ASSIGNED'].includes(d.status),dates:[W.day(Date.now()),W.addDays(W.day(Date.now()),1),W.addDays(W.day(Date.now()),2)]};},
+    customer:token=>{const b=buyerStates.get(token);if(!b)return {available:false,status:'unavailable'};const d=b.details,policy=d?.policy||{};const o=d?{id:d.order_reference,version:1,state:states[d.status],street:d.street||'',landmark:d.landmark||'',pin:point(d.latitude,d.longitude)||point(d.proposed_latitude,d.proposed_longitude),anchor:null,location:d.initial_pin_requires_review?'unknown':'buyer_selected',time:windowLabel(d.delivery_time_window),note:d.delivery_instructions||'',date:policy.delivery_day||W.day(Date.now()),confirmation:b.confirmation||null}:{};return {...b,editingPolicy:policy,simulationOnly:b.otpPreview?.simulation===true,order:o,verified:!!d,state:states[b.card?.delivery_status],sender:b.card?.shop_display_name||'LannPya',reference:b.card?.order_reference,item:'Delivery confirmation',payment:'unknown',expected:null,remaining:policy.remaining_edits??3,editable:!!d&&policy.editable===true,dates:[W.day(Date.now()),W.addDays(W.day(Date.now()),1),W.addDays(W.day(Date.now()),2)]};},
     async verify(token,digits){await loadBuyer(token);try{await api.buyer.verify(digits);const b=buyerStates.get(token);b.details=await api.buyer.details();b.challenge=null;b.otpPreview=null;return store.customer(token);}catch(e){await loadBuyer(token).catch(()=>{});throw e;}},
     async confirm(token,p){
       if(!p.pin||!Number.isFinite(p.pin.lat)||!Number.isFinite(p.pin.lng))throw Error('Select a valid map pin first.');
-      await api.buyer.location({request_id:crypto.randomUUID(),latitude:p.pin.lat.toFixed(7),longitude:p.pin.lng.toFixed(7),initial_pin_acknowledged:!!p.acknowledged});
+      if(!p.date||!p.time||p.time===W.ANY_TIME)throw Error('Choose a specific delivery day and time window so we can show the edit cutoff.');
       const action={'At home':'AVAILABLE','Reschedule':'RESCHEDULE','Leave with security':'LEAVE_WITH_SECURITY'}[p.answer]||'AVAILABLE';
-      const body={request_id:crypto.randomUUID(),action,...(p.note?{instructions:p.note}:{})};
-      if(action==='RESCHEDULE'){if(!p.date||p.time===W.ANY_TIME)throw Error('Location request saved. Rescheduling also needs a specific future time window.');const [start,end]=p.time.split('–');body.time_window={start:`${p.date}T${start}:00+06:30`,end:`${p.date}T${end}:00+06:30`};}
-      try{await api.buyer.respond(body);}catch(e){throw Error(`Location request was saved; availability was not saved: ${e.message}`);}
-      buyerStates.get(token).confirmation={answer:p.answer,time:p.time,date:p.date,note:p.note||'',pin:{...p.pin}};return store.customer(token);
+      const [start,end]=p.time.split('–');
+      const body={request_id:crypto.randomUUID(),latitude:p.pin.lat.toFixed(7),longitude:p.pin.lng.toFixed(7),initial_pin_acknowledged:!!p.acknowledged,action,time_window:{start:`${p.date}T${start}:00+06:30`,end:`${p.date}T${end}:00+06:30`},...(p.note?{instructions:p.note}:{})};
+      await api.buyer.request(body);
+      const buyer=buyerStates.get(token);buyer.details=await api.buyer.details();
+      buyer.confirmation={answer:p.answer,time:p.time,date:p.date,note:p.note||'',pin:{...p.pin}};return store.customer(token);
     },
     replay:()=>{throw Error('Offline replay is simulation-only. Live requests must be explicitly retried.');},
     export:()=>{throw Error('Exporting private live records is not provided by this local UI.');}

@@ -94,6 +94,9 @@ class BuyerOtpService:
             select(ConfirmationLink.order_id).where(ConfirmationLink.token_hash == token_hash)
         )
         if order_id is not None:
+            from app.services.automatic_assignment import lock_allocator
+
+            lock_allocator(self.session)
             lock_order(self.session, order_id)
         link = self.session.scalar(select(ConfirmationLink).where(ConfirmationLink.token_hash == token_hash))
         if link is None:
@@ -107,7 +110,10 @@ class BuyerOtpService:
             raise OrderAPIError(410, "CONFIRMATION_EXPIRED", "Confirmation link has expired.")
         if link.locked_at or link.failed_attempts >= 3:
             raise OrderAPIError(423, "CONFIRMATION_LOCKED", "Confirmation is locked; contact the shop.")
-        if order.status not in {OrderStatus.NEEDS_REVIEW, OrderStatus.AWAITING_CONFIRMATION, OrderStatus.CONFIRMED}:
+        if order.status not in {
+            OrderStatus.NEEDS_REVIEW, OrderStatus.AWAITING_CONFIRMATION, OrderStatus.CONFIRMED,
+            OrderStatus.READY_FOR_DISPATCH, OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED,
+        }:
             raise OrderAPIError(409, "BUYER_CHANGES_CLOSED", "Delivery details cannot be changed at this stage.")
         return link, order
 
@@ -123,9 +129,6 @@ class BuyerOtpService:
     def start(self, token):
         # Allocation and OTP start share this coordinator; always acquire it
         # before the order lock taken by _link().
-        from app.services.automatic_assignment import lock_allocator
-
-        lock_allocator(self.session)
         link, order = self._link(token)
         phone = normalize_phone(order.customer_phone)
         phone_binding = hashlib.sha256(phone.encode()).hexdigest()

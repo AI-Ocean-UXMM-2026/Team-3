@@ -67,6 +67,7 @@ BUYER_METHODS = {
     "/details": "GET",
     "/location": "PATCH",
     "/response": "PATCH",
+    "/request": "PATCH",
 }
 PRIVATE_KEYS = {
     "access_token",

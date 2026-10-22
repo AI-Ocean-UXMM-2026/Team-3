@@ -13,7 +13,7 @@ from sqlalchemy.exc import OperationalError
 from app.core.access_logging import HideQueryString
 from app.core.config import Settings
 from app.core.order_errors import OrderAPIError
-from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
+from app.db.buyer_models import BuyerEditPolicy, BuyerOtpChallenge, BuyerReminderOutbox, BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User, utcnow
 from app.db.session import Database
@@ -770,6 +770,14 @@ def test_missing_boundaries_no_auto_accept_and_anchor_cannot_drift(linked):
         linked["path"] + "/location", headers=auth, json=pin(latitude="16.8040000")
     )
     assert first.json()["decision"] == "APPLIED"
+    current = utcnow()
+    selected = window(current)
+    selected_start = datetime.fromisoformat(selected["start"])
+    with linked["db"].sessions.begin() as session:
+        order = session.get(Order, UUID(linked["order"]["id"]))
+        order.delivery_time_window = f"{selected_start.isoformat()}/{datetime.fromisoformat(selected['end']).isoformat()}"
+        policy = session.get(BuyerEditPolicy, order.id)
+        policy.cutoff_at = selected_start - timedelta(hours=1)
     second = linked["client"].patch(
         linked["path"] + "/location", headers=auth, json=pin(latitude="16.8080000")
     )
@@ -912,6 +920,197 @@ def test_supported_reschedule_and_leave_with_security(linked, monkeypatch):
     assert response.json()["decision"] == "APPLIED"
 
 
+def test_atomic_request_initial_available_saves_requested_window_and_zero_edit_policy(linked, monkeypatch):
+    auth = verified(linked)
+    now = utcnow()
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: now)
+    start = (now + timedelta(days=2)).replace(hour=5, minute=30, second=0, microsecond=0)
+    body = {
+        "request_id": str(uuid4()),
+        "latitude": "16.8000000",
+        "longitude": "96.1000000",
+        "initial_pin_acknowledged": True,
+        "action": "AVAILABLE",
+        "time_window": {"start": start.isoformat(), "end": (start + timedelta(hours=2)).isoformat()},
+        "instructions": "Call at the gate",
+    }
+    response = linked["client"].patch(linked["path"] + "/request", headers=auth, json=body)
+    assert response.status_code == 200, response.text
+    saved_order = saved(linked)
+    assert saved_order["delivery_time_window"] == f"{start.isoformat()}/{(start + timedelta(hours=2)).isoformat()}"
+    details = linked["client"].get(linked["path"] + "/details", headers=auth).json()
+    assert details["delivery_time_window"] == saved_order["delivery_time_window"]
+    assert details["policy"]["edit_count"] == 0
+    assert details["policy"]["max_edits"] == 3
+    assert details["policy"]["editable"] is True
+    assert datetime.fromisoformat(details["policy"]["cutoff_at"]) == start - timedelta(hours=1)
+    with linked["db"].sessions() as session:
+        assert session.scalar(select(func.count()).select_from(BuyerRequest)) == 2
+
+
+def atomic_body(start, **extra):
+    return {
+        "request_id": str(uuid4()), "latitude": "16.8000000", "longitude": "96.1000000",
+        "initial_pin_acknowledged": True, "action": "AVAILABLE",
+        "time_window": {"start": start.isoformat(), "end": (start + timedelta(hours=2)).isoformat()},
+        **extra,
+    }
+
+
+def test_address_edits_remain_open_inside_two_hour_notice_and_noop_costs_nothing(linked, monkeypatch):
+    auth = verified(linked)
+    now = utcnow()
+    start = now + timedelta(hours=4)
+    clock = [now]
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: clock[0])
+    initial = atomic_body(start)
+    client, path = linked["client"], linked["path"]
+    assert client.patch(path + "/request", headers=auth, json=initial).status_code == 200
+    duplicate = client.patch(path + "/request", headers=auth, json={**initial, "request_id": str(uuid4()), "latitude": "16.8"})
+    assert duplicate.status_code == 200, duplicate.text
+    assert duplicate.json()["editing_policy"]["edit_count"] == 0
+    with linked["db"].sessions.begin() as session:
+        session.scalar(select(BuyerSession)).expires_at = start
+    clock[0] = start - timedelta(minutes=90)
+    edit = client.patch(path + "/request", headers=auth, json=atomic_body(start, longitude="96.1001000"))
+    assert edit.status_code == 200, edit.text
+    assert edit.json()["editing_policy"]["edit_count"] == 1
+    clock[0] = start - timedelta(hours=1)
+    denied = client.patch(path + "/request", headers=auth, json=atomic_body(start, longitude="96.1002000"))
+    assert denied.status_code == 409, denied.text
+    assert client.get(path + "/details", headers=auth).json()["policy"]["editable"] is False
+    assert client.patch(path + "/response", headers=auth, json={"request_id": str(uuid4()), "action": "AVAILABLE"}).status_code == 409
+
+
+@pytest.mark.parametrize("stage", [OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY])
+def test_assigned_amendments_preserve_stage_and_require_independent_location_review(linked, stage):
+    auth = verified(linked)
+    start = utcnow() + timedelta(hours=4)
+    client, path = linked["client"], linked["path"]
+    assert client.patch(path + "/request", headers=auth, json=atomic_body(start)).status_code == 200
+    def review_all():
+        history = client.get(f"/api/orders/{linked['order']['id']}/buyer-requests", headers=ADMIN).json()["items"]
+        for request in history:
+            if request["decision"] == "REVIEW_REQUIRED" and request["resolution"] is None:
+                result = client.patch(f"/api/orders/{linked['order']['id']}/buyer-requests/{request['id']}", headers=ADMIN,
+                    json={"expected_version": saved(linked)["version"], "decision": "APPROVE", "reason": "Checked proposed delivery point and instructions"})
+                assert result.status_code == 200, result.text
+    review_all()
+    with linked["db"].sessions.begin() as session:
+        session.get(Order, UUID(linked["order"]["id"])).status = stage
+    original = saved(linked)["latitude"]
+    edit = client.patch(path + "/request", headers=auth, json=atomic_body(start, latitude="16.8001000"))
+    assert edit.status_code == 200, edit.text
+    assert saved(linked)["status"] == stage
+    assert saved(linked)["latitude"] == original
+    assert client.get(path + "/details", headers=auth).status_code == 200
+    review_all()
+    assert saved(linked)["status"] == stage
+    assert Decimal(saved(linked)["latitude"]) == Decimal("16.8001000")
+
+
+def test_atomic_request_caps_material_edits_and_readable_policy_after_cutoff(linked, monkeypatch):
+    auth = verified(linked)
+    now = utcnow()
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: now)
+    start = (now + timedelta(days=2)).replace(hour=5, minute=30, second=0, microsecond=0)
+    initial = {
+        "request_id": str(uuid4()), "latitude": "16.8000000", "longitude": "96.1000000",
+        "initial_pin_acknowledged": True, "action": "AVAILABLE",
+        "time_window": {"start": start.isoformat(), "end": (start + timedelta(hours=2)).isoformat()},
+    }
+    first = linked["client"].patch(linked["path"] + "/request", headers=auth, json=initial)
+    assert first.status_code == 200, first.text
+    for index in range(3):
+        body = {**initial, "request_id": str(uuid4()), "longitude": f"{96.1001 + index * 0.0001:.7f}", "instructions": f"Call {index}"}
+        edit = linked["client"].patch(linked["path"] + "/request", headers=auth, json=body)
+        assert edit.status_code == 200, edit.text
+    fourth = linked["client"].patch(linked["path"] + "/request", headers=auth, json={**initial, "request_id": str(uuid4()), "longitude": "96.1010"})
+    assert fourth.status_code == 409
+    with linked["db"].sessions.begin() as session:
+        session.scalar(select(BuyerSession)).expires_at = now + timedelta(days=3)
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: now + timedelta(days=2))
+    detail = linked["client"].get(linked["path"] + "/details", headers=auth)
+    assert detail.status_code == 200
+    assert detail.json()["policy"]["editable"] is False
+    assert detail.json()["policy"]["reason"] in {"CUTOFF_PASSED", "EDITS_EXHAUSTED"}
+
+
+def test_due_reminder_is_simulation_and_has_one_durable_order_claim(linked):
+    from app.services.buyer_confirmation import YANGON
+    from app.services.buyer_reminders import run_reminder_pass
+
+    now = utcnow()
+    start = (now + timedelta(hours=4)).replace(minute=0, second=0, microsecond=0)
+    end = start + timedelta(hours=2)
+    scheduled = start - timedelta(minutes=90)
+    with linked["db"].sessions.begin() as session:
+        order = session.get(Order, UUID(linked["order"]["id"]))
+        order.delivery_time_window = f"{start.isoformat()}/{end.isoformat()}"
+        order.parsing_metadata = {**order.parsing_metadata, "parcel": {"delivery_day": start.astimezone(YANGON).date().isoformat()}}
+        session.add(BuyerEditPolicy(order_id=order.id, edit_count=0, initial_submitted_at=now, cutoff_at=start - timedelta(hours=1), updated_at=now))
+
+    class NoNetwork:
+        def send(self, phone, message):
+            raise AssertionError("local/test reminder must not call an external provider")
+
+    result = run_reminder_pass(linked["db"], linked["settings"], provider=NoNetwork(), now=scheduled)
+    again = run_reminder_pass(linked["db"], linked["settings"], provider=NoNetwork(), now=scheduled)
+    assert result["simulation"] == 1
+    assert again["simulation"] == 0
+    with linked["db"].sessions() as session:
+        rows = session.scalars(select(BuyerReminderOutbox)).all()
+        assert len(rows) == 1
+        assert rows[0].status == "SIMULATION"
+        assert "3 delivery detail edits" in rows[0].message_body
+        assert "Yangon time" in rows[0].message_body
+
+
+@pytest.mark.parametrize("uncertain", [False, True])
+def test_reminder_provider_claim_is_not_retried_and_warning_names_cutoff(linked, uncertain):
+    from app.services.buyer_confirmation import YANGON
+    from app.services.buyer_reminders import run_reminder_pass
+
+    start = utcnow().astimezone(YANGON).replace(hour=12, minute=0, second=0, microsecond=0).astimezone(UTC)
+    due = start - timedelta(minutes=90)
+    with linked["db"].sessions.begin() as session:
+        order = session.get(Order, UUID(linked["order"]["id"]))
+        order.delivery_time_window = f"{start.isoformat()}/{(start + timedelta(hours=2)).isoformat()}"
+        order.parsing_metadata = {"parcel": {"delivery_day": start.astimezone(YANGON).date().isoformat()}}
+        session.add(BuyerEditPolicy(order_id=order.id, edit_count=1, initial_submitted_at=due-timedelta(days=1), cutoff_at=start-timedelta(hours=1), updated_at=due))
+    linked["settings"].environment = "production"
+    linked["settings"].buyer_reminder_external_sends_enabled = True
+    calls = []
+    class FakeProvider:
+        def send(self, phone, message):
+            calls.append((phone, message))
+            if uncertain:
+                raise TimeoutError("provider acceptance unknown")
+            return "SM" + "a" * 32
+    assert run_reminder_pass(linked["db"], linked["settings"], FakeProvider(), now=due-timedelta(seconds=1))["accepted"] == 0
+    first = run_reminder_pass(linked["db"], linked["settings"], FakeProvider(), now=due)
+    run_reminder_pass(linked["db"], linked["settings"], FakeProvider(), now=due+timedelta(minutes=1))
+    assert len(calls) == 1
+    assert "12:00–14:00" in calls[0][1] and "11:00 Yangon time" in calls[0][1]
+    assert "up to 3" in calls[0][1] and "2 remain" in calls[0][1]
+    assert first["accepted"] == (0 if uncertain else 1)
+    with linked["db"].sessions() as session:
+        assert session.get(BuyerReminderOutbox, UUID(linked["order"]["id"])).status == ("UNKNOWN" if uncertain else "ACCEPTED")
+
+
+def test_atomic_concurrent_edits_do_not_exceed_three(linked):
+    auth = verified(linked)
+    start = utcnow()+timedelta(hours=4)
+    assert linked["client"].patch(linked["path"]+"/request", headers=auth, json=atomic_body(start)).status_code == 200
+    def amend(index):
+        return linked["client"].patch(linked["path"]+"/request", headers=auth,
+            json=atomic_body(start, instructions=f"Concurrent amendment {index}")).status_code
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        statuses = list(pool.map(amend, range(4)))
+    assert sorted(statuses) == [200, 200, 200, 409]
+    assert linked["client"].get(linked["path"]+"/details", headers=auth).json()["policy"]["edit_count"] == 3
+
+
 @pytest.mark.parametrize(
     "body",
     [
@@ -994,7 +1193,11 @@ def test_closed_order_never_accepts_buyer_changes(linked, status):
         response = (linked["client"].post if suffix == "verify" else linked["client"].patch)(
             linked["path"] + "/" + suffix, headers=auth, json=body
         )
-        assert response.status_code in {404, 409, 410}
+        if status in {"READY_FOR_DISPATCH", "ASSIGNED", "OUT_FOR_DELIVERY"}:
+            assert response.status_code == (403 if suffix == "verify" else 409)
+            assert saved(linked)["status"] == status
+        else:
+            assert response.status_code in {404, 409, 410}
 
 
 def test_delivery_view_only_24h_and_cancel_revoke(linked, monkeypatch):
@@ -1017,7 +1220,7 @@ def test_delivery_view_only_24h_and_cancel_revoke(linked, monkeypatch):
     assert card.status_code == 200 and card.json()["state"] == "VIEW_ONLY"
     expiry = datetime.fromisoformat(card.json()["expires_at"].replace("Z", "+00:00"))
     assert timedelta(hours=23, minutes=59) < expiry - now < timedelta(hours=24, minutes=1)
-    assert linked["client"].get(linked["path"] + "/details", headers=auth).status_code == 409
+    assert linked["client"].get(linked["path"] + "/details", headers=auth).status_code == 401
     monkeypatch.setattr(
         "app.services.buyer_confirmation.utcnow", lambda: expiry + timedelta(seconds=1)
     )

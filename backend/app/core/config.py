@@ -84,6 +84,11 @@ class Settings(BaseSettings):
                 raise ValueError("Production requires explicitly enabled Twilio Verify")
             if not (self.buyer_twilio_account_sid and self.buyer_twilio_auth_token and self.buyer_twilio_verify_service_sid):
                 raise ValueError("Production Twilio Verify credentials are required")
+        if self.buyer_reminder_external_sends_enabled:
+            if not (self.buyer_twilio_account_sid and self.buyer_twilio_auth_token):
+                raise ValueError("Buyer reminder SMS requires Twilio Messaging credentials")
+            if bool(self.buyer_twilio_messaging_service_sid) == bool(self.buyer_twilio_message_from):
+                raise ValueError("Configure exactly one Twilio Messaging Service SID or sender")
         return self
 
     database_url: SecretStr = Field(
@@ -112,6 +117,10 @@ class Settings(BaseSettings):
     buyer_twilio_account_sid: str | None = None
     buyer_twilio_auth_token: SecretStr | None = None
     buyer_twilio_verify_service_sid: str | None = None
+    buyer_reminder_external_sends_enabled: bool = False
+    buyer_reminder_lead_minutes: int = Field(default=30, ge=1, le=1440)
+    buyer_twilio_messaging_service_sid: str | None = None
+    buyer_twilio_message_from: str | None = None
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",

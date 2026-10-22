@@ -67,6 +67,20 @@ test('reissued/revoked/expired links never grant old access',()=>{
 test('buyer pin confirmation resolves the location hold and clears the address check',()=>{
  const s=make();confirm(s);assert.equal(s.order('LP-2045').state,'ready');assert.equal(s.order('LP-2045').location,'buyer_confirmed');assert.equal(s.triage('LP-2045').level,'green');assert.equal(s.order('LP-2045').confirmation.note,'Blue gate');
 });
+test('buyer edit policy keeps the first confirmation free and caps later material changes at three',()=>{
+ const s=make();confirm(s);let c=s.customer('demo-2045');assert.equal(c.editingPolicy.edit_count,0);assert.equal(c.editingPolicy.remaining_edits,3);
+ for(let i=1;i<=3;i++){const current=s.order('LP-2045');s.confirm(current.link.token,{expectedVersion:current.version,pin:current.pin,time:current.time,answer:'At home',note:'Edit '+i});}
+ assert.equal(s.customer('demo-2045').editingPolicy.edit_count,3);assert.equal(s.customer('demo-2045').editingPolicy.remaining_edits,0);
+ const current=s.order('LP-2045');assert.throws(()=>s.confirm(current.link.token,{expectedVersion:current.version,pin:current.pin,time:current.time,answer:'At home',note:'Edit four'}),/closed|three allowed/);
+});
+test('demo reminder is clearly simulated and the ETA cutoff closes edits at its exact boundary',()=>{
+ const s=make();confirm(s);clock(s,'08:30');const c=s.customer('demo-2045');
+ const reminders=s.snapshot().reminders||[];
+ assert.equal(reminders.length,1);assert.equal(reminders[0].status,'SIMULATION');assert.match(reminders[0].message,/three edits/);
+ clock(s,'09:00');assert.equal(s.customer('demo-2045').editingPolicy.editable,false);
+ clock(s,'08:00');assert.equal(s.customer('demo-2045').editingPolicy.editable,false,'Closed edits cannot reopen by rewinding the demo clock');
+ const o=s.order('LP-2045');assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:o.pin,time:o.time,answer:'At home',note:'Too late'}),/cutoff/);
+});
 test('confirmation cannot hide an unknown payment hold',()=>{
  const s=make();command(s,'edit',{id:'LP-2045',fields:{payment:'unknown',expected:null},reason:'Amount unclear'});confirm(s);assert.equal(s.order('LP-2045').state,'held');
 });
@@ -82,9 +96,12 @@ test('security COD requires explicit ability to pay and stale versions reject sa
  command(s,'incident',{id:o.id,reason:'Record changed'});
  assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:o.time,answer:'At home'}),/Conflict/);
 });
-test('customer self service stops at cutoff or actual dispatch',()=>{
+test('customer self service closes at cutoff and departed amendments require review',()=>{
  const s=make();clock(s,'09:00');assert.throws(()=>confirm(s),/cutoff/);
- const b=make();confirm(b);command(b,'assign',{id:'LP-2045',routeId:'RT-001'});command(b,'dispatch',{routeId:'RT-001'});assert.throws(()=>confirm(b),/cutoff/);
+ const b=make();confirm(b);command(b,'assign',{id:'LP-2045',routeId:'RT-001'});command(b,'dispatch',{routeId:'RT-001'});confirm(b,{note:'Changed gate after departure'});
+ assert.equal(b.order('LP-2045').state,'out_for_delivery');assert.ok(b.order('LP-2045').proposedPin);assert.equal(b.order('LP-2045').note,'Blue gate');
+ clock(b,'10:00');assert.throws(()=>command(b,'complete',{id:'LP-2045',amount:28000},R),/review/);
+ command(b,'approve_customer_location',{id:'LP-2045',reason:'Reviewed buyer amendment'});assert.equal(b.order('LP-2045').note,'Changed gate after departure');
 });
 test('receipt and payment/location readiness gate assignment and dispatch',()=>{
  const s=make();assert.throws(()=>command(s,'assign',{id:'LP-2046',routeId:'RT-001'}),/receipt/);
@@ -205,11 +222,13 @@ test('manual creation is admin-only, validated and atomic; no seeded records or 
  const reloaded=W.createStore(storage);assert.equal(reloaded.snapshot().orders.length,1);assert.equal(reloaded.snapshot().routes.length,0);assert.equal(reloaded.snapshot().orders[0].id,o.id);
 });
 test('customer without an anchor can submit a proposal but cannot clear the admin review hold',()=>{
- const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.ANY_TIME,answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
+ const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
  assert.throws(()=>command(s,'approve_customer_location',{id,reason:'Unauthorised'},R),/Admin/);command(s,'approve_customer_location',{id,reason:'Checked delivery pin'});assert.equal(s.order(id).state,'ready');assert.equal(s.order(id).confirmation.note,'Blue gate');assert.equal(s.customer(o.link.token).available,true);
 });
-test('Any time manual orders can dispatch and deliver today without the old fixed clock or cutoff',()=>{
- const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T21:30:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s,{lat:'16.8254',lng:'96.1309'}),received:true,locationReviewed:true}).value,o=s.order(id);assert.equal(s.deadline(id),true);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:o.pin,time:W.ANY_TIME,answer:'At home',expectedVersion:o.version});const routeId=command(s,'new_route',{date:o.date,riderId:R.id}).value;command(s,'assign',{id,routeId});command(s,'dispatch',{routeId});command(s,'complete',{id,amount:100},R);assert.equal(s.order(id).state,'delivered');assert.equal(s.deadline(id),false);
+test('manual orders leave location unknown until the buyer submits a pin',()=>{
+ let currentTime=Date.parse('2026-10-21T06:00:00+06:30');const s=W.createStore(memory(),{now:()=>currentTime});const id=command(s,'create_manual',{fields:manualFields(s,{street:'Hledan Road',landmark:'Near Junction Square'}),received:true}).value,o=s.order(id);assert.equal(s.deadline(id),true);assert.equal(o.pin,null);assert.equal(o.anchor,null);assert.equal(o.location,'unresolved');
+ verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',expectedVersion:o.version});assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
+ const routeId=command(s,'new_route',{date:o.date,riderId:R.id}).value;command(s,'approve_customer_location',{id,reason:'Checked delivery pin'});command(s,'assign',{id,routeId});command(s,'dispatch',{routeId});currentTime=Date.parse('2026-10-21T10:00:00+06:30');command(s,'complete',{id,amount:100},R);assert.equal(s.order(id).state,'delivered');assert.equal(s.deadline(id),false);
 });
 test('shop prep timeline sets the earliest delivery day and the buyer chooses from the next three days',()=>{
  const s=make();clock(s,'09:00');const today=W.day(s.now());
