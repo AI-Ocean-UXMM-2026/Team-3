@@ -201,3 +201,21 @@ test('shop prep timeline sets the earliest delivery day and the buyer chooses fr
  assert.equal(s.order(id).date,W.addDays(today,6));assert.equal(s.order(id).confirmation.date,W.addDays(today,6));
  assert.throws(()=>command(s,'edit',{id,fields:{date:W.addDays(today,2)},reason:'Buyer asked',expectedVersion:s.order(id).version}),/ready on/);
 });
+
+test('auto pin comes from the landmark, then the street, then the township centre',()=>{
+ assert.equal(W.addressPoint('kamayut','Hledan Road','Behind Junction Square').precision,'landmark');
+ assert.equal(W.addressPoint('kamayut','Hledan Road','').precision,'street');
+ assert.equal(W.addressPoint('kamayut','Some new lane','').precision,'township');
+ assert.equal(W.addressPoint('kamayut','',''),null);
+ const o=W.parse('Name: Ma Aye\nPhone: 09794339082\nTownship: Kamayut\nStreet: Hledan Road\nLandmark: Behind Junction Square\nCOD: 5000');
+ assert.equal(o.pinFrom,'landmark');assert.deepEqual(o.pin,o.anchor);
+});
+test('a new rider gets a one-time invite and can be given a route',()=>{
+ const data=new Map(),st={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};const s=W.createStore(st,{initialState:W.seed()});
+ const {id,code}=s.execute('add_rider',{name:'Ko Min Thu',phone:'09 4211 77830',vehicle:'Bicycle'}).value;
+ assert.match(code,/^LP-[A-Z0-9]{4}$/);assert.equal(W.ACTORS[id].name,'Ko Min Thu');
+ assert.throws(()=>s.execute('add_rider',{name:'Copy',phone:'09421177830',vehicle:'Car'}),/already on the list/);
+ assert.equal(s.execute('use_invite',{code},W.ACTORS.customer).value.id,id);
+ assert.throws(()=>s.execute('use_invite',{code},W.ACTORS.customer),/doesn’t work/);
+ assert.ok(s.execute('new_route',{riderId:id,date:W.day(s.now())}).value);
+});

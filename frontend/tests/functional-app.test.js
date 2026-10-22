@@ -25,11 +25,11 @@ test('admin field corrections, hub receipt and assignment controls mutate shared
  e.ctx.location.hash='#/routes';assert.ok(e.find('a.route-tile'));e.ctx.location.hash='#/routes/RT-001';assert.ok(e.find('#app-sheet'));await e.action('dispatch-route','RT-001');await e.submit('dialog form');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
 });
 test('delivered undo is exactly timed; cash dialog cancellation does not complete delivery',async()=>{
- const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('delivered','LP-2046');await e.tick(1999);assert.equal(e.find('dialog'),null);await e.action('delivered','LP-2046');await e.tick(100);assert.equal(e.find('dialog'),null);assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
+ const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('picked-up','RT-001');await e.action('delivered','LP-2046');await e.tick(1999);assert.equal(e.find('dialog'),null);await e.action('delivered','LP-2046');await e.tick(100);assert.equal(e.find('dialog'),null);assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
  await e.action('delivered','LP-2046');await e.tick(2000);assert.ok(e.find('dialog'));e.find('[data-dismiss]').click();assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
 });
 test('rider completes COD via the timed controller and hub can finish cash closeout',async()=>{
- const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('delivered','LP-2046');await e.tick(2000);await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().order('LP-2046').collection.actual,35000);
+ const e=boot('#/ride',departed);await e.action('accept','LP-2046');await e.action('picked-up','RT-001');await e.action('delivered','LP-2046');await e.tick(2000);await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().order('LP-2046').collection.actual,35000);
  e.ctx.location.hash='#/ride/handover';await e.action('submit-cash','RT-001');assert.equal(e.find('dialog'),null);assert.equal(e.store().snapshot().routes[0].handover.declared,35000);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
  e.ctx.location.hash='#/closeout';assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='close-route'));await e.action('receive-cash','RT-001');assert.equal(e.find('[name="amount"]').value,'');assert.equal(e.find('#cash-difference').hidden,true);
  await e.submit('dialog form');assert.match(e.find('dialog').textContent,/Enter the amount you physically counted/);assert.equal(e.store().snapshot().routes[0].handover.status,'submitted');
@@ -75,7 +75,7 @@ test('failed save retains customer form and the same form can be retried',async(
  e.ctx.location.hash='#/scenarios';e.find('#scenario').value='normal';e.find('#scenario').onchange({target:e.find('#scenario')});e.ctx.location.hash='#/track/demo-2045';await e.submit('#customer-form');assert.equal(e.store().order('LP-2045').confirmation.note,'Keep this draft');
 });
 test('offline controller queues a handoff; conflict review preserves it until resolution',async()=>{
- const e=boot('#/ride',departed);await e.action('prepare-offline');e.ctx.location.hash='#/scenarios';e.find('#offline-mode').checked=true;e.find('#offline-mode').onchange({target:e.find('#offline-mode')});e.ctx.location.hash='#/ride';await e.action('accept','LP-2046');await e.action('delivered','LP-2046');await e.tick(2000);await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().snapshot().outbox[0].status,'pending');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
+ const e=boot('#/ride',departed);await e.action('prepare-offline');e.ctx.location.hash='#/scenarios';e.find('#offline-mode').checked=true;e.find('#offline-mode').onchange({target:e.find('#offline-mode')});e.ctx.location.hash='#/ride';await e.action('accept','LP-2046');await e.action('picked-up','RT-001');await e.action('delivered','LP-2046');await e.tick(2000);await e.submit('dialog form',{amount:'35000'});assert.equal(e.store().snapshot().outbox[0].status,'pending');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
  e.ctx.location.hash='#/scenarios';await e.action('stale');e.find('#offline-mode').checked=false;e.find('#offline-mode').onchange({target:e.find('#offline-mode')});await e.action('replay');assert.equal(e.store().snapshot().outbox[0].status,'conflict');await e.action('resolve-outbox',e.store().snapshot().outbox[0].operationId);await e.submit('dialog form',{reason:'Checked actual handoff with rider',accept:'yes'});assert.equal(e.store().order('LP-2046').state,'delivered');
 });
 test('rider failure requires the hub to acknowledge physical return',async()=>{
@@ -102,7 +102,7 @@ test('manual order → customer location and availability → admin approval →
  e.ctx.location.hash='#/routes';await e.action('new-route');await e.submit('dialog form',{riderId:'rider-1',date:order.date});const route=e.store().snapshot().routes[0];
  e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{routeId:route.id});e.ctx.location.hash='#/routes/'+route.id;await e.action('dispatch-route',route.id);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
  e.ctx.location.hash='#/ride';assert.match(e.root.textContent,/Delivery stop: Test customer/);assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
- await e.action('accept',order.id);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
+ await e.action('accept',order.id);await e.action('picked-up',route.id);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
  e.ctx.location.hash='#/track/'+order.link.token;assert.match(e.root.textContent,/Your parcel was delivered/);
 });
 test('customer action buttons cannot accidentally submit a location form',async()=>{
@@ -125,4 +125,12 @@ test('rider menu opens four separate pages and an empty Returned page says so',a
  const e=boot('#/ride',departed);const links=e.all('.rider-menu a.rider-tab').map(a=>a.attributes.href);assert.deepEqual(links,['#/ride','#/ride/returns','#/ride/handover','#/ride/history']);
  e.ctx.location.hash='#/ride/returns';assert.match(e.root.textContent,/No returned orders/);assert.ok(!e.find('.stop-card'));assert.ok(!e.find('#local-ride-queue'));
  const f=boot('#/ride/returns',s=>{departed(s);s.execute('fail',{id:'LP-2046',reason:W.REASONS[0],resolution:'return'},R);});assert.match(f.root.textContent,/LP-2046/);assert.doesNotMatch(f.root.textContent,/No returned orders/);
+});
+test('after Accept the rider collects every parcel at the hub before the first stop',async()=>{
+ const e=boot('#/ride',departed);await e.action('accept','LP-2046');assert.ok(e.find('.hub-pickup'));assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='delivered'));
+ assert.match(e.root.textContent,/Pick up at the hub first/);await e.action('picked-up','RT-001');
+ assert.ok(e.store().snapshot().routes[0].pickedUpAt);assert.equal(e.find('.hub-pickup'),null);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='delivered'));
+});
+test('Riders page lists the built-in riders and opens the add form',async()=>{
+ const e=boot('#/riders');assert.match(e.root.textContent,/Ko Aung/);assert.match(e.root.textContent,/Ko Wai/);await e.action('rider-form','open');assert.ok(e.find('#rider-form'));
 });

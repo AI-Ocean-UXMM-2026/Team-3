@@ -108,3 +108,8 @@ Any future Burmese wording changes need another review. Refresh source reference
 | ဤဖုန်းမှ ထွက်မည်လား | Sign out of this phone? | Rider sign-out confirm |
 | ပို့ဆောင်သူ {name} က သင့်ပါဆယ် {ref} ကို လက်ခံပြီးပါပြီ။ | Rider {name} accepted your parcel {ref}. | Buyer text-message banner |
 | သင့်ဆီ ရောက်လာတော့မည် | You're the next stop (wording given by the project owner) | Buyer page heading when the rider's next stop is the buyer |
+| ပစ္စည်းယူရန် ဂိုဒေါင်သို့ အရင်သွားပါ | Pick up at the hub first | Rider hub pickup card heading |
+| ပစ္စည်းယူရန် ဂိုဒေါင် | Pickup hub | Rider hub sign and hub map |
+| ပို့ဆောင်သူများ | Riders | Dispatcher More menu, Riders page title |
+| အမည် | Name | Add rider form |
+| မြေပုံ | Map (button label) | Rider hub card, open the hub map |
