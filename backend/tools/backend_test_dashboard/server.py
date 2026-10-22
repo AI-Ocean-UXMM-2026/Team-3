@@ -46,7 +46,7 @@ ALLOWED = {
         r"/api/routes/google-demo",
         rf"/api/routes/plans/{UUID_PATTERN}/commit",
         rf"/api/routes/{UUID_PATTERN}/actions",
-        ORDER + r"/(operations|prepare-assignment)",
+        ORDER + r"/(operations|auto-assignment)",
         r"/api/orders/parse",
         r"/api/orders",
         r"/api/riders",

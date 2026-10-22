@@ -70,16 +70,14 @@ def link(client, identifier):
 
 
 def buyer(client, handle, method="GET", suffix="", body=None, status=200):
-    if method == "POST" and suffix == "/verify" and body and "last_four" in body:
+    if method == "POST" and suffix == "/verify" and body and "code" in body:
         demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
         if demo.status_code != 200:
             if buyer(client, handle).get("state") == "LOCKED":
                 return call(client, method, "/api/confirm/@buyer" + suffix, {"code": "000000"}, status, buyer_handle=handle)
             call(client, "POST", "/api/confirm/@buyer/otp", {}, buyer_handle=handle)
             demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
-        if body["last_four"] == "1111":
-            body = {"code": "111111"}
-        else:
+        if body["code"] == "000000":
             assert demo.status_code == 200 and demo.json()["simulation"] is True
             body = {"code": demo.json()["code"]}
     return call(client, method, "/api/confirm/@buyer" + suffix, body, status, buyer_handle=handle)
@@ -163,6 +161,42 @@ def test_dashboard_proxy_is_allowlisted_and_not_ssrf(dashboard, path):
     assert "private-secret-token" not in json.dumps(data)
 
 
+def test_dispatcher_auto_assignment_proxy_is_protected_and_legacy_prepare_is_not_allowlisted(dashboard):
+    client, _, _ = dashboard
+    order_id = str(uuid4())
+    accepted = call(
+        client,
+        "POST",
+        f"/api/orders/{order_id}/auto-assignment",
+        {
+            "request_id": str(uuid4()),
+            "expected_version": 1,
+            "acknowledge_unverified_location": True,
+        },
+        404,
+    )
+    assert accepted["error"]["code"] != "PATH_REJECTED"  # valid contract reaches the backend
+    rejected = call(client, "POST", f"/api/orders/{order_id}/prepare-assignment", {}, 400)
+    assert rejected["error"]["code"] == "PATH_REJECTED"
+    rider = call(client, "GET", "/api/riders") ["items"][0]
+    scoped = client.post(
+        "/dashboard/api",
+        json={
+            "method": "POST",
+            "path": f"/api/orders/{order_id}/auto-assignment",
+            "body": {
+                "request_id": str(uuid4()),
+                "expected_version": 1,
+                "acknowledge_unverified_location": True,
+            },
+            "actor": "rider",
+            "rider_id": rider["id"],
+        },
+    )
+    assert scoped.status_code == 403
+    assert scoped.json()["error"]["code"] == "RIDER_SCOPE"
+
+
 def test_parser_real_extraction_and_invalid_request(dashboard):
     client, _, _ = dashboard
     parsed = call(client, "POST", "/api/orders/parse", {"raw_text": RAW})
@@ -221,7 +255,7 @@ def test_full_buyer_dispatcher_rider_cod_lifecycle(dashboard):
     card = buyer(client, handle)
     assert not any(k in card for k in ("customer_phone", "street", "latitude"))
     buyer(client, handle, suffix="/details", status=401)
-    verified = buyer(client, handle, "POST", "/verify", {"last_four": "0000"})
+    verified = buyer(client, handle, "POST", "/verify", {"code": "000000"})
     assert verified["verified"] and "access_token" not in verified
     details = buyer(client, handle, suffix="/details")
     assert details["initial_pin_requires_review"]
@@ -333,7 +367,7 @@ def test_buyer_reschedule_rejection_and_invalid_coordinates(dashboard):
     client, _, boot = dashboard
     identifier = order(client, boot)["id"]
     handle = link(client, identifier)["buyer_handle"]
-    buyer(client, handle, "POST", "/verify", {"last_four": "0000"})
+    buyer(client, handle, "POST", "/verify", {"code": "000000"})
     buyer(
         client,
         handle,
@@ -384,7 +418,7 @@ def test_expired_link_session_and_real_lockout(dashboard):
     client, _, boot = dashboard
     identifier = order(client, boot)["id"]
     handle = link(client, identifier)["buyer_handle"]
-    buyer(client, handle, "POST", "/verify", {"last_four": "0000"})
+    buyer(client, handle, "POST", "/verify", {"code": "000000"})
     assert client.post(
         "/dashboard/expire", json={"buyer_handle": handle, "kind": "SESSION"}
     ).json()["test_fixture_only"]
@@ -398,9 +432,9 @@ def test_expired_link_session_and_real_lockout(dashboard):
         "buyer_handle"
     ]
     for expected in (403, 403, 403):
-        buyer(client, handle, "POST", "/verify", {"last_four": "1111"}, expected)
+        buyer(client, handle, "POST", "/verify", {"code": "111111"}, expected)
     assert buyer(client, handle)["state"] == "LOCKED"
-    buyer(client, handle, "POST", "/verify", {"last_four": "0000"}, 423)
+    buyer(client, handle, "POST", "/verify", {"code": "000000"}, 423)
 
 
 @pytest.mark.parametrize("invalidation", ["cancel", "expire"])
@@ -458,7 +492,7 @@ def test_internal_http_logs_never_include_buyer_capabilities(dashboard, caplog):
     client, box, boot = dashboard
     caplog.set_level(logging.INFO, logger="httpx2")
     handle = link(client, order(client, boot)["id"])["buyer_handle"]
-    buyer(client, handle, "POST", "/verify", {"last_four": "0000"})
+    buyer(client, handle, "POST", "/verify", {"code": "000000"})
     buyer(client, handle, suffix="/details")
     private = box.buyers[handle]
     assert private["path"].split("/")[-1] not in caplog.text

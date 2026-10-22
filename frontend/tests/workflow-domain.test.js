@@ -10,7 +10,8 @@ function dispatched(s,id='LP-2046'){
   if(!s.order(id).received)command(s,'receive',{id});
   command(s,'assign',{id,routeId:'RT-001'});command(s,'dispatch',{routeId:'RT-001'});clock(s);return s.order(id);
 }
-function confirm(s,changes={}){if(s.linkStatus('LP-2045')!=='active')command(s,'issue_link',{id:'LP-2045'});const o=s.order('LP-2045');s.verify(o.link.token,'1602');return s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:W.WINDOWS[0],answer:'At home',note:'Blue gate',...changes});}
+function verifyBuyer(s,token='demo-2045',code='123456'){s.requestOtp(token);return s.verify(token,code);}
+function confirm(s,changes={}){if(s.linkStatus('LP-2045')!=='active')command(s,'issue_link',{id:'LP-2045'});const o=s.order('LP-2045');verifyBuyer(s,o.link.token);return s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:W.WINDOWS[0],answer:'At home',note:'Blue gate',...changes});}
 test('rules parse Myanmar digits and retain deterministic provenance',()=>{
  const p=W.parse('Name: Test\nPhone: ၀၉၈၈၇၃၄၁၆၀၂\nTownship: Kamayut\nStreet: Hledan Road\nCOD: ၂၈၀၀၀');
  assert.equal(p.phone,'09887341602');assert.equal(p.expected,28000);assert.equal(p.provenance.phone.source,'rule');assert.equal(W.triage(p).level,'green');
@@ -32,10 +33,20 @@ test('batch duplicate detection is explicit and failed batch creation is atomic'
 test('public link projection omits private address and phone',()=>{
  const c=make().customer('demo-2045');assert.equal(c.available,true);assert.equal(c.order,undefined);assert.equal(c.phone,undefined);assert.equal(c.pin,undefined);
 });
-test('phone lock survives new session; malformed checks consume no attempts',()=>{
- const storage=memory(),s=W.createStore(storage,{initialState:W.fixtures()});assert.throws(()=>s.verify('demo-2045','12'),/four/);assert.equal(s.customer('demo-2045').remaining,3);
- for(let i=0;i<3;i++)assert.throws(()=>s.verify('demo-2045','0000'));
+test('local OTP is requested before preview, uses six digits and locks after three failures',()=>{
+ const storage=memory(),s=W.createStore(storage,{initialState:W.fixtures()});assert.equal(s.customer('demo-2045').otpPreview,undefined);
+ assert.throws(()=>s.verify('demo-2045','12'),/six/);assert.equal(s.customer('demo-2045').remaining,3);
+ assert.equal(s.requestOtp('demo-2045').mode,'DEMO');assert.equal(s.customer('demo-2045').otpPreview,'123456');
+ for(let i=0;i<3;i++)assert.throws(()=>s.verify('demo-2045','000000'));
  assert.equal(W.createStore(storage,{initialState:W.fixtures()}).customer('demo-2045').status,'locked');
+});
+test('free automatic assignment sends a pending offer; decline replaces it; acceptance precedes departure',()=>{
+ const s=make();confirm(s);const id='LP-2045';command(s,'auto_assign',{id});
+ let o=s.order(id),route=s.snapshot().routes.find(r=>r.id===o.routeId),first=W.ACTORS.rider;
+ assert.equal(o.responseStatus,'PENDING');assert.equal(o.state,'assigned');assert.throws(()=>command(s,'dispatch',{routeId:route.id}),/accept/);
+ command(s,'offer_response',{id,action:'DECLINE',offerVersion:o.offerVersion},first);o=s.order(id);assert.equal(o.responseStatus,'PENDING');assert.notEqual(o.routeId,route.id);assert.equal(s.snapshot().routes.find(r=>r.id===o.routeId).riderId,W.ACTORS.rider2.id);
+ const replacement=s.snapshot().routes.find(r=>r.id===o.routeId);command(s,'offer_response',{id,action:'ACCEPT',offerVersion:o.offerVersion},W.ACTORS.rider2);
+ o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'assigned');command(s,'dispatch',{routeId:replacement.id});assert.equal(s.order(id).state,'out_for_delivery');
 });
 test('reissued/revoked/expired links never grant old access',()=>{
  const s=make();command(s,'issue_link',{id:'LP-2045'});assert.equal(s.customer('demo-2045').available,false);
@@ -51,7 +62,7 @@ test('confirmation cannot hide an unknown payment hold',()=>{
 test('repeated nudges use original anchor; cross-township moves inside radius are rejected',()=>{
  const s=make(),o=s.order('LP-2045');confirm(s,{pin:{lat:o.anchor.lat+.003,lng:o.anchor.lng}});
  assert.throws(()=>confirm(s,{pin:{lat:o.anchor.lat+.006,lng:o.anchor.lng}}),/500 m/);
- command(s,'verify_location',{id:o.id,pin:{lat:16.8181,lng:96.1309},reason:'Fixture boundary anchor'});command(s,'issue_link',{id:o.id});const latest=s.order(o.id);s.verify(latest.link.token,'1602');
+ command(s,'verify_location',{id:o.id,pin:{lat:16.8181,lng:96.1309},reason:'Fixture boundary anchor'});command(s,'issue_link',{id:o.id});const latest=s.order(o.id);verifyBuyer(s,latest.link.token);
  assert.throws(()=>s.confirm(latest.link.token,{expectedVersion:latest.version,pin:{lat:16.8179,lng:96.1309},time:W.WINDOWS[0],answer:'At home'}),/township/);
 });
 test('security COD requires explicit ability to pay and stale versions reject saves',()=>{
@@ -132,7 +143,7 @@ test('storage failure falls back to memory; requested reset removes only old app
  const storage=memory();storage.setItem('lannpya.delivery.v1',JSON.stringify({stops:[{id:'old'}]}));storage.setItem('lannpya.workflow.v3',JSON.stringify(W.fixtures()));storage.setItem('unrelated-app','keep');const s=W.createStore(storage);assert.equal(s.snapshot().orders.length,0);assert.equal(s.snapshot().routes.length,0);assert.equal(storage.getItem('lannpya.delivery.v1'),null);assert.equal(storage.getItem('lannpya.workflow.v3'),null);assert.equal(storage.getItem('unrelated-app'),'keep');
 });
 test('verified customer and rider projections exclude raw chat and full phone',()=>{
- const s=make();s.verify('demo-2045','1602');const customer=s.customer('demo-2045');assert.equal(customer.order.phone,undefined);assert.equal(customer.order.raw,undefined);assert.equal(customer.order.link,undefined);
+ const s=make();verifyBuyer(s);const customer=s.customer('demo-2045');assert.equal(customer.order.phone,undefined);assert.equal(customer.order.raw,undefined);assert.equal(customer.order.link,undefined);assert.equal(customer.phoneEnd,undefined);
  dispatched(s);assert.equal(s.order('LP-2046',R).phone,undefined);assert.equal(s.queue(R)[0].raw,undefined);
 });
 test('coverage policy holds undeparted parcels without moving a dispatched parcel',()=>{
@@ -183,18 +194,18 @@ test('manual creation is admin-only, validated and atomic; no seeded records or 
  const reloaded=W.createStore(storage);assert.equal(reloaded.snapshot().orders.length,1);assert.equal(reloaded.snapshot().routes.length,0);assert.equal(reloaded.snapshot().orders[0].id,o.id);
 });
 test('customer without an anchor can submit a proposal but cannot clear the admin review hold',()=>{
- const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);s.verify(o.link.token,'9082');s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.ANY_TIME,answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
+ const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.ANY_TIME,answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
  assert.throws(()=>command(s,'approve_customer_location',{id,reason:'Unauthorised'},R),/Admin/);command(s,'approve_customer_location',{id,reason:'Checked delivery pin'});assert.equal(s.order(id).state,'ready');assert.equal(s.order(id).confirmation.note,'Blue gate');assert.equal(s.customer(o.link.token).available,true);
 });
 test('Any time manual orders can dispatch and deliver today without the old fixed clock or cutoff',()=>{
- const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T21:30:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s,{lat:'16.8254',lng:'96.1309'}),received:true,locationReviewed:true}).value,o=s.order(id);assert.equal(s.deadline(id),true);s.verify(o.link.token,'9082');s.confirm(o.link.token,{pin:o.pin,time:W.ANY_TIME,answer:'At home',expectedVersion:o.version});const routeId=command(s,'new_route',{date:o.date,riderId:R.id}).value;command(s,'assign',{id,routeId});command(s,'dispatch',{routeId});command(s,'complete',{id,amount:100},R);assert.equal(s.order(id).state,'delivered');assert.equal(s.deadline(id),false);
+ const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T21:30:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s,{lat:'16.8254',lng:'96.1309'}),received:true,locationReviewed:true}).value,o=s.order(id);assert.equal(s.deadline(id),true);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:o.pin,time:W.ANY_TIME,answer:'At home',expectedVersion:o.version});const routeId=command(s,'new_route',{date:o.date,riderId:R.id}).value;command(s,'assign',{id,routeId});command(s,'dispatch',{routeId});command(s,'complete',{id,amount:100},R);assert.equal(s.order(id).state,'delivered');assert.equal(s.deadline(id),false);
 });
 test('shop prep timeline sets the earliest delivery day and the buyer chooses from the next three days',()=>{
  const s=make();clock(s,'09:00');const today=W.day(s.now());
  assert.throws(()=>command(s,'create_manual',{fields:manualFields(s,{prep:'pre_5'})}),/ready on/);
  const id=command(s,'create_manual',{fields:manualFields(s,{prep:'pre_5',date:W.addDays(today,5)})}).value,o=s.order(id);
  assert.equal(o.readyDate,W.addDays(today,5));
- s.verify(o.link.token,'9082');const c=s.customer(o.link.token);
+ verifyBuyer(s,o.link.token);const c=s.customer(o.link.token);
  assert.deepEqual(c.dates,[5,6,7].map(n=>W.addDays(today,n)));
  assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:{lat:16.8254,lng:96.1309},date:today,time:W.SLOTS[0].time,answer:'At home'}),/days shown/);
  s.confirm(o.link.token,{expectedVersion:o.version,pin:{lat:16.8254,lng:96.1309},date:W.addDays(today,6),time:W.SLOTS[2].time,answer:'At home'});

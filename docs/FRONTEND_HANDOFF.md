@@ -30,7 +30,7 @@ secure deployment. Never deploy a dispatcher/admin development token in browser 
 | Merchant / dispatcher | X-Dev-Access-Token, server-bound local actor | Merchant scoped to own orders; Dispatcher/Admin manage local records |
 | Rider | Its own server-bound Rider actor + local token | Own profile/availability/queue/delivery actions; no private order-management API |
 | Buyer card | Secret link capability only | Minimal data before verification |
-| Buyer sensitive actions | Same link + Authorization: Bearer credential after last-four check | Bound to link/order/generation, short-lived |
+| Buyer sensitive actions | Same link + Authorization: Bearer credential after six-digit OTP verification | Bound to link/order/generation, short-lived |
 
 The local token is not login or production authentication. Each instance represents one
 server-configured actor; there is no user/role-switch endpoint. The demo uses separate
@@ -86,6 +86,8 @@ customer data. HTTP success is 200 unless noted. Data schemas are defined below 
 | `GET /api/orders/{order_id}` | none | Order |
 | `PATCH /api/orders/{order_id}` | `{expected_version:v,floor:"2",delivery_instructions:userText}` | Order |
 | `PATCH /api/orders/{order_id}/status` | `{expected_version:v,status:"NEEDS_REVIEW"}` | Order |
+| `POST /api/orders/{order_id}/prepare-assignment` | Legacy compatibility operation; the current frontend uses auto-assignment below | Legacy response |
+| `POST /api/orders/{order_id}/auto-assignment` | `{request_id:u,expected_version:v,acknowledge_unverified_location:true,receive_at_hub:false}` | `{order,allocation_status,reason,assignment,route}` |
 | `GET /api/orders/{order_id}/events` | `?page=1&page_size=20` | EventPage |
 | `GET /api/users` | `?role=Merchant&limit=100` | User[] |
 | `POST /api/orders/{order_id}/confirmation-link` | none | 201 Link |
@@ -94,7 +96,8 @@ customer data. HTTP success is 200 unless noted. Data schemas are defined below 
 | `GET /api/orders/{order_id}/buyer-requests` | `?page=1&page_size=20` | BuyerRequestPage |
 | `PATCH /api/orders/{order_id}/buyer-requests/{request_id}` | `{expected_version:v,decision:"APPROVE",reason:operatorReason}` OR REJECT; path uses **history item id**, not its request_id | Review |
 | `GET /api/confirm/{token}` | none | Card |
-| `POST /api/confirm/{token}/verify` | `{last_four:userEnteredFourAsciiDigits}` | BuyerAuthorization |
+| `POST /api/confirm/{token}/otp` | `{}` | OTPChallenge |
+| `POST /api/confirm/{token}/verify` | `{code:userEnteredSixAsciiDigits}` | BuyerAuthorization |
 | `GET /api/confirm/{token}/details` | buyer Bearer header | BuyerDetails |
 | `PATCH /api/confirm/{token}/location` | `{request_id:u,latitude:lat,longitude:lng,initial_pin_acknowledged:true}` + buyer Bearer | BuyerAction |
 | `PATCH /api/confirm/{token}/response` | `{request_id:u,action:"AVAILABLE",instructions:userText}` + buyer Bearer | BuyerAction |
@@ -206,12 +209,14 @@ IDs and operation flags, not private correction/failure values; read private aud
 5. Buyer AVAILABLE or an operator can set CONFIRMED once validation/review allows. Unresolved
    requests block confirmation/readiness. READY_FOR_DISPATCH requires explicit
    acknowledge_unverified_location:true for AMBER and a Dispatcher/Admin actor.
-6. Create/select AVAILABLE rider. POST /assign, not generic ASSIGNED bookkeeping. COD must
-   be known (zero means prepaid). GET events/assignments for history. Unassign before start
-   to process later buyer corrections, then review/confirm/ready/reassign. No on-road edits.
+6. Reconfirm through POST /auto-assignment after review is clear. The backend selects an
+   AVAILABLE rider without an active assignment and sends a pending offer. A pending offer
+   is not consent: the rider must ACCEPT before route departure or delivery. DECLINE ends
+   that offer and requests a replacement automatically. Preserve physical receipt evidence,
+   delivery windows, COD, returns and cash closeout. No on-road edits.
 
 Lifecycle: DRAFT -> NEEDS_REVIEW -> optional AWAITING_CONFIRMATION -> CONFIRMED ->
-READY_FOR_DISPATCH -> ASSIGNED -> OUT_FOR_DELIVERY -> DELIVERED/FAILED. Review/cancellation
+READY_FOR_DISPATCH -> ASSIGNED (offer PENDING) -> ASSIGNED (ACCEPTED) -> OUT_FOR_DELIVERY -> DELIVERED/FAILED. Review/cancellation
 branches and allowed back-transitions are in the full contract. FAILED may return to review;
 DELIVERED/CANCELLED are terminal. Confidence AMBER/RED/GREEN is not a delivery status.
 
@@ -219,7 +224,10 @@ DELIVERED/CANCELLED are terminal. Confidence AMBER/RED/GREEN is not a delivery s
 
 1. GET card; state VERIFICATION_REQUIRED allows the check, LOCKED means contact shop,
    VIEW_ONLY means completed delivery and minimal information only.
-2. POST verify with a **string of four ASCII digits**, never a JSON number. Three failed
+2. POST `/api/confirm/{token}/otp` with `{}` to request a six-digit code, then POST
+   `/api/confirm/{token}/verify` with a **string of six ASCII digits**, never a JSON number.
+   In local simulation mode the public response never contains the code; a protected local
+   dashboard preview is available to test operators. Local simulation sends no SMS. Three failed
    valid guesses lock the link across sessions/concurrent calls. Malformed input is 422.
    Failures never return digits/remaining guesses; do not auto-retry guesses.
 3. Success gives separate default 15-minute authorization, capped at link expiry. New
@@ -246,8 +254,8 @@ review/confirmation never manufactures GREEN. Buyer writes stop at READY_FOR_DIS
 
 Default links last 72 hours. Phone correction/cancellation/revocation invalidates them.
 Active eligible delivered links become minimal view-only for 24 hours; sensitive edits stop.
-Expired/revoked/locked links are not revived. Four digits plus a private link do not prove
-phone ownership. Protect frontend page with no-referrer/no-store, no analytics/third-party
+Expired/revoked/locked links are not revived. A six-digit OTP and private link do not prove
+phone ownership in a production identity system. Protect frontend page with no-referrer/no-store, no analytics/third-party
 scripts, no token logging/history persistence or service-worker caching.
 
 ## Rider workflow and polling
@@ -295,7 +303,8 @@ const corrected = await api(`/api/orders/${saved.id}`, { method: "PATCH",
   body: { expected_version: saved.version, delivery_instructions: instructionsFromForm } });
 const buyer = createBuyerApi({ baseUrl: buyerBackendBase, linkToken: tokenReadFromLink });
 const card = await buyer.card();
-await buyer.verify(lastFourFromForm); // Helper keeps bearer in closure memory.
+await buyer.requestOtp(); // POST /otp with an empty JSON object.
+await buyer.verify(sixDigitCodeFromForm); // POST /verify; bearer stays in closure memory.
 const details = await buyer.details();
 const requestId = crypto.randomUUID(); // Retain for a retry of this same body.
 const proposal = await buyer.location({ request_id: requestId, latitude: selectedLatitude,
@@ -370,7 +379,8 @@ The local integration adds these role-protected native operations without renami
 - `POST /api/routes`
 - `POST /api/routes/{route_id}/actions`
 - `POST /api/orders/{order_id}/operations`
-- `POST /api/orders/{order_id}/prepare-assignment`
+- `POST /api/orders/{order_id}/auto-assignment`
+- `PATCH /api/riders/{rider_id}/deliveries/{order_id}/status` with `action: ACCEPT` or `DECLINE`
 
 See [final contract](final-integration/FRONTEND_BACKEND_CONTRACT.md) and generated OpenAPI for schemas and local credential boundaries. Earlier phase reports are historical.
 

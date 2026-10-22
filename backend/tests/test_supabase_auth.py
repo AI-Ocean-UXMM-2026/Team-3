@@ -35,6 +35,11 @@ def secure(tmp_path):
         supabase_auth_enabled=True,
         supabase_url="https://example.supabase.co",
         supabase_publishable_key="sb_publishable_test",
+        buyer_otp_mode="twilio",
+        buyer_otp_external_sends_enabled=True,
+        buyer_twilio_account_sid="AC00000000000000000000000000000000",
+        buyer_twilio_auth_token="synthetic-test-only",
+        buyer_twilio_verify_service_sid="VA00000000000000000000000000000000",
     )
     app = create_app(settings, database=db)
     with TestClient(app, client=("203.0.113.1", 5000)) as client:

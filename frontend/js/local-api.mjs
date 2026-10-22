@@ -21,7 +21,8 @@ async function bridge(baseUrl) {
     if(value?.buyer_handle)return {...value,confirmation_url:'/confirm/'+value.buyer_handle};
     return value;
   };
-  return {call};
+  const demoOtp=buyer_handle=>request('/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(buyer_handle));
+  return {call,demoOtp};
 }
 
 export class LocalWorkspaceApi extends WorkspaceApi {
@@ -48,7 +49,7 @@ export class LocalWorkspaceApi extends WorkspaceApi {
       return (await local).call('/api/confirm/@buyer'+suffix,{method,body},'dispatcher',null,handle);
     };
     this.buyer?.clear();
-    this.buyer={card:()=>call(''),verify:last_four=>call('/verify','POST',{last_four}),details:()=>call('/details'),location:body=>call('/location','PATCH',body),respond:body=>call('/response','PATCH',body),clear:()=>{active=false;}};
+    this.buyer={card:()=>call(''),requestOtp:()=>call('/otp','POST',{}),demoCode:async()=>{if(!active)throw Error('This buyer view was closed.');return (await local).demoOtp(handle);},verify:code=>call('/verify','POST',{code}),details:()=>call('/details'),location:body=>call('/location','PATCH',body),respond:body=>call('/response','PATCH',body),clear:()=>{active=false;}};
     return this.buyer;
   }
 }

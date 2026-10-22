@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.config import Settings
-from app.db.buyer_models import BuyerRequest
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User
 from app.db.rider_models import DeliveryAssignment
@@ -201,13 +201,25 @@ class Experiment:
             self.call(public, "GET", path, "revoked_link_rejection", expected=(404,))
             path = "/api" + replacement["confirmation_url"]
         self.call(public, "GET", path, "buyer_card", planned.reference)
+        challenge = self.call(
+            public,
+            "POST",
+            path + "/otp",
+            "buyer_otp_request",
+            planned.reference,
+            body={},
+        )
+        with self.database.sessions() as session:
+            otp_code = session.get(BuyerOtpChallenge, UUID(challenge["challenge_id"])).demo_code
+        if not otp_code:
+            raise SimulationError("Demo OTP fixture did not produce a local test code.")
         authorization = self.call(
             public,
             "POST",
             path + "/verify",
             "buyer_verify",
             planned.reference,
-            body={"last_four": planned.phone_last_four},
+            body={"code": otp_code},
         )
         auth = {"Authorization": "Bearer " + authorization["access_token"]}
         self.call(

@@ -31,6 +31,11 @@ async function main(){
   const r=await fetch(origin+'/dashboard/api',{method:'POST',headers:headers(),body:JSON.stringify({method,path:apiPath,body,...extra}),signal:AbortSignal.timeout(15000)});
   assert.ok(r.ok,`${method} ${apiPath} returned ${r.status}`);return (await r.json()).data;
  }
+ async function buyerCode(handle){
+  await call('POST','/api/confirm/@buyer/otp',{}, {buyer_handle:handle});
+  const r=await fetch(origin+'/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(handle),{headers:{Cookie:cookie,Origin:origin}});
+  assert.ok(r.ok,'Protected local OTP preview');const result=await r.json();assert.equal(result.simulation,true);return result.code;
+ }
  async function stop(){
   if(!child||child.exitCode!==null)return;
   try{await fetch(origin+'/dashboard/shutdown',{method:'POST',headers:headers(),body:JSON.stringify({confirm:'STOP LOCAL TOOL'}),signal:AbortSignal.timeout(5000)});let timer;try{await Promise.race([exited,new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('Isolated shutdown timed out')),10000);})]);}finally{clearTimeout(timer);}}
@@ -43,7 +48,7 @@ async function main(){
   const endpoint='/api/orders/'+order.id;
   order=await call('PATCH',endpoint+'/status',{expected_version:order.version,status:'NEEDS_REVIEW'});
   const link=await call('POST',endpoint+'/confirmation-link',{}),buyer={buyer_handle:link.buyer_handle};
-  await call('POST','/api/confirm/@buyer/verify',{last_four:'0000'},buyer);
+  await call('POST','/api/confirm/@buyer/verify',{code:await buyerCode(buyer.buyer_handle)},buyer);
   await call('PATCH','/api/confirm/@buyer/location',{request_id:crypto.randomUUID(),latitude:'0',longitude:'0',initial_pin_acknowledged:true},buyer);
   const pending=(await call('GET',endpoint+'/buyer-requests')).items[0];order=await call('GET',endpoint);
   await call('PATCH',endpoint+'/buyer-requests/'+pending.id,{expected_version:order.version,decision:'APPROVE',reason:'Fictional test location; no real home or geospatial accuracy claim'});

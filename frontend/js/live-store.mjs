@@ -8,15 +8,15 @@ export function projectOrder(row){
   return {id:row.id,version:row.version,name:row.customer_name||'',phone:row.customer_phone||'',raw:row.original_message||'',normalized:row.normalized_message||'',areaId:row.township,street:row.street||'',landmark:row.landmark||'',floor:row.building_floor_unit||row.floor||'',item:p.item||'',sender:p.sender||'',reference:p.reference||'',date:p.delivery_day||'',time:row.delivery_time_window||'Any time',payment:row.cod_amount==null?'unknown':Number(row.cod_amount)===0?'prepaid':'cod',expected:row.cod_amount==null?null:Number(row.cod_amount),note:row.delivery_instructions||'',state:p.return_received_at?'returned':states[row.status]||'held',location:pin?(row.field_sources?.latitude?.method==='buyer_confirmation'?'buyer_confirmed':'manual_unverified'):'unknown',anchor:null,pin,routeId:p.route_id||null,received:!!p.hub_received_at,collection:p.collection?{...p.collection,discrepancy:p.collection.actual!==p.collection.expected}:null,incident:p.incident||null,attempts:[],encodingReview:false,confidence:row.confidence_level,reasons:(row.confidence_reasons||[]).map(x=>x.message),fieldSources:row.field_sources,ai:row.ai_availability_status};
 }
 export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=location.origin,route=location.hash.slice(2)}={}){
-  const links=new Map(),linkStates=new Map(),buyerStates=new Map(),native=new Map(),routeRows=new Map();
+  const links=new Map(),linkStates=new Map(),buyerStates=new Map(),native=new Map(),routeRows=new Map(),allocationStates=new Map(),pendingAutoRequests=new Map(),pendingOfferRequests=new Map();
   let lastRoute=route||'dispatch',queueRows=[],requests=[],activeBuyer=null;
   let state={orders:[],routes:[],plans:[],riderPlans:[],riders:[],events:[],outbox:[],downloads:{},policy:{areas:[],cutoff:900,enforceCutoff:true,maxRetries:0,radius:500,linkDays:3,version:1,noteLimit:2000},policyHistory:[],clockMode:'live'};
   const all=(side,path)=>api.all(side,path),call=(path,method='GET',body,side='admin')=>api.call(side,path,{method,body});
   function rows(routes){routeRows.clear();return routes.map(r=>{routeRows.set(r.id,r);return {...r,riderId:r.rider_id,date:r.day,orderIds:r.items.map(o=>o.id),active:null};});}
-  function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r);if(links.has(r.id))o.link=links.get(r.id);return o;});}
+  function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r),allocation=allocationStates.get(r.id);if(links.has(r.id))o.link=links.get(r.id);if(allocation){o.allocationStatus=allocation.status;o.allocationReason=allocation.reason;if(allocation.routeId)o.routeId=allocation.routeId;if(allocation.riderId)o.assignedRiderId=allocation.riderId;}return o;});}
   function applyBuyerReviews(id,updates){
     requests=updates;const pending=updates.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution),o=state.orders.find(o=>o.id===id);
-    if(o){o.pendingBuyerReviewCount=pending.length;const location=pending.find(r=>r.kind==='LOCATION');o.proposedPin=location?point(location.submitted_values.latitude,location.submitted_values.longitude):null;}
+    if(o){o.pendingBuyerReviewCount=pending.length;o.buyerResponseRecorded=updates.some(r=>r.kind==='RESPONSE');const location=pending.find(r=>r.kind==='LOCATION');o.proposedPin=location?point(location.submitted_values.latitude,location.submitted_values.longitude):null;}
     return copy(pending);
   }
   async function checkBuyerReviews(id){return applyBuyerReviews(id,await all('admin',`/api/orders/${id}/buyer-requests`));}
@@ -41,7 +41,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       state.riderPlans=(await call(`/api/riders/${rider.id}/route-plans`,'GET',undefined,'rider')).items||[];
       state.plans=[];state.riders=[];
       const projected=new Map(routes.flatMap(r=>r.items.map(o=>[o.id,{id:o.id,name:o.name||'',state:o.return_received?'returned':states[o.status],collection:o.collection,routeId:r.id,attempts:[]}])));
-      for(const q of queueRows){const pin=point(q.latitude,q.longitude);projected.set(q.order_id,{...(projected.get(q.order_id)||{}),id:q.order_id,version:q.order_version,name:q.customer_name||'',phone:q.customer_phone||'',street:q.street||'',landmark:q.landmark||'',note:q.delivery_instructions||'',floor:q.building_floor_unit||'',areaId:q.township,state:states[q.status],pin,anchor:null,location:q.coordinate_status,navigationUrl:q.navigation_ready?q.navigation_url:null,expected:q.cod_amount==null?null:Number(q.cod_amount),payment:Number(q.cod_amount)===0?'prepaid':'cod',time:q.delivery_time_window||W.ANY_TIME,date:'',attempts:[],confirmation:q.buyer_confirmation?.last_confirmed_at?{answer:({AVAILABLE:'At home',RESCHEDULE:'Rescheduled',LEAVE_WITH_SECURITY:'Leave with security'})[q.buyer_confirmation.availability]||'Location only; availability unconfirmed',time:q.delivery_time_window||W.ANY_TIME}:null});}
+      for(const q of queueRows){const pin=point(q.latitude,q.longitude);projected.set(q.order_id,{...(projected.get(q.order_id)||{}),id:q.order_id,version:q.order_version,name:q.customer_name||'',phone:q.customer_phone||'',street:q.street||'',landmark:q.landmark||'',note:q.delivery_instructions||'',floor:q.building_floor_unit||'',areaId:q.township,state:states[q.status],pin,anchor:null,location:q.coordinate_status,navigationUrl:q.navigation_ready?q.navigation_url:null,expected:q.cod_amount==null?null:Number(q.cod_amount),payment:Number(q.cod_amount)===0?'prepaid':'cod',time:q.delivery_time_window||W.ANY_TIME,date:'',routeId:q.route_id||projected.get(q.order_id)?.routeId||null,assignmentId:q.assignment_id,responseStatus:q.response_status,offerVersion:q.offer_version,allocationStatus:q.allocation_status,attempts:[],confirmation:q.buyer_confirmation?.last_confirmed_at?{answer:({AVAILABLE:'At home',RESCHEDULE:'Rescheduled',LEAVE_WITH_SECURITY:'Leave with security'})[q.buyer_confirmation.availability]||'Location only; availability unconfirmed',time:q.delivery_time_window||W.ANY_TIME}:null});}
       state.orders=[...projected.values()];state.events=[];return;
     }
     await connect('admin');
@@ -98,8 +98,17 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       await api.patch(row(p.id),{latitude:String(p.pin.lat),longitude:String(p.pin.lng)});
     }else if(type==='new_route'){value=(await call('/api/routes','POST',{rider_id:p.riderId,day:p.date})).id;
     }else if(type==='assign'){
-      const pending=await checkBuyerReviews(p.id);if(pending.length)throw Error(`Review ${pending.length} pending buyer request(s) on this order before assigning a rider.`);
-      await api.prepareAssignment(row(p.id),'route:'+p.routeId,{acknowledge:!!p.acknowledge,received:false});
+      const pending=await checkBuyerReviews(p.id);if(pending.length)throw Error(`Review ${pending.length} pending buyer request(s) on this order before reconfirming.`);
+      const current=await api.order(p.id),key=`${p.id}:${current.version}`;native.set(p.id,current);
+      let requestId=pendingAutoRequests.get(key);if(!requestId){requestId=crypto.randomUUID();pendingAutoRequests.set(key,requestId);}
+      let allocation;try{allocation=await api.autoAssignment(current,{acknowledge:!!p.acknowledge,received:!!p.received},requestId);}catch(e){throw e;}
+      pendingAutoRequests.delete(key);allocationStates.set(p.id,{status:allocation.allocation_status,reason:allocation.reason||'',routeId:allocation.route?.id||null,riderId:allocation.assignment?.rider_id||null});
+    }else if(type==='offer_response'){
+      await connect('rider',actor.id);const q=queueRows.find(q=>q.order_id===p.id);if(!q)throw Error('This offer is not in the selected rider queue. Refresh before retrying.');
+      const assignmentId=q.assignment_id;if(!assignmentId||!Number.isInteger(q.offer_version))throw Error('This offer is stale. Refresh the rider queue before responding.');
+      let requestId=pendingOfferRequests.get(assignmentId);if(!requestId){requestId=crypto.randomUUID();pendingOfferRequests.set(assignmentId,requestId);}
+      try{value=await api.respondToOffer(q,p.action,requestId);}catch(e){await sync().catch(()=>{});throw e;}
+      pendingOfferRequests.delete(assignmentId);
     }else if(type==='unassign'){await call(`/api/orders/${p.id}/unassign`,'POST',{expected_version:row(p.id).version});
     }else if(type==='dispatch'){await api.routeAction('admin',routeRows.get(p.routeId),'DISPATCH');
     }else if(type==='cancel'){await api.status(row(p.id),'CANCELLED');
@@ -113,7 +122,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       const result=await api.routeAction(side,r,{submit_cash:'HANDOVER',receive_cash:'RECEIVE_CLOSE',close_route:'CLOSE'}[type],{...(type==='close_route'?{}:{amount:p.amount,recorded_total:r.recorded_total,reason:p.reason||null,resolve:!!p.resolve})});value={closed:result.state==='closed'};
     }else throw Error(`Unsupported in LIVE_BACKEND: ${type}. No simulated mutation was made.`);
     try{await sync();}catch{throw Error('The backend accepted the write, but refresh failed. Reload before retrying; no simulated success was substituted.');}
-    return {value,pending:false};
+    return {value,pending:false,allocationStatus:type==='assign'?allocationStates.get(p.id)?.status:undefined};
   }
   const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,checkBuyerReviews,
     routingStatus:()=>call('/api/routes/provider-status'),
@@ -127,6 +136,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     requests:()=>copy(requests.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution)),
     async selectRider(id){await connect('rider',id);await sync('ride');},
     async verifyRefresh(token){await loadBuyer(token);const b=buyerStates.get(token);if(b.details)b.details=await api.buyer.details();},
+    async requestOtp(token){await loadBuyer(token);const b=buyerStates.get(token),challenge=await api.buyer.requestOtp();b.challenge=challenge;b.otpPreview=challenge.mode==='DEMO'?await api.buyer.demoCode():null;return copy(challenge);},
     async parse(raw_text){await connect('admin');const r=await call('/api/orders/parse','POST',{raw_text}),a=r.address;return {name:a.customer_name||'',phone:a.phone_number||'',areaId:a.township||'',street:a.street||'',landmark:a.landmark||'',floor:a.building_floor_unit||'',expected:a.cod_amount,payment:a.cod_amount===0?'prepaid':a.cod_amount==null?'unknown':'cod',note:a.delivery_instructions||'',warnings:[...r.validation_reasons.map(v=>v.message),`AI: ${r.ai.status}. ${r.ai.message}`],confidence:r.confidence.toLowerCase(),pin:null};},
     triage:id=>{const o=order(id);return {level:(o.confidence||'AMBER').toLowerCase(),reasons:o.reasons||['Location accuracy is not independently verified.']};},
     blockers:id=>{const o=order(id);return [...(o.confidence==='RED'?['Correct critical address validation failures']:[]),...(!o.pin?['Location needed']:[]),...(o.pendingBuyerReviewCount?[`${o.pendingBuyerReviewCount} buyer requests awaiting review`]:[]),...(!o.received?['Physical hub receipt required']:[])];},
@@ -135,8 +145,8 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     linkStatus:id=>links.has(id)?Date.now()<links.get(id).expires?'active':'expired':linkStates.get(id)||'not_loaded',
     queue:actor=>actor.id===api.connections.rider?.actor.id?copy(queueRows.map(q=>state.orders.find(o=>o.id===q.order_id)).filter(Boolean)):[],
     closeoutBlockers:id=>routeRows.get(id)?.blockers||[],
-    customer:token=>{const b=buyerStates.get(token);if(!b)return {available:false,status:'unavailable'};const d=b.details;const o=d?{id:d.order_reference,version:1,state:states[d.status],street:d.street||'',landmark:d.landmark||'',pin:point(d.latitude,d.longitude),anchor:null,location:d.initial_pin_requires_review?'unknown':'buyer_selected',time:d.delivery_time_window||W.ANY_TIME,note:d.delivery_instructions||'',date:W.day(Date.now()),confirmation:b.confirmation||null}:{};return {...b,order:o,verified:!!d,state:states[b.card?.delivery_status],sender:b.card?.shop_display_name||'LannPya',reference:b.card?.order_reference,item:'Delivery confirmation',payment:'unknown',expected:null,remaining:'up to 3',editable:!!d&&!['DELIVERED','CANCELLED','OUT_FOR_DELIVERY','ASSIGNED'].includes(d.status),dates:[W.day(Date.now()),W.addDays(W.day(Date.now()),1),W.addDays(W.day(Date.now()),2)]};},
-    async verify(token,digits){await loadBuyer(token);try{await api.buyer.verify(digits);buyerStates.get(token).details=await api.buyer.details();return store.customer(token);}catch(e){await loadBuyer(token).catch(()=>{});throw e;}},
+    customer:token=>{const b=buyerStates.get(token);if(!b)return {available:false,status:'unavailable'};const d=b.details;const o=d?{id:d.order_reference,version:1,state:states[d.status],street:d.street||'',landmark:d.landmark||'',pin:point(d.latitude,d.longitude),anchor:null,location:d.initial_pin_requires_review?'unknown':'buyer_selected',time:d.delivery_time_window||W.ANY_TIME,note:d.delivery_instructions||'',date:W.day(Date.now()),confirmation:b.confirmation||null}:{};return {...b,simulationOnly:b.otpPreview?.simulation===true,order:o,verified:!!d,state:states[b.card?.delivery_status],sender:b.card?.shop_display_name||'LannPya',reference:b.card?.order_reference,item:'Delivery confirmation',payment:'unknown',expected:null,remaining:'up to 3',editable:!!d&&!['DELIVERED','CANCELLED','OUT_FOR_DELIVERY','ASSIGNED'].includes(d.status),dates:[W.day(Date.now()),W.addDays(W.day(Date.now()),1),W.addDays(W.day(Date.now()),2)]};},
+    async verify(token,digits){await loadBuyer(token);try{await api.buyer.verify(digits);const b=buyerStates.get(token);b.details=await api.buyer.details();b.challenge=null;b.otpPreview=null;return store.customer(token);}catch(e){await loadBuyer(token).catch(()=>{});throw e;}},
     async confirm(token,p){
       if(!p.pin||!Number.isFinite(p.pin.lat)||!Number.isFinite(p.pin.lng))throw Error('Select a valid map pin first.');
       await api.buyer.location({request_id:crypto.randomUUID(),latitude:p.pin.lat.toFixed(7),longitude:p.pin.lng.toFixed(7),initial_pin_acknowledged:!!p.acknowledged});

@@ -18,21 +18,25 @@ test("development token stays on the chosen loopback backend", async () => {
   await assert.rejects(api("https://other.example.invalid/api/orders"));
 });
 
-test("buyer verification keeps the credential separate and supports clearing it", async () => {
+test("buyer requests a six-digit OTP and keeps the verified credential separate", async () => {
   const calls = [];
   globalThis.fetch = async (url, options) => {
     calls.push({ url, options });
     return Response.json(url.endsWith("/verify") ? { access_token: "buyer-secret", token_type: "Bearer", expires_at: "2099-01-01T00:00:00Z" } : {});
   };
   const buyer = createBuyerApi({ baseUrl, linkToken: "a".repeat(43) });
-  const verification = await buyer.verify("0000");
+  await buyer.requestOtp();
+  await assert.rejects(buyer.verify("0000"), /six-digit/);
+  const verification = await buyer.verify("123456");
   assert.equal(verification.access_token, undefined);
   await buyer.details();
-  assert.equal(calls[1].options.headers.Authorization, "Bearer buyer-secret");
-  assert.equal(calls[1].options.headers["X-Dev-Access-Token"], undefined);
+  assert.deepEqual(JSON.parse(calls[0].options.body), {});
+  assert.deepEqual(JSON.parse(calls[1].options.body), { code: "123456" });
+  assert.equal(calls[2].options.headers.Authorization, "Bearer buyer-secret");
+  assert.equal(calls[2].options.headers["X-Dev-Access-Token"], undefined);
   buyer.clear();
   await buyer.card();
-  assert.equal(calls[2].options.headers.Authorization, undefined);
+  assert.equal(calls[3].options.headers.Authorization, undefined);
 });
 
 test("errors preserve field locations and browser-visible Retry-After", async () => {

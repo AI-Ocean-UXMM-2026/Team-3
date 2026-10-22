@@ -1,4 +1,4 @@
-const {test,expect,inspect}=require('./fixtures.cjs');
+const {test,expect,inspect,verify}=require('./fixtures.cjs');
 const fs=require('node:fs');
 const path=require('node:path');
 test.beforeEach(async({page})=>{await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));});
@@ -11,7 +11,7 @@ async function order(page,name,coordinates=true){
   const id=new URL(page.url()).hash.split('/').at(-1);
   if(coordinates){
     await page.locator('[data-action=issue]').click();const link=page.getByRole('link',{name:'See what the buyer sees'});await expect(link).toBeVisible();const href=await link.getAttribute('href');
-    await page.goto('/'+href);await expect(page.locator('#verify-form')).toBeVisible();await page.locator('[name=digits]').fill('0000');await page.locator('#verify-form button').click();
+    await verify(page,new URL(href,page.url()).href);
     await expect(page.locator('#customer-form')).toBeVisible();await page.locator('[name=latitude]').fill('16.81');await page.locator('[name=longitude]').fill('96.11');await page.locator('[name=initial_pin_acknowledged]').check();await page.locator('#customer-form .customer-primary').click();await expect(page.locator('.live-notice').filter({hasText:'persisted'})).toBeVisible();
     await page.goto('/#/order/'+id);await expect(page.locator('#edit-form')).toBeVisible();
     if(await page.locator('[data-action=approve-location]').count()){await page.locator('[data-action=approve-location]').click();await page.locator('dialog [name=reason]').fill('Synthetic buyer point review; independent accuracy unknown');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);}

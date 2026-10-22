@@ -19,6 +19,11 @@ def settings(**changes):
             "routing_provider": "google",
             "routing_external_requests_enabled": True,
             "google_routes_api_key": SecretStr("synthetic-test-credential"),
+            "buyer_otp_mode": "twilio",
+            "buyer_otp_external_sends_enabled": True,
+            "buyer_twilio_account_sid": "ACsynthetic-test-only",
+            "buyer_twilio_auth_token": SecretStr("synthetic-test-only"),
+            "buyer_twilio_verify_service_sid": "VAsynthetic-test-only",
             **changes,
         },
     )

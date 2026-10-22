@@ -1,5 +1,5 @@
 // Complete local mapping journey at every requested viewport. Synthetic data/GPS; no live maps APIs.
-const {test,expect,inspect}=require('./fixtures.cjs');
+const {test,expect,inspect,verify}=require('./fixtures.cjs');
 const path=require('node:path');
 const fs=require('node:fs');
 const output=path.resolve('.tmp/mapping-release/screenshots');
@@ -17,7 +17,7 @@ for(const [width,height] of [[1440,900],[1366,768],[768,1024],[390,844],[360,740
       await form.locator('[name=areaId]').selectOption('Hlaing');await form.locator('[name=received]').check();await form.locator('button').last().click();
       await expect(page.locator('#edit-form')).toBeVisible();const id=new URL(page.url()).hash.split('/').at(-1);
       await page.locator('[data-action=issue]').click();const link=page.getByRole('link',{name:'See what the buyer sees'});await expect(link).toBeVisible();
-      await page.goto('/'+await link.getAttribute('href'));await expect(page.locator('#verify-form')).toBeVisible();await page.locator('[name=digits]').fill('0000');await page.locator('#verify-form button').click();
+      await verify(page,new URL(await link.getAttribute('href'),page.url()).href);
       const map=page.locator('#buyer-map');await expect(map).toBeVisible();await expect(page.locator('[name=latitude]')).toHaveValue('');
       await page.evaluate(()=>{const original=navigator.geolocation.getCurrentPosition.bind(navigator.geolocation);globalThis.restoreReleaseGps=()=>navigator.geolocation.getCurrentPosition=original;navigator.geolocation.getCurrentPosition=(_ok,fail)=>fail({code:1});});
       await page.locator('[data-action=get-location]').click();await expect(page.locator('.form-error')).toContainText('permission denied');

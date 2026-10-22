@@ -2,12 +2,31 @@ const {test,expect,enter,inspect,create,link,verify,approve,assignDispatch,shot}
 
 test('complete browser-only order, buyer, approval, rider COD and hub closeout journey',async({page})=>{
   const sent=[];page.on('request',r=>{if(r.url().endsWith('/dashboard/api'))sent.push(r.postDataJSON());});
+  await enter(page);
+  for(const name of ['Fictional QA rider one','Fictional QA rider two']){
+    await page.locator('#new-rider-form [name=name]').fill(name);
+    await page.locator('#new-rider-form button[type=submit]').click();
+    await expect(page.locator('#api-status')).toContainText('Saved in the backend database');
+  }
+  const available=(await inspect(page,'/api/riders')).items.filter(r=>r.operational_status==='AVAILABLE');
+  expect(available.length).toBeGreaterThanOrEqual(2);
   const id=await create(page);
   let order=await inspect(page,'/api/orders/'+id);
   expect(order.original_message).toContain('၀၉၇၉၀၀၀၀၀၀၀');expect(order.cod_amount).toBe('25000');
   expect(order.latitude).toBeNull();expect(order.confidence_level).toBe('AMBER');
   const url=await link(page);const buyer=await page.context().newPage();
-  await verify(buyer,url);await expect(buyer.locator('#buyer-location-form')).toBeVisible();
+  await buyer.goto(url);await expect(buyer.locator('[data-action=request-buyer-otp]')).toBeVisible();
+  await expect(buyer.locator('body')).not.toContainText('SIMULATION ONLY');
+  await buyer.locator('[data-action=request-buyer-otp]').click();
+  await expect(buyer.locator('#verify-api-form')).toBeVisible();
+  await expect(buyer.locator('body')).toContainText('SIMULATION ONLY');
+  const handle=String(url).match(/(?:track\/|confirm\/)([A-Za-z0-9_-]{43})/)?.[1];
+  const codeResponse=await buyer.request.get('/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(handle));
+  expect(codeResponse.ok()).toBeTruthy();const code=(await codeResponse.json()).code;
+  expect(code).toMatch(/^[0-9]{6}$/);
+  await buyer.locator('#verify-api-form [name=digits]').fill(code);
+  await buyer.locator('#verify-api-form button[type=submit]').click();
+  await expect(buyer.locator('#buyer-location-form')).toBeVisible();
   await buyer.locator('#buyer-location-form [name=latitude]').fill('0');
   await buyer.locator('#buyer-location-form [name=longitude]').fill('0');
   await buyer.locator('[name=initial_pin_acknowledged]').check();
@@ -15,18 +34,47 @@ test('complete browser-only order, buyer, approval, rider COD and hub closeout j
   await expect(buyer.locator('#api-status')).toContainText('awaiting admin review');
   expect((await inspect(page,'/api/orders/'+id)).latitude).toBeNull();
   await buyer.locator('#buyer-response-form [name=instructions]').fill('FICTIONAL QA: အနီရောင်တံခါး၊ ဖုန်းအရင်ဆက်ပါ');
+  await buyer.locator('#buyer-response-form [name=action]').selectOption('AVAILABLE');
   await buyer.locator('#buyer-response-form button[type=submit]').click();
   await expect(buyer.locator('#api-status')).toContainText(/saved|review/);
   await shot(buyer,'customer-verified-desktop');
+  await buyer.setViewportSize({width:390,height:844});
+  await shot(buyer,'customer-verified-mobile');
   await approve(page,id);order=await inspect(page,'/api/orders/'+id);
   expect(Number(order.latitude)).toBe(0);expect(order.confidence_level).toBe('AMBER');
-  await assignDispatch(page);
+  const assignmentForm=page.locator('#auto-assignment-form');await expect(assignmentForm).toBeVisible();
+  await assignmentForm.locator('[name=received]').check();await assignmentForm.locator('[name=ack]').check();
+  await assignmentForm.locator('button[type=submit]').click();
+  await expect(page.locator('#api-status')).toContainText(/offer sent|waiting/i);
+  let history=(await inspect(page,`/api/orders/${id}/assignments?page=1&page_size=100`)).items;
+  const firstOffer=history.at(-1);expect(firstOffer.response_status).toBe('PENDING');
+  await enter(page,'rider',firstOffer.rider_id);
+  await expect(page.locator('[data-action=accept-offer]')).toBeVisible();
+  await expect(page.locator('[data-action=deliver]')).toHaveCount(0);
+  await page.locator('[data-action=decline-offer]').click();
+  await expect(page.locator('#api-status')).not.toHaveClass(/error/);
+  await enter(page,'admin');await page.goto('/api.html#/order/'+id);
+  await expect(page.locator('#auto-assignment-form')).toHaveCount(0);
+  history=(await inspect(page,`/api/orders/${id}/assignments?page=1&page_size=100`)).items;
+  expect(history).toHaveLength(2);
+  const replacement=history.at(-1);expect(replacement.response_status).toBe('PENDING');
+  expect(replacement.rider_id).not.toBe(firstOffer.rider_id);
+  await enter(page,'rider',replacement.rider_id);
+  await expect(page.locator('[data-action=accept-offer]')).toBeVisible();
+  await expect(page.locator('[data-action=deliver]')).toHaveCount(0);
+  await page.locator('[data-action=accept-offer]').click();
+  await expect(page.locator('[data-action=accept-offer]')).toHaveCount(0);
+  await expect(page.locator('[data-action=deliver]')).toHaveCount(0);
+  await page.setViewportSize({width:390,height:844});await shot(page,'rider-accepted-mobile');
+  await page.setViewportSize({width:1440,height:900});
+  await enter(page,'admin');await page.goto('/api.html#/order/'+id);
+  await expect(page.locator('[data-action=dispatch]')).toBeVisible();
+  await page.locator('[data-action=dispatch]').click();await page.locator('dialog button[type=submit]').click();
+  await expect(page.locator('dialog')).toHaveCount(0);
   order=await inspect(page,'/api/orders/'+id);expect(order.status).toBe('OUT_FOR_DELIVERY');
-  const rider=(await inspect(page,'/api/riders')).items[0];
+  const riderId=replacement.rider_id;
   await shot(page,'admin-departed-desktop');
-  await page.locator('.role-switch a[href="#/rider"]').click();
-  await page.locator('#connect-form [name=actor_id]').fill(rider.id);
-  await page.locator('#connect-form button[type=submit]').click();
+  await enter(page,'rider',riderId);
   await expect(page.locator('[data-action=deliver]')).toBeVisible();
   await expect(page.locator('.stop-landmark')).toBeVisible();
   const navigation=page.getByRole('link',{name:/Open Google Maps/});
@@ -46,7 +94,7 @@ test('complete browser-only order, buyer, approval, rider COD and hub closeout j
   await expect(page.locator('[data-action=deliver]')).toHaveCount(0);
   await page.locator('[data-action=handover]').click();
   await expect(page.locator('#api-status')).toContainText('Handover submitted');
-  await page.locator('.role-switch a[href="#/admin"]').click();
+  await enter(page,'admin');
   await page.locator('[data-action=receipt]').click();
   await page.locator('dialog [name=amount]').fill('-1');
   await page.locator('dialog button[type=submit]').click();
@@ -62,7 +110,7 @@ test('complete browser-only order, buyer, approval, rider COD and hub closeout j
   expect(events.filter(e=>e.event_type==='DELIVERY_COMPLETED')).toHaveLength(1);
   expect(events.some(e=>e.event_type==='DELIVERY_STARTED')).toBeTruthy();
   expect(sent.some(r=>r.path==='/api/orders'&&r.method==='POST')).toBeTruthy();
-  expect(sent.some(r=>r.path.endsWith('/prepare-assignment')&&r.method==='POST')).toBeTruthy();
+  expect(sent.some(r=>r.path.endsWith('/auto-assignment')&&r.method==='POST')).toBeTruthy();
   expect(page.audit.activity.filter(e=>e.kind==='http'&&e.path==='/dashboard/api'&&e.status>=500)).toEqual([]);
 });
 
@@ -95,14 +143,15 @@ for(const [name,raw,confidence,cod,phone] of samples)test('parser UI/API consist
 
 test('buyer wrong digits lock at three failures, public card privacy and reissue revocation',async({page})=>{
   const id=await create(page);const url=await link(page);const buyer=await page.context().newPage();
-  await buyer.goto(url);await expect(buyer.locator('#verify-api-form')).toBeVisible();
+  await buyer.goto(url);await expect(buyer.locator('[data-action=request-buyer-otp]')).toBeVisible();
   await expect(buyer.locator('body')).not.toContainText('09790000000');
+  await buyer.locator('[data-action=request-buyer-otp]').click();await expect(buyer.locator('#verify-api-form')).toBeVisible();
   for(let i=0;i<3;i++){
-    await buyer.locator('[name=digits]').fill('1111');await buyer.locator('#verify-api-form button[type=submit]').click();
+    await buyer.locator('[name=digits]').fill('111111');await buyer.locator('#verify-api-form button[type=submit]').click();
     await expect(buyer.locator('#api-status')).toHaveClass(/error/);
     await expect(buyer.locator('#verify-api-form button[type=submit]')).toBeEnabled();
   }
-  await buyer.locator('[name=digits]').fill('0000');await buyer.locator('#verify-api-form button[type=submit]').click();
+  await buyer.locator('[name=digits]').fill('000000');await buyer.locator('#verify-api-form button[type=submit]').click();
   await expect(buyer.locator('#api-status')).toContainText(/locked|attempt|unavailable/i);
   await expect(buyer.locator('#buyer-location-form')).toHaveCount(0);
   await shot(buyer,'customer-locked');
@@ -209,7 +258,7 @@ for(const [width,height] of [[1440,900],[1366,768],[768,1024],[390,844],[360,740
   await buyer.locator('#buyer-location-form button[type=submit]').click();
   await expect(buyer.locator('#api-status')).toContainText('awaiting admin review');
   await approve(page,id);
-  const form=page.locator('#prepare-assignment-form');
+  const form=page.locator('#auto-assignment-form');
   await form.locator('[name=received]').check();await form.locator('[name=ack]').check();
   await form.locator('button[type=submit]').click();
   await expect(page.locator('[data-action=dispatch]')).toBeVisible();
@@ -349,17 +398,17 @@ test('parcel incident resolution and draft unassignment use persistent workflow 
   await page.locator('dialog [name=reason]').fill('Fictional parcel packaging needs review');
   await page.locator('dialog button[type=submit]').click();
   await expect(page.locator('[data-action=resolve-incident]')).toBeVisible();
-  await expect(page.locator('#prepare-assignment-form')).toHaveCount(0);
+  await expect(page.locator('#auto-assignment-form')).toHaveCount(0);
   await page.locator('[data-action=resolve-incident]').click();
   await page.locator('dialog [name=reason]').fill('Fictional packaging inspected and resolved');
   await page.locator('dialog button[type=submit]').click();
-  const form=page.locator('#prepare-assignment-form');await expect(form).toBeVisible();
+  const form=page.locator('#auto-assignment-form');await expect(form).toBeVisible();
   await form.locator('[name=received]').check();await form.locator('[name=ack]').check();
   await form.locator('button[type=submit]').click();
   await expect(page.locator('[data-action=unassign]')).toBeVisible();
   expect((await inspect(page,'/api/orders/'+id)).status).toBe('ASSIGNED');
   await page.locator('[data-action=unassign]').click();
-  await expect(page.locator('#prepare-assignment-form')).toBeVisible();
+  await expect(page.locator('#auto-assignment-form')).toBeVisible();
   expect((await inspect(page,'/api/orders/'+id)).status).toBe('READY_FOR_DISPATCH');
 });
 

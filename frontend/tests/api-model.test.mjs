@@ -20,8 +20,11 @@ test('private customer links accept native and hash formats without malformed to
 test('API role is server-bound and admin/rider/customer credentials are separate',async t=>{
  const calls=[];t.mock.method(globalThis,'fetch',async(url,opts)=>{calls.push({url,opts});if(url.endsWith('/api/session'))return reply({id:url.includes(':8001')?'rider-id':'admin-id',name:'Test',role:url.includes(':8001')?'Rider':'Admin'});if(url.endsWith('/verify'))return reply({access_token:'buyer-bearer-only',token_type:'Bearer',expires_at:'later'});return reply({items:[],total:0});});
  const api=new WorkspaceApi();await api.connect('admin','http://127.0.0.1:8000',secret);await api.connect('rider','http://127.0.0.1:8001',secret+'rider');await assert.rejects(()=>api.connect('rider','http://127.0.0.1:8000',secret),/belongs to Admin/);
- api.openBuyer('http://127.0.0.1:8000',token);await api.buyer.card();await api.buyer.verify('4567');await api.buyer.details();
+ api.openBuyer('http://127.0.0.1:8000',token);await api.buyer.card();await api.buyer.requestOtp();await api.buyer.verify('123456');await api.buyer.details();
  const buyer=calls.filter(c=>c.url.includes('/api/confirm/'));assert.ok(buyer.every(c=>!c.opts.headers['X-Dev-Access-Token']));assert.equal(buyer.at(-1).opts.headers.Authorization,'Bearer buyer-bearer-only');
+ assert.equal(JSON.parse(buyer.find(c=>c.url.endsWith('/otp')).opts.body).code,undefined);
+ assert.deepEqual(JSON.parse(buyer.find(c=>c.url.endsWith('/otp')).opts.body),{});
+ assert.deepEqual(JSON.parse(buyer.find(c=>c.url.endsWith('/verify')).opts.body),{code:'123456'});
  await api.call('rider','/api/routes');assert.equal(calls.at(-1).opts.headers['X-Dev-Access-Token'],secret+'rider');assert.equal(calls.at(-1).opts.headers.Authorization,undefined);
  api.disconnect('admin');await assert.rejects(()=>api.order('x'),/Connect/);
 });
@@ -46,16 +49,15 @@ test('delivery and combined closeout carry actual amounts, current versions and 
  await api.routeAction('admin',{id:'r',version:5},'RECEIVE_CLOSE',{amount:25000},'receipt-1');await api.routeAction('admin',{id:'r',version:5},'RECEIVE_CLOSE',{amount:25000},'receipt-1');assert.deepEqual(calls[1],calls[2]);
 });
 
-test('atomic preparation uses one versioned request for either route choice and never dispatches',async t=>{
+test('automatic reconfirmation and offer replies use the exact versioned contracts',async t=>{
  const calls=[];t.mock.method(globalThis,'fetch',async(url,opts)=>{if(url.endsWith('/session'))return reply({id:'a',role:'Admin'});calls.push({url,body:JSON.parse(opts.body)});return reply({route:{id:'r'}});});
  const api=new WorkspaceApi();await api.connect('admin','http://127.0.0.1:8000',secret);
- const order={id:'o',version:2,parsing_metadata:{parcel:{}}};
- assert.throws(()=>api.prepareAssignment(order,'rider:person',{received:true}),/acknowledge/);
- assert.throws(()=>api.prepareAssignment(order,'rider:person',{acknowledge:true}),/physical hub receipt/);
- assert.throws(()=>api.prepareAssignment(order,'',{received:true,acknowledge:true}),/Choose/);
- await api.prepareAssignment(order,'rider:person',{received:true,acknowledge:true},'same-request');
- await api.prepareAssignment(order,'rider:person',{received:true,acknowledge:true},'same-request');
- assert.deepEqual(calls[0],calls[1]);assert.equal(calls[0].body.expected_version,2);assert.equal(calls[0].body.rider_id,'person');assert.equal(calls[0].body.route_id,undefined);
- await api.prepareAssignment(order,'route:existing',{received:true,acknowledge:true},'other-request');
- assert.equal(calls[2].body.route_id,'existing');assert.equal(calls[2].body.rider_id,undefined);assert.ok(calls.every(c=>c.url.endsWith('/prepare-assignment')));
+ const order={id:'o',version:2};
+ await api.autoAssignment(order,{received:false,acknowledge:true},'same-request');
+ assert.equal(calls[0].url,'http://127.0.0.1:8000/api/orders/o/auto-assignment');
+ assert.deepEqual(calls[0].body,{request_id:'same-request',expected_version:2,acknowledge_unverified_location:true,receive_at_hub:false});
+ api.connections.rider={client:api.connections.admin.client,actor:{id:'rider-id',role:'Rider'}};
+ await api.respondToOffer({order_id:'o',order_version:3,assignment_id:'assignment-1',offer_version:4},'DECLINE','offer-request');
+ assert.equal(calls[1].url,'http://127.0.0.1:8000/api/riders/rider-id/deliveries/o/status');
+ assert.deepEqual(calls[1].body,{request_id:'offer-request',expected_version:3,action:'DECLINE',assignment_id:'assignment-1',offer_version:4});
 });

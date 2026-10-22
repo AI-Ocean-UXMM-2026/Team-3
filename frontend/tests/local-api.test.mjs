@@ -32,12 +32,17 @@ test('local adapter preserves real backend rejection and never invents success',
 
 test('buyer calls use a capability handle with session CSRF, never browser Bearer credentials',async t=>{
  const calls=[];t.mock.method(globalThis,'fetch',async(url,options={})=>{
-  calls.push({url,options});return new Response(JSON.stringify(url.endsWith('/dashboard/bootstrap')?{test_mode:true,csrf:'csrf'}:{data:{verified:true}}));
+   calls.push({url,options});if(url.includes('/dashboard/buyer-otp?'))return new Response(JSON.stringify({simulation:true,code:'123456'}));return new Response(JSON.stringify(url.endsWith('/dashboard/bootstrap')?{test_mode:true,csrf:'csrf'}:{data:{verified:true,challenge_id:'challenge',mode:'DEMO'}}));
  });
  const buyer=new LocalWorkspaceApi().openBuyer('http://127.0.0.1:8780','a'.repeat(43));
- assert.equal((await buyer.verify('0000')).verified,true);
- assert.equal(JSON.parse(calls.at(-1).options.body).path,'/api/confirm/@buyer/verify');
- assert.equal(calls.at(-1).options.headers.Authorization,undefined);
+  assert.equal((await buyer.requestOtp()).mode,'DEMO');
+  const preview=await buyer.demoCode();assert.equal(preview.code,'123456');
+  assert.equal((await buyer.verify('123456')).verified,true);
+  const proxy=calls.filter(c=>c.url.endsWith('/dashboard/api')).map(c=>JSON.parse(c.options.body));
+  assert.equal(proxy[0].path,'/api/confirm/@buyer/otp');assert.deepEqual(proxy[0].body,{});
+  assert.equal(proxy[1].path,'/api/confirm/@buyer/verify');assert.deepEqual(proxy[1].body,{code:'123456'});
+  assert.ok(calls.find(c=>c.url.includes('/dashboard/buyer-otp?buyer_handle=')).url.endsWith('a'.repeat(43)));
+  assert.ok(calls.filter(c=>c.url.endsWith('/dashboard/api')).every(c=>c.options.headers.Authorization===undefined));
  buyer.clear();await assert.rejects(buyer.details(),/closed/);
 });
 

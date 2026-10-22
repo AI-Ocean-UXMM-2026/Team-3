@@ -7,12 +7,12 @@ import socket
 import subprocess
 import sys
 import time
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx2 as httpx
 from sqlalchemy import func, select
 
-from app.db.buyer_models import BuyerRequest, ConfirmationLink
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, ConfirmationLink
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User
 from app.db.rider_models import DeliveryAssignment, RiderActionReceipt, RiderProfile
@@ -142,7 +142,14 @@ def main():
         clients.append(buyer)
         buyer_path = "/api/confirm/" + token
         expect("public_card", buyer.get(buyer_path))
-        verification = buyer.post(buyer_path + "/verify", json={"last_four": "4567"})
+        challenge = buyer.post(buyer_path + "/otp", json={})
+        assert challenge.status_code == 200
+        with database.sessions() as session:
+            test_code = session.get(
+                BuyerOtpChallenge, UUID(challenge.json()["challenge_id"])
+            ).demo_code
+        assert test_code and len(test_code) == 6
+        verification = buyer.post(buyer_path + "/verify", json={"code": test_code})
         assert verification.status_code == 200
         capabilities.append(verification.json()["access_token"])
         expect("buyer_verified", verification)

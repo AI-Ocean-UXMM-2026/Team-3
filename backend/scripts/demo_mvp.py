@@ -15,7 +15,7 @@ import httpx2 as httpx
 from sqlalchemy import func, select
 
 from app.core.config import Settings
-from app.db.buyer_models import BuyerRequest, ConfirmationLink
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, ConfirmationLink
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User
 from app.db.rider_models import DeliveryAssignment, RiderActionReceipt
@@ -204,9 +204,12 @@ class LocalDemo:
             "state",
             "expires_at",
         }
-        result = self.expect(
-            "buyer_verification", public.post(path + "/verify", json={"last_four": PHONE[-4:]})
-        )
+        challenge = self.expect("buyer_otp_request", public.post(path + "/otp", json={}))
+        with self.database.sessions() as session:
+            code = session.get(BuyerOtpChallenge, UUID(challenge["challenge_id"])).demo_code
+        if not code:
+            raise RuntimeError("Isolated demo OTP fixture did not create a test code")
+        result = self.expect("buyer_verification", public.post(path + "/verify", json={"code": code}))
         self.redactions.append(result["access_token"])
         public.headers["Authorization"] = "Bearer " + result["access_token"]
         return public, path

@@ -21,6 +21,7 @@ function setup(t,hash='#/admin',override){
   else if(path==='/api/orders/o1')data=order;
   else if(path.endsWith('/buyer-requests'))data={items:[],total:0};
   else if(path.endsWith('/confirmation-link'))data={confirmation_url:'/confirm/'+token};
+  else if(path.endsWith('/otp'))data={challenge_id:'challenge1',destination_masked:'••••4567',resend_after:new Date(Date.now()+60000).toISOString(),mode:'DEMO'};
   else if(path.endsWith('/verify'))data={access_token:'bearer',token_type:'Bearer',expires_at:'later'};
   else if(path.endsWith('/details'))data={order_reference:'o1',status:'NEEDS_REVIEW',township:'Kamaryut',policy:{}};
   else if(path.includes('/api/confirm/'))data={order_reference:'o1',state:'VERIFICATION_REQUIRED',delivery_status:'NEEDS_REVIEW'};
@@ -30,6 +31,7 @@ function setup(t,hash='#/admin',override){
  t.mock.method(globalThis,'fetch',async(url,opts={})=>{
    const path=new URL(url).pathname;
    if(path==='/dashboard/bootstrap')return new Response(JSON.stringify({test_mode:true,csrf:'fixture-csrf'}));
+   if(path==='/dashboard/buyer-otp')return new Response(JSON.stringify({simulation:true,code:'123456',notice:'SIMULATION ONLY'}));
    if(path!=='/dashboard/api')throw Error('Unexpected frontend transport route');
    const call=JSON.parse(opts.body),base=call.actor==='rider'?'http://127.0.0.1:8001':'http://127.0.0.1:8000';
    const endpoint=call.path.replace('@buyer',token);
@@ -96,17 +98,18 @@ test('history read failure is explicit while the saved order remains usable',asy
 });
 
 test('API customer card verifies using only its own bearer and erases token from current URL',async t=>{
- const e=setup(t,'#/track/'+token);await e.ctx.ready;assert.ok(e.find('#verify-api-form'));assert.equal(e.replacedUrl,'/api.html#/customer');
- await e.submit('#verify-api-form',{digits:'4567'});assert.ok(e.find('#buyer-location-form'));assert.ok(e.find('#buyer-response-form'));assert.ok(e.calls.every(c=>!c.opts.headers?.['X-Dev-Access-Token']));assert.equal(e.calls.at(-1).opts.headers.Authorization,undefined);
+ const e=setup(t,'#/track/'+token);await e.ctx.ready;assert.equal(e.find('#verify-api-form'),null);assert.equal(e.replacedUrl,'/api.html#/customer');
+ await e.action('request-buyer-otp','');assert.ok(e.find('#verify-api-form'));assert.match(e.root.textContent,/SIMULATION ONLY/);
+ await e.submit('#verify-api-form',{digits:'123456'});assert.ok(e.find('#buyer-location-form'));assert.ok(e.find('#buyer-response-form'));assert.ok(e.calls.some(c=>c.url.endsWith('/otp')&&c.opts.body==='{}'));assert.deepEqual(JSON.parse(e.calls.find(c=>c.url.endsWith('/verify')).opts.body),{code:'123456'});assert.ok(e.calls.every(c=>!c.opts.headers?.['X-Dev-Access-Token']));assert.equal(e.calls.at(-1).opts.headers.Authorization,undefined);
 });
 
 test('API customer failures keep entered form and never display a saved confirmation',async t=>{
  const e=setup(t,'#/track/'+token,(path)=>path.endsWith('/verify')?new Response(JSON.stringify({error:{code:'BUYER_VERIFICATION_FAILED',message:'Verification failed'}}),{status:403,headers:{'Content-Type':'application/json'}}):null);
- await e.ctx.ready;await e.submit('#verify-api-form',{digits:'0000'});assert.equal(e.find('[name="digits"]').value,'0000');assert.match(e.find('#api-status').textContent,/Verification failed/);assert.equal(e.find('#buyer-location-form'),null);
+ await e.ctx.ready;await e.action('request-buyer-otp','');await e.submit('#verify-api-form',{digits:'000000'});assert.equal(e.find('[name="digits"]').value,'000000');assert.match(e.find('#api-status').textContent,/Verification failed/);assert.equal(e.find('#buyer-location-form'),null);
 });
 
 test('API rider delivery form waits two seconds, preserves actual amount, and only then saves',async t=>{
- const stop={order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',customer_name:'Buyer',cod_amount:'25000'};
+ const stop={order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',response_status:'ACCEPTED',customer_name:'Buyer',cod_amount:'25000'};
  const e=setup(t,'#/rider',(path)=>path.endsWith('/queue')?new Response(JSON.stringify({items:[stop]}),{headers:{'Content-Type':'application/json'}}):null);
  await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8001'});await e.action('deliver','o1');assert.equal(e.find('dialog [type="submit"]').disabled,true);await e.tick(1999);assert.equal(e.find('dialog [type="submit"]').disabled,true);await e.tick(1);assert.equal(e.find('dialog [type="submit"]').disabled,false);
  await e.submit('dialog form',{amount:'24000',reason:'Recipient paid short'});const call=e.calls.find(c=>c.url.includes('/deliveries/'));const body=JSON.parse(call.opts.body);assert.equal(body.actual_amount,24000);assert.equal(body.difference_reason,'Recipient paid short');assert.equal(e.find('dialog'),null);
@@ -123,7 +126,7 @@ test('reference-themed customer progress never labels a review order confirmed',
 });
 
 test('reference-themed rider uses illustrative geography and existing real delivery controls',async t=>{
- const stop={order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',customer_name:'Buyer',township:'Kamaryut',street:'Hledan Road',cod_amount:'25000'};
+ const stop={order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',response_status:'ACCEPTED',customer_name:'Buyer',township:'Kamaryut',street:'Hledan Road',cod_amount:'25000'};
  const e=setup(t,'#/rider',path=>path.endsWith('/queue')?new Response(JSON.stringify({items:[stop]}),{headers:{'Content-Type':'application/json'}}):null);
  await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8001'});assert.ok(e.find('.route-map'));assert.ok(e.find('.rider-bottom-nav'));assert.match(e.find('.map-disclaimer').textContent,/Illustrative/);assert.match(e.find('.map-destination').textContent,/Hledan Road/);assert.match(e.find('.stop-payment').textContent,/25,000 MMK/);assert.doesNotMatch(e.root.textContent,/21 min|Visa|US\$/);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='deliver'&&b.dataset.id==='o1'));
 });
@@ -134,40 +137,40 @@ test('admin prepares, records explicit receipt and assigns in one call, then dis
  const e=setup(t,'#/admin',(path,opts)=>{
   if(path==='/api/orders/o1')return reply(saved);
   if(path==='/api/routes')return reply({items:route?[route]:[],total:route?1:0});
-  if(path.endsWith('/prepare-assignment')){
+ if(path.endsWith('/auto-assignment')){
    route={id:'route1',rider_id:'rider1',version:1,day:today(),state:'draft',items:[{id:'o1',status:'ASSIGNED',name:'Buyer'}],recorded_total:0,blockers:[]};
    saved={...saved,status:'ASSIGNED',version:5,parsing_metadata:{parcel:{...saved.parsing_metadata.parcel,hub_received_at:'now',route_id:route.id}}};
-   return reply({order:saved,route});
+   return reply({order:saved,allocation_status:'ASSIGNED',reason:null,assignment:{id:'a1',response_status:'PENDING'},route});
   }
   if(path.endsWith('/actions'))return reply({...route,state:'dispatched'});
  });
  await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});e.ctx.location.hash='#/order/o1';await e.flush();
- assert.ok(e.find('#prepare-assignment-form'));
- await e.submit('#prepare-assignment-form',{selection:'rider:rider1',ack:true});assert.match(e.find('#api-status').textContent,/physical hub receipt/);
- assert.equal(e.calls.filter(c=>c.url.endsWith('/prepare-assignment')).length,0);
- await e.submit('#prepare-assignment-form',{selection:'rider:rider1',received:true,ack:true});
- const prep=e.calls.filter(c=>c.url.endsWith('/prepare-assignment'));assert.equal(prep.length,1);assert.equal(e.calls.filter(c=>c.opts.method==='PATCH').length,0);
- assert.deepEqual(JSON.parse(prep[0].opts.body),{request_id:JSON.parse(prep[0].opts.body).request_id,expected_version:1,rider_id:'rider1',receive_at_hub:true,acknowledge_unverified_location:true});
- assert.equal(e.find('#prepare-assignment-form'),null);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='dispatch'));
+ assert.ok(e.find('#auto-assignment-form'));assert.equal(e.find('[name="selection"]'),null);
+ await e.submit('#auto-assignment-form',{ack:true});assert.match(e.find('#api-status').textContent,/physical hub receipt/);
+ assert.equal(e.calls.filter(c=>c.url.endsWith('/auto-assignment')).length,0);
+ await e.submit('#auto-assignment-form',{received:true,ack:true});
+ const prep=e.calls.filter(c=>c.url.endsWith('/auto-assignment'));assert.equal(prep.length,1);assert.equal(e.calls.filter(c=>c.opts.method==='PATCH').length,0);
+ assert.deepEqual(JSON.parse(prep[0].opts.body),{request_id:JSON.parse(prep[0].opts.body).request_id,expected_version:1,receive_at_hub:true,acknowledge_unverified_location:true});
+ assert.equal(e.find('#auto-assignment-form'),null);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='dispatch'));
  assert.equal(e.calls.filter(c=>c.url.endsWith('/actions')).length,0);
  await e.action('dispatch','route1');assert.match(e.find('dialog').textContent,/physically present/);await e.submit('dialog form');
  assert.equal(JSON.parse(e.calls.find(c=>c.url.endsWith('/actions')).opts.body).action,'DISPATCH');
 });
 
-test('prepare retry keeps request identity and form after a network error',async t=>{
+test('automatic assignment retry keeps request identity and form after a network error',async t=>{
  const sent=[];
  const e=setup(t,'#/admin',(path,opts)=>{
-  if(path.endsWith('/prepare-assignment')){sent.push(JSON.parse(opts.body));throw new TypeError('Connection interrupted');}
+  if(path.endsWith('/auto-assignment')){sent.push(JSON.parse(opts.body));throw new TypeError('Connection interrupted');}
  });
  await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});e.ctx.location.hash='#/order/o1';await e.flush();
- await e.submit('#prepare-assignment-form',{selection:'rider:rider1',ack:true});assert.ok(e.find('#prepare-assignment-form'));assert.match(e.find('#api-status').textContent,/No success was confirmed/);
- await e.submit('#prepare-assignment-form');assert.deepEqual(sent[0],sent[1]);
+ await e.submit('#auto-assignment-form',{ack:true});assert.ok(e.find('#auto-assignment-form'));assert.match(e.find('#api-status').textContent,/No success was confirmed/);
+ await e.submit('#auto-assignment-form');assert.deepEqual(sent[0],sent[1]);
 });
 
 test('pending customer review blocks the short prepare path without approving anything automatically',async t=>{
  const e=setup(t,'#/admin',path=>path.endsWith('/buyer-requests')?reply({items:[{id:'b1',kind:'LOCATION',decision:'REVIEW_REQUIRED',resolution:null,reason_codes:['INITIAL_PIN_REQUIRES_REVIEW'],submitted_values:{latitude:'16.8',longitude:'96.1'}}],total:1}):null);
  await e.ctx.ready;await e.submit('#connect-form',{base:'http://127.0.0.1:8000'});e.ctx.location.hash='#/order/o1';await e.flush();
- assert.equal(e.find('#prepare-assignment-form'),null);assert.match(e.find('#prepare-parcel').textContent,/1 customer update/);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='review'));assert.equal(e.calls.filter(c=>['POST','PATCH'].includes(c.opts.method)).length,0);
+ assert.equal(e.find('#auto-assignment-form'),null);assert.match(e.find('#prepare-parcel').textContent,/1 customer update/);assert.ok(e.all('[data-action]').some(b=>b.dataset.action==='review'));assert.equal(e.calls.filter(c=>['POST','PATCH'].includes(c.opts.method)).length,0);
 });
 
 test('future draft route explains its departure day instead of offering an unusable dispatch action',async t=>{
@@ -179,7 +182,7 @@ test('future draft route explains its departure day instead of offering an unusa
 });
 
 test('rider current stop advances after delivery; other stops stay in a collapsible queue',async t=>{
- let stops=[{order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',customer_name:'First buyer',cod_amount:'25000'},{order_id:'o2',order_version:3,status:'OUT_FOR_DELIVERY',customer_name:'Second buyer',cod_amount:'0'}];
+ let stops=[{order_id:'o1',order_version:2,status:'OUT_FOR_DELIVERY',response_status:'ACCEPTED',customer_name:'First buyer',cod_amount:'25000'},{order_id:'o2',order_version:3,status:'OUT_FOR_DELIVERY',response_status:'ACCEPTED',customer_name:'Second buyer',cod_amount:'0'}];
  const e=setup(t,'#/rider',(path,opts)=>{
   if(path.endsWith('/queue'))return reply({items:stops});
   if(path.includes('/deliveries/')){stops=stops.slice(1);return reply({});}

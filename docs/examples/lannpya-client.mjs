@@ -64,9 +64,14 @@ export function createBuyerApi({ baseUrl, linkToken }) {
     authorization ? { Authorization: `Bearer ${authorization}` } : {}, options);
   return {
     card: (signal) => call("", { signal }),
-    async verify(lastFour) {
+    async requestOtp() {
       authorization = undefined;
-      const result = await call("/verify", { method: "POST", body: { last_four: lastFour } });
+      return call("/otp", { method: "POST", body: {} });
+    },
+    async verify(code) {
+      authorization = undefined;
+      if (!/^[0-9]{6}$/.test(String(code))) throw new Error("Enter the six-digit code sent to the saved phone.");
+      const result = await call("/verify", { method: "POST", body: { code: String(code) } });
       authorization = result.access_token; // Closure memory only; never URL/storage/logging.
       return { token_type: result.token_type, expires_at: result.expires_at };
     },

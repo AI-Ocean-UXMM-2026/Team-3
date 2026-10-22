@@ -25,6 +25,7 @@
     if (!state || state.version !== 1 || !Array.isArray(state.stops) || !Array.isArray(state.events)) state = seed();
     const listeners = new Set();
     let verified = false;
+    let challenge = null;
     function save() {
       try { storage?.setItem(KEY, JSON.stringify(state)); if (!storage) persistent = false; } catch { persistent = false; }
       listeners.forEach(fn => fn());
@@ -50,17 +51,29 @@
       stop: id => clone(getStop(id)),
       persistent: () => persistent,
       verified: () => verified,
+      otpPreview: () => challenge&&challenge.expiresAt>now()&&!getStop('LP-2045').locked?challenge.code:null,
       subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
       queue() { return clone(state.stops.filter(s => ['queued', 'retry'].includes(s.state)).sort((a,b) => a.time.localeCompare(b.time) || (a.state === 'retry') - (b.state === 'retry'))); },
+      requestOtp() {
+        const s=getStop('LP-2045');
+        if(s.locked)throw new Error('Link locked after three incorrect attempts. Contact the shop.');
+        if(challenge&&challenge.expiresAt>now()&&challenge.resendAt>now())throw new Error('Wait before requesting another code.');
+        challenge={code:'123456',expiresAt:now()+300000,resendAt:now()+60000};
+        state.revision++;save();
+        return {mode:'DEMO',destinationMasked:'••••••••',expiresAt:challenge.expiresAt,resendAfter:challenge.resendAt,simulationOnly:true};
+      },
       verify(digits) {
         const s = getStop('LP-2045');
         if (s.locked) throw new Error('Link locked after three incorrect attempts. Contact the shop.');
-        if (!/^\d{4}$/.test(digits)) throw new Error('Enter exactly four digits.');
-        if (digits !== '1602') {
+        if(!challenge||challenge.expiresAt<=now()){challenge=null;throw new Error('Request a fresh six-digit code first.');}
+        if (!/^\d{6}$/.test(digits)) throw new Error('Enter exactly six digits.');
+        if (digits !== challenge.code) {
           const attempts = s.attempts + 1;
-          commit('phone_check_failed', s.id, { attempts, locked: attempts >= 3 }, attempts >= 3 ? 'Buyer link locked — shop action required' : 'Buyer phone check failed');
+          commit('otp_check_failed', s.id, { attempts, locked: attempts >= 3 }, attempts >= 3 ? 'Buyer link locked — shop action required' : 'Buyer OTP check failed');
+          if(attempts>=3)challenge=null;
           throw new Error(attempts >= 3 ? 'Link locked. Contact the shop to request a new link.' : `Incorrect digits. ${3 - attempts} attempts remaining.`);
         }
+        challenge=null;
         verified = true;
         save();
       },

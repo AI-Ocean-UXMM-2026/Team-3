@@ -1,4 +1,4 @@
-const {test,expect,inspect}=require('./fixtures.cjs');
+const {test,expect,inspect,enter}=require('./fixtures.cjs');
 const fs=require('node:fs');
 const path=require('node:path');
 // Map/network tests use local Leaflet. Optional remote font delivery is independent of API correctness.
@@ -11,6 +11,7 @@ async function manual(page){
   await f.locator('[name=date]').fill(new Date(Date.now()+23400000).toISOString().slice(0,10));
   await f.locator('[name=received]').check();
   await f.locator('button[type=submit],button:not([type])').last().click();
+  await page.locator('.created-dialog [data-created=open]').click();
   await expect(page.locator('#edit-form')).toBeVisible();
   return new URL(page.url()).hash.split('/').at(-1);
 }
@@ -20,16 +21,58 @@ async function buyerLink(page){
   return link.getAttribute('href');
 }
 async function buyer(page,link){
-  await page.goto('/'+link);
+  const token=new URL(link,page.url()).hash.split('/').at(-1);
+  await page.goto('/#/track/'+encodeURIComponent(token));
+  await expect(page.locator('[data-action=request-otp]')).toBeVisible();
+  await page.locator('[data-action=request-otp]').click();
   await expect(page.locator('#verify-form')).toBeVisible();
-  await page.locator('[name=digits]').fill('0000');await page.locator('#verify-form button').click();
+  const preview=page.locator('.verification .demo-hint').filter({hasText:'SIMULATION ONLY'});
+  await expect(preview).toBeVisible();
+  const code=await preview.locator('.num').textContent();
+  await page.locator('#verify-form [name=digits]').fill(code.trim());
+  await page.locator('#verify-form button.customer-primary').click();
   await expect(page.locator('#buyer-map.leaflet-container')).toBeVisible();
 }
 async function screenshot(page,name){
-  const dir=path.resolve('docs/mtt-integration/screenshots');fs.mkdirSync(dir,{recursive:true});
+  const dir=path.resolve(process.env.LANNPYA_SCREENSHOT_DIR||'docs/mtt-integration/screenshots');fs.mkdirSync(dir,{recursive:true});
   await page.screenshot({path:path.join(dir,name+'.png'),fullPage:true});
 }
+function dashboardPathResponse(page,path){
+  return page.waitForResponse(response=>{
+    const request=response.request();if(request.method()!=='POST'||!request.url().endsWith('/dashboard/api'))return false;
+    try{const actual=request.postDataJSON()?.path||'';return actual===path||!path.includes('?')&&actual.startsWith(path+'?');}catch{return false;}
+  });
+}
+async function selectRider(page,riderId){
+  const ridersLoaded=dashboardPathResponse(page,'/api/riders?page=1&page_size=100');
+  await page.goto('/#/dispatch');
+  await ridersLoaded;
+  const key=await page.evaluate(id=>Object.entries(window.Workflow.ACTORS).find(([,a])=>a.id===id)?.[0],riderId);
+  expect(key,`functional app rider picker includes ${riderId}`).toBeTruthy();
+  const queueLoaded=page.waitForResponse(response=>{
+    const request=response.request();if(request.method()!=='POST'||!request.url().endsWith('/dashboard/api'))return false;
+    try{return /^\/api\/riders\/[^/]+\/queue$/.test((request.postDataJSON()?.path||'').split('?')[0]);}catch{return false;}
+  });
+  const plansLoaded=page.waitForResponse(response=>{
+    const request=response.request();if(request.method()!=='POST'||!request.url().endsWith('/dashboard/api'))return false;
+    try{return /^\/api\/riders\/[^/]+\/route-plans$/.test((request.postDataJSON()?.path||'').split('?')[0]);}catch{return false;}
+  });
+  await page.evaluate(()=>{location.hash='#/ride';});
+  await Promise.all([queueLoaded,plansLoaded]);
+  await expect(page.locator('details.rider-demo')).toBeVisible();
+  const picker=page.locator('#rider-picker');
+  const selectedQueue=dashboardPathResponse(page,`/api/riders/${riderId}/queue`);
+  const selectedPlans=dashboardPathResponse(page,`/api/riders/${riderId}/route-plans`);
+  await picker.evaluate((el,value)=>{if(![...el.options].some(option=>option.value===value))throw Error('Rider preview option is missing.');el.value=value;el.dispatchEvent(new Event('change',{bubbles:true}));},key);
+  await Promise.all([selectedQueue,selectedPlans]);
+}
 test('MTT browser creates persistent order, buyer pin, dispatcher review, rider COD and history',async({page})=>{
+  await enter(page);
+  await page.locator('#new-rider-form [name=name]').fill('Fictional MTT replacement rider');
+  await page.locator('#new-rider-form button[type=submit]').click();
+  await expect(page.locator('#api-status')).toContainText('Saved in the backend database');
+  const availableRiders=(await inspect(page,'/api/riders')).items.filter(r=>r.operational_status==='AVAILABLE');
+  expect(availableRiders.length).toBeGreaterThanOrEqual(2);
   const id=await manual(page),before=await inspect(page,'/api/orders/'+id);
   expect(before.customer_name).toBe('Fictional MTT Buyer');expect(before.latitude).toBeNull();expect(before.confidence_level).toBe('AMBER');
   await page.reload();await expect(page.locator('#edit-form [name=name]')).toHaveValue('Fictional MTT Buyer');
@@ -54,21 +97,57 @@ test('MTT browser creates persistent order, buyer pin, dispatcher review, rider 
   while(await page.locator('[data-review-request]').count()){
     await page.locator('[data-review-request]').first().click();await page.locator('dialog [name=reason]').fill('Synthetic review of buyer availability and delivery instructions');await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
   }
-  await screenshot(page,'dispatcher-approved');
-  await page.goto('/#/routes');await page.locator('[data-action=new-route]').click();
+  await screenshot(page,'mtt-dispatcher-desktop');
+  await page.setViewportSize({width:390,height:844});await screenshot(page,'mtt-dispatcher-mobile');
+  await page.setViewportSize({width:1440,height:900});
+  await expect(page.locator('[data-action=assign]')).toHaveText(/Reconfirm and find a rider/);
+  await page.locator('[data-action=assign]').click();
+  await expect(page.locator('dialog')).toContainText('You won’t choose a rider here');
+  await expect(page.locator('dialog select')).toHaveCount(0);
+  await page.locator('dialog [name=acknowledge]').check();
   await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
-  await page.goto('/#/order/'+id);await page.locator('[data-action=assign]').click();
-  await page.locator('dialog [name=acknowledge]').check();await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
-  await page.goto('/#/routes');await page.locator('[data-action=dispatch-route]').click();
+  let offers=(await inspect(page,`/api/orders/${id}/assignments?page=1&page_size=100`)).items;
+  expect(offers).toHaveLength(1);const firstOffer=offers[0];expect(firstOffer.response_status).toBe('PENDING');
+  await selectRider(page,firstOffer.rider_id);
+  await expect(page.locator('.stop-name')).toContainText('Fictional MTT Buyer');
+  await expect(page.locator('[data-action=accept]')).toBeVisible();
+  await expect(page.locator('[data-action=delivered]')).toHaveCount(0);
+  await page.setViewportSize({width:390,height:844});await screenshot(page,'mtt-rider-offer-mobile');
+  await page.locator('[data-action=decline]').click();
+  offers=(await inspect(page,`/api/orders/${id}/assignments?page=1&page_size=100`)).items;
+  expect(offers).toHaveLength(2);const replacement=offers.at(-1);
+  expect(replacement.response_status).toBe('PENDING');expect(replacement.rider_id).not.toBe(firstOffer.rider_id);
+  await selectRider(page,replacement.rider_id);
+  await expect(page.locator('[data-action=accept]')).toBeVisible();
+  await expect(page.locator('[data-action=delivered]')).toHaveCount(0);
+  await page.locator('[data-action=accept]').click();
+  await expect(page.locator('.stop-actions')).toContainText('Offer accepted');
+  await expect(page.locator('[data-action=delivered]')).toHaveCount(0);
+  await page.setViewportSize({width:390,height:844});await screenshot(page,'mtt-rider-accepted-mobile');
+  const routes=(await inspect(page,'/api/routes')).items;
+  const route=routes.find(r=>r.items.some(o=>o.id===id));expect(route).toBeTruthy();expect(route.state).toBe('draft');
+  await page.setViewportSize({width:1440,height:900});await page.goto('/#/routes/'+route.id);
+  await page.locator('[data-action=dispatch-route]').click();
   await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
-  await page.goto('/#/ride');await expect(page.locator('.stop-name')).toContainText('Fictional MTT Buyer');
-  await expect(page.locator('.reply-badge')).toContainText('At home');
-  const nav=page.locator('a[href*="google.com/maps/dir"]');await expect(nav).toBeVisible();expect(await nav.getAttribute('href')).not.toContain('undefined');
-  await screenshot(page,'rider-approved-pin');
-  await page.locator('[data-action=delivered]').click();await expect(page.locator('dialog')).toBeVisible();
-  await page.locator('dialog button[type=submit]').click();expect((await inspect(page,'/api/orders/'+id)).status).toBe('OUT_FOR_DELIVERY');
-  await page.locator('dialog [name=codCollected]').check();await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
+  expect((await inspect(page,'/api/orders/'+id)).status).toBe('OUT_FOR_DELIVERY');
+  await selectRider(page,replacement.rider_id);
+  await expect(page.locator('[data-action=delivered]')).toBeVisible();
+  await page.locator('[data-action=delivered]').click();
+  await expect(page.locator('dialog [name=codCollected]')).toBeVisible();
+  await page.locator('dialog [name=amount]').fill('25000');
+  await page.locator('dialog [name=codCollected]').check();
+  await screenshot(page,'mtt-rider-cod-desktop');
+  await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
   expect((await inspect(page,'/api/orders/'+id)).status).toBe('DELIVERED');
+  await page.goto('/#/ride/handover');await expect(page.locator('[data-action=submit-cash]')).toBeVisible();
+  await page.locator('[data-action=submit-cash]').click();
+  await expect(page.locator('#toast')).toContainText('Cash handed over');
+  await page.goto('/#/closeout');await expect(page.locator('[data-action=receive-cash]')).toBeVisible();
+  await page.locator('[data-action=receive-cash]').click();
+  await page.locator('dialog [name=amount]').fill('25000');
+  await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
+  expect((await inspect(page,'/api/routes')).items.find(r=>r.id===route.id).state).toBe('closed');
+  await screenshot(page,'mtt-hub-closeout-desktop');
   await page.goto('/#/order/'+id);await page.getByText('History',{exact:true}).click();
   await expect(page.locator('details').filter({has:page.getByText('History',{exact:true})})).toContainText(/DELIVERED|DELIVERY_COMPLETED/i);
   await page.reload();expect((await inspect(page,'/api/orders/'+id)).status).toBe('DELIVERED');
@@ -126,8 +205,8 @@ test('MTT device GPS only after click, permission denial recovers with manual pi
 });
 test('MTT three incorrect attempts lock the real link and expose no address',async({page})=>{
   const id=await manual(page),link=await buyerLink(page);await page.goto('/'+link);
-  await expect(page.locator('#verify-form')).toBeVisible();await expect(page.locator('body')).not.toContainText('Fictional red gate');
-  for(let i=0;i<3;i++){await page.locator('[name=digits]').fill('9999');await page.locator('#verify-form button').click();if(i<2)await expect(page.locator('.form-error')).not.toBeEmpty();}
+  await expect(page.locator('[data-action=request-otp]')).toBeVisible();await expect(page.locator('body')).not.toContainText('Fictional red gate');await page.locator('[data-action=request-otp]').click();
+  for(let i=0;i<3;i++){await page.locator('[name=digits]').fill('999999');await page.locator('#verify-form button').click();if(i<2)await expect(page.locator('.form-error')).not.toBeEmpty();}
   await expect(page.getByRole('heading',{name:'This link is locked'})).toBeVisible();
   expect((await inspect(page,'/api/orders/'+id)).latitude).toBeNull();
 });

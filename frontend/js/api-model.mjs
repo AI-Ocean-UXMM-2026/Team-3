@@ -64,12 +64,8 @@ export class WorkspaceApi {
     return row;
   }
   operation(order,action,reason){return this.call('admin',`/api/orders/${order.id}/operations`,{method:'POST',body:{expected_version:order.version,action,reason:reason||null}});}
-  prepareAssignment(order,selection,{received=false,acknowledge=false}={},request_id=crypto.randomUUID()){
-    if(!acknowledge)throw Error('Review the delivery point and explicitly acknowledge its unverified map accuracy.');
-    if(!context(order).hub_received_at&&!received)throw Error('Confirm physical hub receipt before assigning this parcel.');
-    const [kind,id]=String(selection||'').split(':');
-    if(!['route','rider'].includes(kind)||!id)throw Error('Choose a matching draft route or an available rider.');
-    return this.call('admin',`/api/orders/${order.id}/prepare-assignment`,{method:'POST',body:{request_id,expected_version:order.version,[kind+'_id']:id,receive_at_hub:received,acknowledge_unverified_location:acknowledge}});
+  autoAssignment(order,{received=false,acknowledge=false}={},request_id=crypto.randomUUID()){
+    return this.call('admin',`/api/orders/${order.id}/auto-assignment`,{method:'POST',body:{request_id,expected_version:order.version,acknowledge_unverified_location:!!acknowledge,receive_at_hub:!!received}});
   }
   routeAction(side,route,action,extra={},request_id=crypto.randomUUID()){
     return this.call(side,`/api/routes/${route.id}/actions`,{method:'POST',body:{request_id,expected_version:route.version,action,...extra}});
@@ -77,6 +73,13 @@ export class WorkspaceApi {
   delivery(order,action,extra={},request_id=crypto.randomUUID()){
     const rider=this.connections.rider?.actor.id;
     return this.call('rider',`/api/riders/${rider}/deliveries/${order.order_id}/status`,{method:'PATCH',body:{request_id,expected_version:order.order_version,action,...extra}});
+  }
+  respondToOffer(order,action,request_id=crypto.randomUUID()){
+    const rider=this.connections.rider?.actor.id;
+    if(!rider)throw Error('Connect the assigned rider before responding to an offer.');
+    if(!['ACCEPT','DECLINE'].includes(action))throw Error('Choose ACCEPT or DECLINE for a pending rider offer.');
+    if(!order.assignment_id||!Number.isInteger(order.offer_version))throw Error('Refresh the rider queue; this offer is stale or unavailable.');
+    return this.call('rider',`/api/riders/${rider}/deliveries/${order.order_id}/status`,{method:'PATCH',body:{request_id,expected_version:order.order_version,action,assignment_id:order.assignment_id,offer_version:order.offer_version}});
   }
   openBuyer(baseUrl,value){this.buyer?.clear();this.buyer=createBuyerApi({baseUrl,linkToken:tokenFrom(value)});return this.buyer;}
 }

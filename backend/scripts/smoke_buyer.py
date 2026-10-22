@@ -7,12 +7,12 @@ import socket
 import subprocess
 import sys
 import time
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx2 as httpx
 from sqlalchemy import func, select
 
-from app.db.buyer_models import BuyerRequest, BuyerSession, ConfirmationLink
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, BuyerSession, ConfirmationLink
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User
 from app.db.session import BACKEND_ROOT, Database
@@ -130,10 +130,19 @@ def main():
             denied = client.patch(buyer_path + "/location", json=body)
             assert denied.status_code == 401
             record("unauthorized_pin", denied)
-            wrong = client.post(buyer_path + "/verify", json={"last_four": "0000"})
+            challenge = client.post(buyer_path + "/otp", json={})
+            assert challenge.status_code == 200
+            with db.sessions() as session:
+                test_code = session.get(
+                    BuyerOtpChallenge, UUID(challenge.json()["challenge_id"])
+                ).demo_code
+            assert test_code and len(test_code) == 6
+            capabilities.append(test_code)
+            wrong_code = "000000" if test_code != "000000" else "000001"
+            wrong = client.post(buyer_path + "/verify", json={"code": wrong_code})
             assert wrong.status_code == 403
             record("failed_verification", wrong)
-            verify = client.post(buyer_path + "/verify", json={"last_four": "4567"})
+            verify = client.post(buyer_path + "/verify", json={"code": test_code})
             assert verify.status_code == 200
             credential = verify.json()["access_token"]
             capabilities.append(credential)

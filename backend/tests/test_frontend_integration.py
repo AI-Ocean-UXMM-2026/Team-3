@@ -15,6 +15,12 @@ ORIGIN = "http://localhost:61234"
 
 
 def local_app(**changes):
+    if changes.get("environment") == "production":
+        changes.setdefault("buyer_otp_mode", "twilio")
+        changes.setdefault("buyer_otp_external_sends_enabled", True)
+        changes.setdefault("buyer_twilio_account_sid", "ACsynthetic-test-only")
+        changes.setdefault("buyer_twilio_auth_token", "synthetic-test-only")
+        changes.setdefault("buyer_twilio_verify_service_sid", "VAsynthetic-test-only")
     return create_app(Settings(_env_file=None, cors_origins=[ORIGIN], **changes))
 
 
@@ -152,9 +158,22 @@ def test_demo_inputs_are_deterministic_unverified_and_rules_based():
 
 def test_demo_refuses_production_and_preserves_isolation(tmp_path, monkeypatch):
     monkeypatch.setenv("LANNPYA_ENVIRONMENT", "production")
+    monkeypatch.setenv("LANNPYA_BUYER_OTP_MODE", "twilio")
+    monkeypatch.setenv("LANNPYA_BUYER_OTP_EXTERNAL_SENDS_ENABLED", "true")
+    monkeypatch.setenv("LANNPYA_BUYER_TWILIO_ACCOUNT_SID", "ACsynthetic-test-only")
+    monkeypatch.setenv("LANNPYA_BUYER_TWILIO_AUTH_TOKEN", "synthetic-test-only")
+    monkeypatch.setenv("LANNPYA_BUYER_TWILIO_VERIFY_SERVICE_SID", "VAsynthetic-test-only")
     with pytest.raises(RuntimeError, match="disabled"):
         LocalDemo()
     monkeypatch.setenv("LANNPYA_ENVIRONMENT", "test")
+    for name in (
+        "LANNPYA_BUYER_OTP_MODE",
+        "LANNPYA_BUYER_OTP_EXTERNAL_SENDS_ENABLED",
+        "LANNPYA_BUYER_TWILIO_ACCOUNT_SID",
+        "LANNPYA_BUYER_TWILIO_AUTH_TOKEN",
+        "LANNPYA_BUYER_TWILIO_VERIFY_SERVICE_SID",
+    ):
+        monkeypatch.delenv(name)
     monkeypatch.setattr("scripts.demo_mvp.BACKEND_ROOT", tmp_path)
     first, second = LocalDemo(), LocalDemo()
     try:

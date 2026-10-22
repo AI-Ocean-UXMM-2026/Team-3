@@ -35,3 +35,14 @@ the domain. The local server permits original inline style attributes for Signbo
 motion, while retaining the script policy and local access boundary. Tests: 140
 frontend tests and two real local-backend browser tests passed, plus the existing six
 Supabase browser flows. See [[docs/SUPABASE_AUTH_SETUP]] for exact demo credentials.
+
+## Automatic rider offers and buyer OTP
+
+The `codex/automatic-rider-otp` task updates the existing dispatcher, buyer and rider
+flows without changing their layout or CSS. Buyer verification requests a six-digit OTP;
+the local code preview is explicitly simulation-only and protected by the local BFF.
+Dispatchers reconfirm after customer updates and reviews, then the server allocates to a
+free AVAILABLE rider. Riders must accept before departure; decline requests automatic
+replacement. Existing delivery windows, COD, returns and cash closeout remain in the flow.
+No real SMS, external credentials or deployment were used. Setup and behavior are in
+[[docs/AUTOMATIC_RIDER_OTP]].

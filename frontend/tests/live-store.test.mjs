@@ -67,13 +67,39 @@ test('pending buyer reviews remain explicit until both location and response hav
  assert.deepEqual(calls.filter(c=>c.method==='PATCH').map(c=>c.path),['/api/orders/synthetic-order/buyer-requests/location-row','/api/orders/synthetic-order/buyer-requests/response-row']);
 });
 
-test('assignment checks buyer reviews before sending a prepare-assignment write',async t=>{
- t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {store,api,updates}=await reviewSetup();let assigned=0;
- api.prepareAssignment=async()=>{assigned++;};
- await assert.rejects(store.execute('assign',{id:original.id,routeId:'route',acknowledge:true}),/Review.*buyer request/);
- assert.equal(assigned,0);
+test('reconfirmation checks buyer reviews before sending automatic allocation',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {store,api,updates}=await reviewSetup();let allocated=0;
+ api.autoAssignment=async()=>{allocated++;return {allocation_status:'ASSIGNED',assignment:{rider_id:'rider'},route:{id:'route'}};};
+ await assert.rejects(store.execute('assign',{id:original.id,acknowledge:true}),/Review.*buyer request/);
+ assert.equal(allocated,0);
  updates.forEach(r=>r.resolution='APPROVE');
- await store.execute('assign',{id:original.id,routeId:'route',acknowledge:true});assert.equal(assigned,1);
+ await store.execute('assign',{id:original.id,acknowledge:true});assert.equal(allocated,1);
+});
+
+test('dispatcher reconfirmation uses server auto-allocation and keeps a no-rider result waiting',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {store,api,calls}=await setup();api.order=async()=>structuredClone(original);let body;
+ api.autoAssignment=async(order,options,requestId)=>{body={order,options,requestId};return {allocation_status:'WAITING_FOR_RIDER',reason:'NO_AVAILABLE_RIDER',assignment:null,route:null};};
+ await store.execute('assign',{id:original.id,acknowledge:true});
+ assert.equal(body.order.id,original.id);assert.deepEqual(body.options,{received:false,acknowledge:true});
+ assert.equal(store.order(original.id).allocationStatus,'WAITING_FOR_RIDER');
+ assert.equal(store.order(original.id).routeId,null);assert.equal(store.snapshot().routes.length,0);
+ assert.ok(!calls.some(c=>c.path?.endsWith('/prepare-assignment')));
+});
+
+test('stale rider-offer reply refreshes the queue and never fabricates acceptance',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {api,store}=await setup('ride'),offer={order_id:'synthetic-order',order_version:4,assignment_id:'offer-1',offer_version:2,response_status:'PENDING',status:'ASSIGNED',customer_name:'Fictional buyer'};
+ let queueCalls=0;api.call=async(side,path)=>path.endsWith('/queue')?(queueCalls++,{items:[structuredClone(offer)]}):path.endsWith('/route-plans')?{items:[]}:{items:[]};await store.sync('ride');let replyCalls=0;
+ api.respondToOffer=async(row,action,requestId)=>{replyCalls++;assert.equal(row.assignment_id,'offer-1');assert.equal(row.offer_version,2);assert.equal(action,'ACCEPT');assert.ok(requestId);throw Object.assign(new Error('Stale rider offer'),{status:409});};
+ await assert.rejects(store.execute('offer_response',{id:'synthetic-order',action:'ACCEPT'},{id:'rider'}),/Stale rider offer/);
+ assert.equal(replyCalls,1);assert.equal(queueCalls,2);
+ assert.equal(store.order('synthetic-order').responseStatus,'PENDING');
+});
+
+test('live buyer OTP preview is separate from the public challenge and is cleared after verification',async()=>{
+ const token='a'.repeat(43),f=apiFixture();f.api.openBuyer=()=>{f.api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED'}),requestOtp:async()=>({challenge_id:'challenge',destination_masked:'••••4567',expires_at:'later',resend_after:'soon',mode:'DEMO'}),demoCode:async()=>({simulation:true,code:'123456',notice:'SIMULATION ONLY'}),verify:async code=>assert.equal(code,'123456'),details:async()=>({order_reference:'buyer-ref',status:'CONFIRMED'})};};
+ const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'track/'+token});await store.requestOtp(token);
+ assert.equal(store.customer(token).verified,false);assert.equal(store.customer(token).otpPreview.simulation,true);assert.equal(store.customer(token).simulationOnly,true);assert.deepEqual(store.customer(token).order,{});
+ await store.verify(token,'123456');assert.equal(store.customer(token).verified,true);assert.equal(store.customer(token).otpPreview,null);assert.equal(store.customer(token).simulationOnly,false);
 });
 
 test('buyer confirmation keeps submitted values only after both writes succeed',async t=>{

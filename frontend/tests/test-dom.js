@@ -6,6 +6,7 @@ class Element {
   classes(xs,on){const set=new Set((this.attributes.class||'').split(' ').filter(Boolean));for(const x of xs)on?set.add(x):set.delete(x);this.attributes.class=[...set].join(' ');}
   append(el){el.parent=this;this.children.push(el);}
   appendChild(el){this.append(el);}
+  addEventListener(name,fn){this['on'+name]=fn;}
   remove(){if(this.parent)this.parent.children=this.parent.children.filter(x=>x!==this);}
   set innerHTML(html){this.children=[];const stack=[this],voids=new Set(['input','br','hr','img','meta','link']);for(const token of html.match(/<[^>]*>|[^<]+/g)||[]){if(token.startsWith('</')){const tag=token.slice(2,-1).trim();for(let i=stack.length-1;i>0;i--)if(stack[i].tagName===tag){stack.length=i;break;}}else if(token.startsWith('<')){const m=token.match(/^<([a-zA-Z][\w-]*)([\s\S]*?)\/?\s*>$/);if(!m)continue;const attrs={};for(const a of m[2].matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g))attrs[a[1]]=decode(a[2]??a[3]??a[4]??'');const el=new Element(m[1].toLowerCase(),attrs);stack.at(-1).append(el);if(!voids.has(el.tagName))stack.push(el);}else stack.at(-1).children.push(decode(token));}}
   get innerHTML(){return this.children.map(x=>typeof x==='string'?x:`<${x.tagName} ${Object.entries(x.attributes).map(([k,v])=>`${k}="${v}"`).join(' ')}>${x.innerHTML}</${x.tagName}>`).join('');}

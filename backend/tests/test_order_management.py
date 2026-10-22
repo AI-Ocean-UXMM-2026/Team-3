@@ -92,6 +92,7 @@ def test_migrated_schema_and_no_drift(store):
         "delivery_events",
         "confirmation_links",
         "buyer_sessions",
+        "buyer_otp_challenges",
         "location_references",
         "buyer_requests",
         "buyer_rate_limits",
@@ -109,7 +110,7 @@ def test_migrated_schema_and_no_drift(store):
         assert connection.scalar(text("PRAGMA foreign_keys")) == 1
         assert (
             connection.scalar(text("select version_num from alembic_version"))
-            == "0006_automatic_assignment"
+            == "0007_buyer_otp"
         )
         assert (
             compare_metadata(
@@ -454,6 +455,11 @@ def test_production_and_disabled_configuration_fail_closed(store):
         database_url="postgresql+psycopg://not-used/never-connect",
         dev_access_token=TOKEN,
         dev_actor_id=store[1]["dispatcher"],
+        buyer_otp_mode="twilio",
+        buyer_otp_external_sends_enabled=True,
+        buyer_twilio_account_sid="AC00000000000000000000000000000000",
+        buyer_twilio_auth_token="synthetic-test-only",
+        buyer_twilio_verify_service_sid="VA00000000000000000000000000000000",
     )
     app = create_app(settings, database=store[0])
     assert app.state.database is None

@@ -85,15 +85,16 @@ on('change-status',async()=>{const target=$('next-status').value;if(!target)thro
 on('events',async()=>api('GET',`/api/orders/${selectedId()}/events?page_size=100`));
 on('generate-link',async()=>{const data=await api('POST',`/api/orders/${selectedId()}/confirmation-link`);const label=`Test link ${state.buyers.length+1} · expires ${data.expires_at}`;state.buyers.push({handle:data.buyer_handle});if(state.buyers.length===1)$('buyer-select').replaceChildren();$('buyer-select').append(new Option(label,data.buyer_handle));$('buyer-select').value=data.buyer_handle;});
 on('revoke-link',async()=>api('POST',`/api/orders/${selectedId()}/confirmation-link/revoke`));
-on('buyer-card',async()=>buyer('GET'));on('buyer-details',async()=>buyer('GET','/details'));on('verify',async()=>buyer('POST','/verify',{last_four:$('last-four').value}));
+on('buyer-card',async()=>buyer('GET'));on('buyer-details',async()=>buyer('GET','/details'));on('verify',async()=>{await buyer('POST','/otp',{});const handle=$('buyer-select').value;const {response,data}=await local('/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(handle));if(!response.ok||data.simulation!==true)throw new Error('Protected local test code is unavailable. No verification success was recorded.');await buyer('POST','/verify',{code:data.code});});
 on('submit-pin',async()=>buyer('PATCH','/location',{request_id:crypto.randomUUID(),latitude:$('latitude').value,longitude:$('longitude').value,initial_pin_acknowledged:$('initial-pin').checked}));
 for(const [id,action] of [['available','AVAILABLE'],['instructions','INSTRUCTIONS'],['security','LEAVE_WITH_SECURITY']])on(id,async()=>buyer('PATCH','/response',{request_id:crypto.randomUUID(),action,...($('buyer-instructions').value?{instructions:$('buyer-instructions').value}:{})}));
 const tomorrow=new Date();tomorrow.setUTCDate(tomorrow.getUTCDate()+1);tomorrow.setUTCHours(4,0,0,0);$('window-start').value=tomorrow.toISOString();$('window-end').value=new Date(+tomorrow+3600000).toISOString();
 on('reschedule',async()=>buyer('PATCH','/response',{request_id:crypto.randomUUID(),action:'RESCHEDULE',time_window:{start:$('window-start').value,end:$('window-end').value}}));
 for(const [id,kind] of [['expire-link','LINK'],['expire-session','SESSION']])on(id,async()=>{requireBuyer();const {response,data}=await local('/dashboard/expire',{buyer_handle:$('buyer-select').value,kind});result(data,'Fixture timestamp change · HTTP '+response.status,!response.ok);});
 on('lock-link',async()=>{requireBuyer();let locked=false;
-  const guess=$('wrong-four').value;if(!/^\d{4}$/.test(guess))throw new Error('Enter four deliberately incorrect numeric digits.');
-  for(let i=0;i<3;i++){try{await buyer('POST','/verify',{last_four:guess});throw new Error('Those digits verified successfully. Stop: use deliberately incorrect digits.');}catch(e){if(e.status===423){locked=true;break;}if(![401,403].includes(e.status))throw e;}}
+  await buyer('POST','/otp',{});const handle=$('buyer-select').value;const {response,data}=await local('/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(handle));if(!response.ok||data.simulation!==true)throw new Error('Protected local test code is unavailable.');
+  const guess=$('wrong-code').value;if(!/^\d{6}$/.test(guess)||guess===data.code)throw new Error('Enter six deliberately incorrect numeric digits.');
+  for(let i=0;i<3;i++){try{await buyer('POST','/verify',{code:guess});throw new Error('Those digits verified successfully. Stop: use deliberately incorrect digits.');}catch(e){if(e.status===423){locked=true;break;}if(![401,403].includes(e.status))throw e;}}
   const card=await buyer('GET');locked=card.state==='LOCKED';
   $('lock-note').textContent=locked?'Public card reports LOCKED. Further verification is rejected with 423.':'Attempts submitted. Inspect the actual API state; no lockout was fabricated.';
 });

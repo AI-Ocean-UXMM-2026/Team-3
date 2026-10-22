@@ -55,6 +55,11 @@ def settings(**values):
             "google_routes_api_key": "synthetic-provider-key",
             "ors_api_key": "synthetic-ors-key",
             "routing_two_wheeler_enabled": True,
+            "buyer_otp_mode": "twilio",
+            "buyer_otp_external_sends_enabled": True,
+            "buyer_twilio_account_sid": "AC00000000000000000000000000000000",
+            "buyer_twilio_auth_token": "synthetic-test-only",
+            "buyer_twilio_verify_service_sid": "VA00000000000000000000000000000000",
             **values,
         },
     )

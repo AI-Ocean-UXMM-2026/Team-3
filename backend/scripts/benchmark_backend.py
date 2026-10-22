@@ -14,6 +14,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, insert, select
 
 from app.core.config import Settings
+from app.db.buyer_models import BuyerOtpChallenge
 from app.db.migrations import upgrade_database
 from app.db.models import Order, User
 from app.db.session import BACKEND_ROOT, Database
@@ -148,9 +149,17 @@ def benchmark(size, samples):
                 link = client.post(f"/api/orders/{row['id']}/confirmation-link")
                 assert link.status_code == 201
                 buyer_path = "/api" + link.json()["confirmation_url"]
+                challenge = client.post(buyer_path + "/otp", json={})
+                assert challenge.status_code == 200
+                with database.sessions() as session:
+                    demo_code = session.get(
+                        BuyerOtpChallenge, UUID(challenge.json()["challenge_id"])
+                    ).demo_code
+                assert demo_code and len(demo_code) == 6
+                wrong_code = "000000" if demo_code != "000000" else "000001"
                 measure(
                     "buyer_verify",
-                    lambda _: client.post(buyer_path + "/verify", json={"last_four": "0000"}),
+                    lambda _: client.post(buyer_path + "/verify", json={"code": wrong_code}),
                 )
                 who = client.post(
                     "/api/riders",

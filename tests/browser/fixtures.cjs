@@ -6,7 +6,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const {setTimeout:delay}=require('node:timers/promises');
 const {pythonPath,root}=require('../../scripts/python_path.cjs');
-const shots=path.join(root,'docs/visual-testing/screenshots');
+const shots=process.env.LANNPYA_SCREENSHOT_DIR||path.join(root,'docs/visual-testing/screenshots');
 const sanitize=s=>String(s).replace(/[A-Za-z0-9_-]{43,}/g,'[redacted]').replace(/\/confirm\/[^/?\s]+/g,'/confirm/[redacted]');
 const test=base.extend({
   app:async({},use,testInfo)=>{
@@ -64,6 +64,7 @@ const test=base.extend({
 });
 async function enter(page,side='admin',id=''){
   await page.goto('/api.html#/'+side);
+  if(side==='rider'&&id){await page.reload();}
   await expect(page.locator('#connect-form, #create-form, #rider-account').first()).toBeVisible();
   const form=page.locator('#connect-form');if(!await form.count())return;
   if(side==='rider'&&id)await form.locator('[name=actor_id]').fill(id);
@@ -90,7 +91,7 @@ async function create(page,{raw='name: Fictional QA Buyer, ၀၉၇၉၀၀၀
     await page.locator('#edit-api-form [name=latitude]').fill('0');
     await page.locator('#edit-api-form [name=longitude]').fill('0');
     await page.locator('#edit-api-form button[type=submit]').click();
-    await expect(page.locator('#prepare-assignment-form')).toBeVisible();
+    await expect(page.locator('#auto-assignment-form')).toBeVisible();
   }
   return id;
 }
@@ -99,8 +100,11 @@ async function link(page){
   await expect(page.locator('[name=generated-link]')).toBeVisible();
   return page.locator('[name=generated-link]').inputValue();
 }
-async function verify(page,url,digits='0000'){
-  await page.goto(url);await expect(page.locator('#verify-api-form')).toBeVisible();
+async function verify(page,url,digits=null){
+  await page.goto(url);await expect(page.locator('[data-action=request-buyer-otp]')).toBeVisible();
+  const handle=String(url).match(/(?:track\/|confirm\/)([A-Za-z0-9_-]{43})/)?.[1];if(!handle)throw Error('Could not find the local buyer handle in this test link.');
+  await page.locator('[data-action=request-buyer-otp]').click();await expect(page.locator('#verify-api-form')).toBeVisible();
+  if(digits===null){const r=await page.request.get('/dashboard/buyer-otp?buyer_handle='+encodeURIComponent(handle));if(!r.ok())throw Error('Protected local test code is unavailable.');digits=(await r.json()).code;}
   await page.locator('#verify-api-form [name=digits]').fill(digits);
   await page.locator('#verify-api-form button[type=submit]').click();
 }
@@ -114,10 +118,16 @@ async function approve(page,id){
   }
 }
 async function assignDispatch(page){
-  const form=page.locator('#prepare-assignment-form');await expect(form).toBeVisible();
+  const orderId=new URL(page.url()).hash.split('/').at(-1);
+  const form=page.locator('#auto-assignment-form');await expect(form).toBeVisible();
   if(await form.locator('[name=received]').count())await form.locator('[name=received]').check();
   await form.locator('[name=ack]').check();await form.locator('button[type=submit]').click();
-  await expect(page.locator('[data-action=dispatch]')).toBeVisible();
+  await expect(page.locator('#api-status')).toContainText(/offer sent|waiting/i);
+  const offers=(await inspect(page,`/api/orders/${orderId}/assignments?page=1&page_size=100`)).items;
+  const offer=offers.at(-1);if(!offer)throw Error('Automatic assignment did not create an offer.');
+  await enter(page,'rider',offer.rider_id);await expect(page.locator('[data-action=accept-offer]')).toBeVisible();
+  await page.locator('[data-action=accept-offer]').click();await expect(page.locator('#api-status')).not.toHaveClass(/error/);
+  await enter(page,'admin');await page.goto('/api.html#/order/'+orderId);await expect(page.locator('[data-action=dispatch]')).toBeVisible();
   await page.locator('[data-action=dispatch]').click();await page.locator('dialog button[type=submit]').click();
   await expect(page.locator('dialog')).toHaveCount(0);
 }
