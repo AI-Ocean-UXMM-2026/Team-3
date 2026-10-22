@@ -40,3 +40,48 @@ test('live parser projection uses server classification and AI status, no client
  const {api,store}=await setup();api.call=async()=>({address:{phone_number:'09790000000',township:'Hlaing',cod_amount:6000},confidence:'AMBER',validation_reasons:[{message:'Unverified'}],ai:{status:'mock',message:'No real extraction'}});
  const r=await store.parse('original');assert.equal(r.phone,'09790000000');assert.equal(r.expected,6000);assert.equal(r.confidence,'amber');assert.equal(r.pin,null);assert.ok(r.warnings.some(x=>x.includes('mock')));
 });
+
+const pendingReviews=()=>[
+ {id:'location-row',request_id:'location-request',kind:'LOCATION',decision:'REVIEW_REQUIRED',resolution:null,submitted_values:{latitude:'16.82',longitude:'96.13'}},
+ {id:'response-row',request_id:'response-request',kind:'RESPONSE',decision:'REVIEW_REQUIRED',resolution:null,submitted_values:{action:'AVAILABLE',instructions:'Call at the gate'}}
+];
+async function reviewSetup(){
+ const f=apiFixture(),updates=pendingReviews(),all=f.api.all;
+ f.api.all=async(side,path)=>path.endsWith('/buyer-requests')?structuredClone(updates):all(side,path);
+ f.api.order=async()=>structuredClone(original);
+ const call=f.api.call;f.api.call=async(side,path,options)=>{const r=updates.find(r=>path.endsWith('/buyer-requests/'+r.id));if(r&&options.method==='PATCH')r.resolution=options.body.decision;return call(side,path,options);};
+ const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'order/'+original.id});
+ return {...f,store,updates};
+}
+
+test('pending buyer reviews remain explicit until both location and response have been resolved',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {store,calls}=await reviewSetup();
+ assert.equal(store.order(original.id).pendingBuyerReviewCount,2);
+ assert.ok(store.blockers(original.id).some(b=>/2 buyer requests/.test(b)));
+ await store.execute('approve_customer_location',{id:original.id,requestId:'location-request',reason:'Checked the buyer pin'});
+ assert.equal(store.order(original.id).pendingBuyerReviewCount,1);
+ assert.equal(store.requests()[0].kind,'RESPONSE');
+ await store.execute('approve_customer_location',{id:original.id,requestId:'response-request',reason:'Checked availability and instructions'});
+ assert.equal(store.order(original.id).pendingBuyerReviewCount,0);
+ assert.deepEqual(store.requests(),[]);
+ assert.deepEqual(calls.filter(c=>c.method==='PATCH').map(c=>c.path),['/api/orders/synthetic-order/buyer-requests/location-row','/api/orders/synthetic-order/buyer-requests/response-row']);
+});
+
+test('assignment checks buyer reviews before sending a prepare-assignment write',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {store,api,updates}=await reviewSetup();let assigned=0;
+ api.prepareAssignment=async()=>{assigned++;};
+ await assert.rejects(store.execute('assign',{id:original.id,routeId:'route',acknowledge:true}),/Review.*buyer request/);
+ assert.equal(assigned,0);
+ updates.forEach(r=>r.resolution='APPROVE');
+ await store.execute('assign',{id:original.id,routeId:'route',acknowledge:true});assert.equal(assigned,1);
+});
+
+test('buyer confirmation keeps submitted values only after both writes succeed',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const f=apiFixture(),token='a'.repeat(43);let failResponse=false;
+ f.api.openBuyer=()=>{f.api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED'}),verify:async()=>{},details:async()=>({order_reference:'buyer-ref',status:'NEEDS_REVIEW',initial_pin_requires_review:true}),location:async()=>({decision:'REVIEW_REQUIRED'}),respond:async()=>{if(failResponse)throw Error('Response rejected');return {decision:'REVIEW_REQUIRED'};}};};
+ const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'track/'+token});await store.verify(token,'0000');
+ const request={pin:{lat:16.82,lng:96.13},answer:'At home',time:'Any time',note:'Call at the gate',date:'2026-10-23',acknowledged:true};
+ failResponse=true;await assert.rejects(store.confirm(token,request),/availability was not saved/);assert.equal(store.customer(token).order.confirmation,null);
+ failResponse=false;await store.confirm(token,request);
+ assert.equal(store.customer(token).order.confirmation.note,'Call at the gate');assert.deepEqual(store.customer(token).order.confirmation.pin,request.pin);assert.equal(store.customer(token).order.confirmation.date,request.date);
+});

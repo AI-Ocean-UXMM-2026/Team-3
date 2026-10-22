@@ -14,6 +14,12 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   const all=(side,path)=>api.all(side,path),call=(path,method='GET',body,side='admin')=>api.call(side,path,{method,body});
   function rows(routes){routeRows.clear();return routes.map(r=>{routeRows.set(r.id,r);return {...r,riderId:r.rider_id,date:r.day,orderIds:r.items.map(o=>o.id),active:null};});}
   function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r);if(links.has(r.id))o.link=links.get(r.id);return o;});}
+  function applyBuyerReviews(id,updates){
+    requests=updates;const pending=updates.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution),o=state.orders.find(o=>o.id===id);
+    if(o){o.pendingBuyerReviewCount=pending.length;const location=pending.find(r=>r.kind==='LOCATION');o.proposedPin=location?point(location.submitted_values.latitude,location.submitted_values.longitude):null;}
+    return copy(pending);
+  }
+  async function checkBuyerReviews(id){return applyBuyerReviews(id,await all('admin',`/api/orders/${id}/buyer-requests`));}
   async function connect(side,id){if(!api.connections[side]||id&&api.connections[side].actor.id!==id)await api.connect(side,origin,id||'');}
   async function loadBuyer(token){
     if(activeBuyer!==token){api.openBuyer(origin,token);activeBuyer=token;}
@@ -45,7 +51,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     Object.keys(W.ACTORS).filter(k=>W.ACTORS[k].role==='rider').forEach(k=>delete W.ACTORS[k]);
     riders.forEach((r,i)=>W.ACTORS[i?'rider'+(i+1):'rider']={id:r.id,role:'rider',name:r.name,hubId:'local'});
     state.events=[];requests=[];
-    const detailId=target.startsWith('order/')?target.slice(6):target.startsWith('dispatch/')?target.slice(9):'';if(detailId){const id=detailId;const [events,updates]=await Promise.all([all('admin',`/api/orders/${id}/events`),all('admin',`/api/orders/${id}/buyer-requests`)]);requests=updates;state.events=events.map(e=>({id:e.id,orderId:id,type:e.event_type,text:`${e.previous_status||''} → ${e.new_status}`,actor:new Date(e.created_at).toISOString(),at:e.created_at})).sort((a,b)=>a.at.localeCompare(b.at));const o=state.orders.find(o=>o.id===id),pending=updates.find(r=>r.kind==='LOCATION'&&r.decision==='REVIEW_REQUIRED'&&!r.resolution);if(o&&pending)o.proposedPin=point(pending.submitted_values.latitude,pending.submitted_values.longitude);}
+    const detailId=target.startsWith('order/')?target.slice(6):target.startsWith('dispatch/')?target.slice(9):'';if(detailId){const id=detailId;const [events,updates]=await Promise.all([all('admin',`/api/orders/${id}/events`),all('admin',`/api/orders/${id}/buyer-requests`)]);applyBuyerReviews(id,updates);state.events=events.map(e=>({id:e.id,orderId:id,type:e.event_type,text:`${e.previous_status||''} → ${e.new_status}`,actor:new Date(e.created_at).toISOString(),at:e.created_at})).sort((a,b)=>a.at.localeCompare(b.at));}
   }
   // Controlled names, never fixture rectangles or township-centre coordinates.
   const places=['Hlaing','Kamaryut','Sanchaung','Bahan','Mayangon','Insein','Yankin','Tamwe','Thingangyun','South Okkalapa','North Okkalapa','North Dagon','South Dagon','East Dagon','Dagon Seikkan'];
@@ -86,6 +92,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       await api.patch(row(p.id),{latitude:String(p.pin.lat),longitude:String(p.pin.lng)});
     }else if(type==='new_route'){value=(await call('/api/routes','POST',{rider_id:p.riderId,day:p.date})).id;
     }else if(type==='assign'){
+      const pending=await checkBuyerReviews(p.id);if(pending.length)throw Error(`Review ${pending.length} pending buyer request(s) on this order before assigning a rider.`);
       await api.prepareAssignment(row(p.id),'route:'+p.routeId,{acknowledge:!!p.acknowledge,received:false});
     }else if(type==='unassign'){await call(`/api/orders/${p.id}/unassign`,'POST',{expected_version:row(p.id).version});
     }else if(type==='dispatch'){await api.routeAction('admin',routeRows.get(p.routeId),'DISPATCH');
@@ -102,7 +109,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     try{await sync();}catch{throw Error('The backend accepted the write, but refresh failed. Reload before retrying; no simulated success was substituted.');}
     return {value,pending:false};
   }
-  const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,
+  const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,checkBuyerReviews,
     routingStatus:()=>call('/api/routes/provider-status'),
     calculateRoute:body=>call('/api/routes/calculate','POST',body),
     googleEstimateStatus:(side='admin')=>call('/api/routes/google-demo/status','GET',undefined,side),
@@ -116,7 +123,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     async verifyRefresh(token){await loadBuyer(token);const b=buyerStates.get(token);if(b.details)b.details=await api.buyer.details();},
     async parse(raw_text){await connect('admin');const r=await call('/api/orders/parse','POST',{raw_text}),a=r.address;return {name:a.customer_name||'',phone:a.phone_number||'',areaId:a.township||'',street:a.street||'',landmark:a.landmark||'',floor:a.building_floor_unit||'',expected:a.cod_amount,payment:a.cod_amount===0?'prepaid':a.cod_amount==null?'unknown':'cod',note:a.delivery_instructions||'',warnings:[...r.validation_reasons.map(v=>v.message),`AI: ${r.ai.status}. ${r.ai.message}`],confidence:r.confidence.toLowerCase(),pin:null};},
     triage:id=>{const o=order(id);return {level:(o.confidence||'AMBER').toLowerCase(),reasons:o.reasons||['Location accuracy is not independently verified.']};},
-    blockers:id=>{const o=order(id);return [...(o.confidence==='RED'?['Correct critical address validation failures']:[]),...(!o.pin?['Location needed']:[]),...(o.proposedPin?['Buyer location awaiting review']:[]),...(!o.received?['Physical hub receipt required']:[])];},
+    blockers:id=>{const o=order(id);return [...(o.confidence==='RED'?['Correct critical address validation failures']:[]),...(!o.pin?['Location needed']:[]),...(o.pendingBuyerReviewCount?[`${o.pendingBuyerReviewCount} buyer requests awaiting review`]:[]),...(!o.received?['Physical hub receipt required']:[])];},
     canEdit:id=>!['assigned','out_for_delivery','delivered','return_pending','returned','cancelled'].includes(order(id).state),
     duplicate:f=>state.orders.filter(o=>f.phone&&o.phone===f.phone).map(o=>o.id),
     linkStatus:id=>links.has(id)?Date.now()<links.get(id).expires?'active':'expired':linkStates.get(id)||'not_loaded',
@@ -131,7 +138,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       const body={request_id:crypto.randomUUID(),action,...(p.note?{instructions:p.note}:{})};
       if(action==='RESCHEDULE'){if(!p.date||p.time===W.ANY_TIME)throw Error('Location request saved. Rescheduling also needs a specific future time window.');const [start,end]=p.time.split('–');body.time_window={start:`${p.date}T${start}:00+06:30`,end:`${p.date}T${end}:00+06:30`};}
       try{await api.buyer.respond(body);}catch(e){throw Error(`Location request was saved; availability was not saved: ${e.message}`);}
-      buyerStates.get(token).confirmation={answer:p.answer,time:p.time};return store.customer(token);
+      buyerStates.get(token).confirmation={answer:p.answer,time:p.time,date:p.date,note:p.note||'',pin:{...p.pin}};return store.customer(token);
     },
     replay:()=>{throw Error('Offline replay is simulation-only. Live requests must be explicitly retried.');},
     export:()=>{throw Error('Exporting private live records is not provided by this local UI.');}

@@ -8,6 +8,24 @@ const source=fs.readFileSync(require.resolve('../js/functional-app.js'),'utf8');
 const A=W.ACTORS.admin,R=W.ACTORS.rider;
 function boot(hash='#/dispatch',prepare,empty=false){const data=new Map(),storage={getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v),removeItem:k=>data.delete(k)};const store=W.createStore(storage,{initialState:empty?W.seed():W.fixtures()});prepare?.(store);const e=environment(storage,hash);e.ctx.window.Workflow=W;vm.runInNewContext(source,e.ctx);return {...e,store:()=>{const s=W.createStore(storage);s.refresh();return s;}};}
 function departed(s){for(const [t,p]of [['receive',{id:'LP-2046'}],['assign',{id:'LP-2046',routeId:'RT-001'}],['dispatch',{routeId:'RT-001'}],['clock',{value:'2026-10-20T10:00:00+06:30'}]])s.execute(t,p,A);}
+
+test('created order confirmation can close or return to the board without deleting the order',async()=>{
+ const e=boot('#/manual',null,true);
+ const fields={name:'Test buyer',phone:'09794339082',item:'Envelope',payment:'prepaid',expected:'0',areaId:'kamayut',prep:'ready_now',date:W.day(e.store().now())};
+ await e.submit('#manual-form',fields);
+ const id=e.store().snapshot().orders[0].id;
+ const close=e.find('[data-created="close"]');assert.ok(close,'Creation confirmation needs a close control');
+ await close.click();assert.equal(e.find('dialog'),null);assert.match(e.ctx.location.hash,/manual/);assert.equal(e.store().order(id).item,'Envelope');
+ await e.submit('#manual-form',{...fields,name:'Second buyer',phone:'09794339083'});
+ await e.find('[data-created="board"]').click();assert.equal(e.ctx.location.hash,'#/dispatch');assert.equal(e.store().snapshot().orders.length,2);
+});
+
+test('record edit action shares the disposition row with its dropdown',async()=>{
+ const e=boot('#/new');e.find('#batch-raw').value='Name: Test buyer\nPhone: 09794339082\nTownship: Kamayut\nCOD: 1000';
+ const reading=e.action('parse');await e.tick(100);await reading;
+ const controls=e.find('.record-controls');assert.ok(controls,'Disposition and Edit need a shared row');
+ assert.ok(controls.querySelector('[data-choice="0"]'));assert.ok(controls.querySelector('[data-action="edit-row"]'));
+});
 test('all workspace routes render actual controls without runtime errors',()=>{
  const e=boot();for(const path of ['dispatch','new','order/LP-2045','routes','buyers','exceptions','closeout','analytics','settings','scenarios','ride','track/demo-2045','track/invalid']){e.ctx.location.hash='#/'+path;assert.doesNotMatch(e.root.textContent,/Unable to open this view/,path);assert.ok(e.root.textContent.length>100,path);}
 });

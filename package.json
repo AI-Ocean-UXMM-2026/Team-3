@@ -10,6 +10,7 @@
     "test:dashboard": "node --test docs/examples/lannpya-client.test.mjs tools/backend-test-dashboard/dashboard.test.cjs tools/backend-test-dashboard/dashboard-http.test.cjs",
     "test:parser": "npm --prefix order-parser test",
     "test:browser": "playwright test",
+    "test:order-flows": "node --test frontend/tests/order-flows.browser.test.cjs",
     "verify:mtt-restart": "node scripts/verify_mtt_restart.cjs",
     "verify:mapping-restart": "node scripts/verify_mapping_restart.cjs",
     "test:mapping": "playwright test tests/browser/mapping-release.spec.cjs tests/browser/routing.spec.cjs tests/browser/mtt-live.spec.cjs tests/browser/google-workflow.spec.cjs tests/browser/google-route-display.spec.cjs"

@@ -140,9 +140,15 @@ Use a section heading, related fields or facts, and a specific next action. Rout
 
 Every field has a visible label. Fields are at least 44px tall, at least 48px for buyers and riders, and use a 2px input focus outline. Original chats remain editable in paste previews; interpretation appears in a definition list with missing fields stated explicitly. Duplicate warnings require a deliberate import choice. The order check preserves its original three-column layout, field order and bordered action panels. Order ID, delivery date and time sit on a dedicated metadata line. Labels, status sentences and action copy use lighter weights and more line spacing; no form fields or action panels are hidden for this refinement. Preserve all form IDs, field names and `data-action` values when styling.
 
+Native selects share the Paper surface, Navy text, hairline border and chevron across all three roles; night mode uses its existing tokens. Record disposition and Edit share a row. The buyer's order reference spans the full details row so long identifiers can wrap safely. Import descriptions and delivery days survive parsing and screen re-renders.
+
+After both live buyer requests save, replace Submit with an icon and green “Delivery request confirmed” status. Keep the submitted values readable and offer Edit my request while changes are allowed. This confirms receipt of the request; dispatcher approval remains a separate step. Show each pending pin or availability request with its own review action before enabling rider assignment.
+
 ### Dialogs
 
 Use an action-specific title and save label. Rider title, key field labels and submit/cancel actions put Burmese above English. Native `<dialog>` provides modal focus containment; `aria-labelledby` points to its title. Cash dialogs ask for the amount physically counted; a differing amount requires a reason. Cancelling preserves workflow state. The existing two-second Delivered undo remains intact.
+
+Order-created confirmations offer Close and Back to service board. Dismissal leaves the saved order intact. These form refinements add no new motion; existing transitions and reduced-motion behavior remain in effect.
 
 The project owner approved the current Burmese UI inventory on 21 October 2026, recorded against source commit `6b800c48741ec3973378253a1b0b92ae573167d6` in `BURMESE-REVIEW.md`. Future Burmese wording changes need a new review; automated checks are not language approval.
 
