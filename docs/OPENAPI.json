@@ -1942,6 +1942,138 @@
         }
       }
     },
+    "/api/confirm/{token}/otp": {
+      "post": {
+        "tags": [
+          "buyer confirmation"
+        ],
+        "summary": "Start Otp",
+        "operationId": "start_otp_api_confirm__token__otp_post",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BuyerOtpChallengeResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "410": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Gone"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          },
+          "423": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Locked"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Internal Server Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
     "/api/confirm/{token}/details": {
       "get": {
         "tags": [
@@ -3820,6 +3952,69 @@
         }
       }
     },
+    "/api/orders/{order_id}/auto-assignment": {
+      "post": {
+        "tags": [
+          "three-role workflow"
+        ],
+        "summary": "Auto Assignment",
+        "operationId": "auto_assignment_api_orders__order_id__auto_assignment_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          },
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "order_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Order Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoAssignment"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Auto Assignment Api Orders  Order Id  Auto Assignment Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/orders/{order_id}/prepare-assignment": {
       "post": {
         "tags": [
@@ -5330,6 +5525,76 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "response_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "DECLINED"
+            ],
+            "title": "Response Status",
+            "default": "ACCEPTED"
+          },
+          "offer_version": {
+            "type": "integer",
+            "title": "Offer Version",
+            "default": 1
+          },
+          "allocation_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Status"
+          },
+          "outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Outcome"
+          },
+          "replacement_assignment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssignmentResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replacement_route": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replacement Route"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
           }
         },
         "type": "object",
@@ -5566,6 +5831,44 @@
             ],
             "title": "Status"
           },
+          "response_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "DECLINED"
+            ],
+            "title": "Response Status",
+            "default": "ACCEPTED"
+          },
+          "offer_version": {
+            "type": "integer",
+            "title": "Offer Version",
+            "default": 1
+          },
+          "allocation_cycle": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Cycle"
+          },
+          "responded_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Responded At"
+          },
           "stop_sequence": {
             "anyOf": [
               {
@@ -5670,6 +5973,37 @@
           "order_version"
         ],
         "title": "AssignmentResult"
+      },
+      "AutoAssignment": {
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Request Id"
+          },
+          "expected_version": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Expected Version"
+          },
+          "acknowledge_unverified_location": {
+            "type": "boolean",
+            "title": "Acknowledge Unverified Location",
+            "default": false
+          },
+          "receive_at_hub": {
+            "type": "boolean",
+            "title": "Receive At Hub",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "request_id",
+          "expected_version"
+        ],
+        "title": "AutoAssignment"
       },
       "BuyerActionResult": {
         "properties": {
@@ -6138,6 +6472,46 @@
         ],
         "title": "BuyerLocation"
       },
+      "BuyerOtpChallengeResult": {
+        "properties": {
+          "challenge_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Challenge Id"
+          },
+          "destination_masked": {
+            "type": "string",
+            "title": "Destination Masked"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "resend_after": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Resend After"
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "DEMO",
+              "SMS"
+            ],
+            "title": "Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge_id",
+          "destination_masked",
+          "expires_at",
+          "resend_after",
+          "mode"
+        ],
+        "title": "BuyerOtpChallengeResult"
+      },
       "BuyerResponse": {
         "properties": {
           "request_id": {
@@ -6542,9 +6916,35 @@
             "enum": [
               "START",
               "DELIVERED",
-              "FAILED"
+              "FAILED",
+              "ACCEPT",
+              "DECLINE"
             ],
             "title": "Action"
+          },
+          "assignment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assignment Id"
+          },
+          "offer_version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offer Version"
           },
           "cod_collected": {
             "anyOf": [
@@ -8320,6 +8720,43 @@
             "format": "uuid",
             "title": "Assignment Id"
           },
+          "response_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ACCEPTED",
+              "DECLINED"
+            ],
+            "title": "Response Status",
+            "default": "ACCEPTED"
+          },
+          "offer_version": {
+            "type": "integer",
+            "title": "Offer Version",
+            "default": 1
+          },
+          "allocation_cycle": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Cycle"
+          },
+          "allocation_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Allocation Status"
+          },
           "order_id": {
             "type": "string",
             "format": "uuid",
@@ -9606,16 +10043,16 @@
       },
       "VerifyBuyer": {
         "properties": {
-          "last_four": {
+          "code": {
             "type": "string",
-            "pattern": "^[0-9]{4}$",
-            "title": "Last Four"
+            "pattern": "^[0-9]{6}$",
+            "title": "Code"
           }
         },
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "last_four"
+          "code"
         ],
         "title": "VerifyBuyer"
       }

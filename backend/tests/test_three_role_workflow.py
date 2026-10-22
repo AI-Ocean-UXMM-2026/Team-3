@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from app.core.config import Settings
+from app.db.buyer_models import BuyerOtpChallenge
 from app.db.migrations import upgrade_database
 from app.db.models import User, utcnow
 from app.db.rider_models import RiderProfile
@@ -61,6 +62,13 @@ def workspace(tmp_path):
 def save(response, status=200):
     assert response.status_code == status, response.text
     return response.json()
+
+
+def verify_customer(client, token, database):
+    started = save(client.post(f"/api/confirm/{token}/otp", json={}))
+    with database.sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(started["challenge_id"])).demo_code
+    return save(client.post(f"/api/confirm/{token}/verify", json={"code": code}))
 
 
 def day():
@@ -177,7 +185,7 @@ def test_full_manual_customer_review_rider_and_short_cash_closeout(workspace):
     token = link["confirmation_url"].rsplit("/", 1)[1]
     public = save(c["admin"].get(f"/api/confirm/{token}"))
     assert "customer_phone" not in public and "latitude" not in public
-    auth = save(c["admin"].post(f"/api/confirm/{token}/verify", json={"last_four": "4567"}))
+    auth = verify_customer(c["admin"], token, db)
     bearer = {"Authorization": f"Bearer {auth['access_token']}"}
     result = save(
         c["admin"].patch(
@@ -365,7 +373,12 @@ def test_frontend_allowlist_and_production_gate(workspace):
         ):
             assert client.get(path).status_code == 404
     core = create_app(
-        Settings(_env_file=None, environment="production", order_management_enabled=True)
+        Settings(
+            _env_file=None, environment="production", order_management_enabled=True,
+            buyer_otp_mode="twilio", buyer_otp_external_sends_enabled=True,
+            buyer_twilio_account_sid="ACtest", buyer_twilio_auth_token="test-token",
+            buyer_twilio_verify_service_sid="VAtest",
+        )
     )
     with TestClient(core) as client:
         assert client.get("/api/routes").status_code == 503
@@ -378,7 +391,7 @@ def test_approved_customer_reschedule_updates_route_day_and_enforces_window(work
     order = status(c["admin"], order, "NEEDS_REVIEW")
     link = save(c["admin"].post(f"/api/orders/{order['id']}/confirmation-link"), 201)
     token = link["confirmation_url"].rsplit("/", 1)[1]
-    auth = save(c["admin"].post(f"/api/confirm/{token}/verify", json={"last_four": "4567"}))
+    auth = verify_customer(c["admin"], token, db)
     tomorrow = (utcnow().astimezone(YANGON) + timedelta(days=1)).replace(
         hour=10, minute=0, second=0, microsecond=0
     )
@@ -523,7 +536,7 @@ def test_prepare_failure_rolls_back_receipt_status_and_route(workspace, problem)
         order = status(c["admin"], order, "NEEDS_REVIEW")
         link = save(c["admin"].post(f"/api/orders/{order['id']}/confirmation-link"), 201)
         token = link["confirmation_url"].rsplit("/", 1)[1]
-        auth = save(c["admin"].post(f"/api/confirm/{token}/verify", json={"last_four": "4567"}))
+        auth = verify_customer(c["admin"], token, db)
         save(
             c["admin"].patch(
                 f"/api/confirm/{token}/location",

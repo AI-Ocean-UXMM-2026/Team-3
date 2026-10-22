@@ -24,6 +24,14 @@ class BuyerAuthorizationResult(BaseModel):
     expires_at: datetime
 
 
+class BuyerOtpChallengeResult(BaseModel):
+    challenge_id: UUID
+    destination_masked: str
+    expires_at: datetime
+    resend_after: datetime
+    mode: Literal["DEMO", "SMS"]
+
+
 class LinkResult(BaseModel):
     link_id: UUID
     confirmation_url: str
@@ -96,7 +104,7 @@ class BuyerHistoryPage(BaseModel):
 
 class VerifyBuyer(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    last_four: str = Field(pattern=r"^[0-9]{4}$", strict=True)
+    code: str = Field(pattern=r"^[0-9]{6}$", strict=True)
 
 
 class BuyerLocation(BaseModel):

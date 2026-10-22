@@ -6,7 +6,7 @@ import httpx2 as httpx
 import pytest
 from pydantic import ValidationError
 from sqlalchemy import func, select
-from test_three_role_workflow import day, manual, save
+from test_three_role_workflow import day, manual, save, verify_customer
 from test_three_role_workflow import workspace as source_workspace
 
 from app.core.config import Settings
@@ -43,7 +43,7 @@ def query(orders, riders, **extra):
 
 
 def preview(workspace, count=2, **extra):
-    c, ids, _ = workspace
+    c, ids, db = workspace
     orders = [manual(workspace) for _ in range(count)]
     body = query(orders, [ids["rider"]], **extra)
     return save(c["admin"].post("/api/routes/optimize", json=body), 201), orders, body
@@ -110,7 +110,11 @@ def test_missing_credentials_external_gate_and_no_silent_fallback():
         with pytest.raises(RoutingFailure, match="KEY_MISSING"):
             HTTPProvider(s).ready("DRIVE")
     with pytest.raises(RoutingFailure, match="FORBIDDEN"):
-        provider_for(Settings(_env_file=None, environment="production"), True)
+        provider_for(Settings(
+            _env_file=None, environment="production", buyer_otp_mode="twilio",
+            buyer_otp_external_sends_enabled=True, buyer_twilio_account_sid="ACtest",
+            buyer_twilio_auth_token="test-token", buyer_twilio_verify_service_sid="VAtest",
+        ), True)
     with pytest.raises(RoutingFailure, match="DISABLED"):
         provider_for(Settings(_env_file=None, routing_provider="disabled"), True)
 
@@ -584,7 +588,7 @@ def test_expensive_operations_have_a_persistent_actor_budget(workspace):
 
 
 def test_approved_buyer_reschedule_invalidates_plan_and_moves_hard_window(workspace):
-    c, ids, _ = workspace
+    c, ids, db = workspace
     plan, orders, body = preview(workspace, count=1)
     identifier = orders[0]["id"]
     save(
@@ -595,7 +599,7 @@ def test_approved_buyer_reschedule_invalidates_plan_and_moves_hard_window(worksp
     )
     link = save(c["admin"].post(f"/api/orders/{identifier}/confirmation-link"), 201)
     token = link["confirmation_url"].rsplit("/", 1)[1]
-    auth = save(c["admin"].post(f"/api/confirm/{token}/verify", json={"last_four": "4567"}))
+    auth = verify_customer(c["admin"], token, db)
     start = datetime.fromisoformat(day() + "T10:00:00+06:30") + timedelta(days=1)
     end = start + timedelta(hours=2)
     request = save(

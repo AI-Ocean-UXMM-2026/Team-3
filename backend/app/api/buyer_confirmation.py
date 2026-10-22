@@ -12,6 +12,7 @@ from app.schemas.buyer import (
     BuyerCardResult,
     BuyerDetailsResult,
     BuyerHistoryPage,
+    BuyerOtpChallengeResult,
     BuyerLocation,
     BuyerResponse,
     BuyerReviewResult,
@@ -24,6 +25,7 @@ from app.schemas.buyer import (
 )
 from app.schemas.errors import ErrorResponse
 from app.services.buyer_confirmation import BuyerConfirmationService
+from app.services.buyer_otp import BuyerOtpService
 
 ERRORS = {
     code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 410, 422, 423, 429, 500, 503)
@@ -112,6 +114,12 @@ def review_buyer_request(
 def verify(token: str, body: VerifyBuyer, request: Request, session: PublicSession):
     consume_rate_limit(request, verify=True)
     return service(request, session).verify(token, body)
+
+
+@public_router.post("/{token}/otp", response_model=BuyerOtpChallengeResult)
+def start_otp(token: str, request: Request, session: PublicSession):
+    consume_rate_limit(request, verify=True)
+    return BuyerOtpService(session, request.app.state.settings).start(token)
 
 
 @public_router.get("/{token}/details", response_model=BuyerDetailsResult)

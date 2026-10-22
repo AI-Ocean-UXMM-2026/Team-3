@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError, OperationalError
 
 from app.core.config import Settings
+from app.db.buyer_models import BuyerOtpChallenge
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User, utcnow
 from app.db.rider_models import DeliveryAssignment, RiderActionReceipt, RiderProfile
@@ -73,6 +74,14 @@ def rider(env, name="Rider", **body):
     )
     assert response.status_code == 201, response.text
     return response.json()
+
+
+def verified_buyer(env, path):
+    started = env["client"].post(path + "/otp", json={})
+    assert started.status_code == 200, started.text
+    with env["db"].sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(started.json()["challenge_id"])).demo_code
+    return env["client"].post(path + "/verify", json={"code": code}).json()
 
 
 def order(env, **structured):
@@ -651,7 +660,12 @@ def test_production_disabled_and_remote_denial(env):
     who = rider(env)
     with TestClient(env["app"], client=("203.0.113.1", 50000)) as client:
         assert client.get(f"/api/riders/{who['id']}/queue", headers=HEADERS).status_code == 403
-    production = Settings(_env_file=None, environment="production", order_management_enabled=True)
+    production = Settings(
+        _env_file=None, environment="production", order_management_enabled=True,
+        buyer_otp_mode="twilio", buyer_otp_external_sends_enabled=True,
+        buyer_twilio_account_sid="ACtest", buyer_twilio_auth_token="test-token",
+        buyer_twilio_verify_service_sid="VAtest",
+    )
     with TestClient(create_app(production), client=("127.0.0.1", 50000)) as client:
         assert client.get("/api/riders", headers=HEADERS).status_code == 503
 
@@ -763,7 +777,7 @@ def test_buyer_approved_update_reaches_reassigned_queue(env):
     )
     link = env["client"].post(f"/api/orders/{row['id']}/confirmation-link", headers=HEADERS).json()
     path = "/api" + link["confirmation_url"]
-    verified = env["client"].post(path + "/verify", json={"last_four": "4567"}).json()
+    verified = verified_buyer(env, path)
     auth = {"Authorization": "Bearer " + verified["access_token"]}
     proposed = env["client"].patch(
         path + "/location",

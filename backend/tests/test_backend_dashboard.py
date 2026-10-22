@@ -69,6 +69,18 @@ def link(client, identifier):
 
 
 def buyer(client, handle, method="GET", suffix="", body=None, status=200):
+    if method == "POST" and suffix == "/verify" and body and "last_four" in body:
+        demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
+        if demo.status_code != 200:
+            if buyer(client, handle).get("state") == "LOCKED":
+                return call(client, method, "/api/confirm/@buyer" + suffix, {"code": "000000"}, status, buyer_handle=handle)
+            call(client, "POST", "/api/confirm/@buyer/otp", {}, buyer_handle=handle)
+            demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
+        if body["last_four"] == "1111":
+            body = {"code": "111111"}
+        else:
+            assert demo.status_code == 200 and demo.json()["simulation"] is True
+            body = {"code": demo.json()["code"]}
     return call(client, method, "/api/confirm/@buyer" + suffix, body, status, buyer_handle=handle)
 
 
@@ -396,6 +408,10 @@ def test_buyer_handle_cannot_cross_browser_sessions(dashboard):
     visible = client.get("/dashboard/bootstrap").json()
     assert visible["buyers"][0]["handle"] == handle
     assert box.buyers[handle]["path"] not in json.dumps(visible)
+    buyer(client, handle, "POST", "/otp", {})
+    demo = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle})
+    assert demo.status_code == 200 and demo.json()["simulation"] is True
+    assert re.fullmatch(r"[0-9]{6}", demo.json()["code"])
     # A separate browser cookie in the SAME sandbox cannot reuse a leaked handle.
     saved = client.cookies.get("lp_dashboard")
     client.cookies.clear()
@@ -404,6 +420,7 @@ def test_buyer_handle_cannot_cross_browser_sessions(dashboard):
     assert fresh["buyers"] == []
     client.headers["X-Dashboard-CSRF"] = fresh["csrf"]
     buyer(client, handle, status=404)
+    assert client.get("/dashboard/buyer-otp", params={"buyer_handle": handle}).status_code == 404
     assert client.cookies.get("lp_dashboard") != saved
     assert box.buyers[handle]["owner"] == saved
 

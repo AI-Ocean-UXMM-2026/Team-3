@@ -9,7 +9,7 @@ from test_buyer_confirmation import ADMIN, env, linked, verified  # noqa: F401
 from test_riders import HEADERS, act, assign, order, queue, rider, saved
 from test_riders import env as rider_env  # noqa: F401
 
-from app.db.buyer_models import BuyerRequest
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest
 from app.db.models import DeliveryEvent, Order
 from app.db.rider_models import DeliveryAssignment
 
@@ -52,19 +52,23 @@ def test_two_dispatchers_assign_one_order_to_different_riders(rider_env):
 
 
 def test_concurrent_successful_verification_only_latest_session_authorizes(linked):
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    assert started.status_code == 200
+    with linked["db"].sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(started.json()["challenge_id"])).demo_code
     replies = parallel_requests(
         linked["app"],
         [
-            {"method": "POST", "url": linked["path"] + "/verify", "json": {"last_four": "4567"}}
+            {"method": "POST", "url": linked["path"] + "/verify", "json": {"code": code}}
             for _ in range(2)
         ],
     )
-    assert all(r.status_code == 200 for r in replies)
+    assert sorted(r.status_code for r in replies) == [200, 403]
     results = [
         linked["client"]
         .get(
             linked["path"] + "/details",
-            headers={"Authorization": "Bearer " + r.json()["access_token"]},
+            headers={"Authorization": "Bearer " + r.json().get("access_token", "")},
         )
         .status_code
         for r in replies

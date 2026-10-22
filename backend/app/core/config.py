@@ -79,6 +79,11 @@ class Settings(BaseSettings):
                     public = False
             if not public:
                 raise ValueError("Supabase browser configuration requires a publishable/anon key")
+        if self.environment == "production":
+            if self.buyer_otp_mode != "twilio" or not self.buyer_otp_external_sends_enabled:
+                raise ValueError("Production requires explicitly enabled Twilio Verify")
+            if not (self.buyer_twilio_account_sid and self.buyer_twilio_auth_token and self.buyer_twilio_verify_service_sid):
+                raise ValueError("Production Twilio Verify credentials are required")
         return self
 
     database_url: SecretStr = Field(
@@ -102,6 +107,11 @@ class Settings(BaseSettings):
     buyer_min_notice_minutes: int = Field(default=120, ge=0, le=1440)
     buyer_max_schedule_days: int = Field(default=7, ge=1, le=30)
     buyer_cross_township_fee_mmk: int | None = Field(default=None, ge=0, le=1000000000)
+    buyer_otp_mode: Literal["demo", "twilio"] = "demo"
+    buyer_otp_external_sends_enabled: bool = False
+    buyer_twilio_account_sid: str | None = None
+    buyer_twilio_auth_token: SecretStr | None = None
+    buyer_twilio_verify_service_sid: str | None = None
     cors_origins: list[str] = Field(
         default_factory=lambda: [
             "http://localhost:5173",

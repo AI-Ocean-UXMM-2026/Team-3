@@ -82,11 +82,13 @@ def test_mtt_cod_delivery_pin_and_audit_persist_after_application_restart(tmp_pa
         path = f"/api/orders/{identifier}"
         call(client, "PATCH", path + "/status", {"expected_version": 1, "status": "NEEDS_REVIEW"})
         handle = call(client, "POST", path + "/confirmation-link")["buyer_handle"]
+        call(client, "POST", "/api/confirm/@buyer/otp", {}, buyer_handle=handle)
+        code = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle}).json()["code"]
         call(
             client,
             "POST",
             "/api/confirm/@buyer/verify",
-            {"last_four": "0000"},
+            {"code": code},
             buyer_handle=handle,
         )
         call(

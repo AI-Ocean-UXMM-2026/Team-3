@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta, timezone
 from sqlalchemy import select, update
 
 from app.core.order_errors import OrderAPIError
-from app.db.buyer_models import BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
 from app.db.models import DeliveryEvent, Order, utcnow
 from app.domain.lifecycle import OrderStatus, UserRole
 from app.services.buyer_policy import distance_meters
@@ -51,6 +51,17 @@ def delivery_link_policy(session, order):
     """Called inside the dispatcher status transaction after the order row is flushed."""
     if order.status == OrderStatus.DELIVERED:
         until = utcnow() + timedelta(hours=24)
+        active_link_ids = select(ConfirmationLink.id).where(
+            ConfirmationLink.order_id == order.id,
+            ConfirmationLink.revoked_at.is_(None),
+            ConfirmationLink.locked_at.is_(None),
+            ConfirmationLink.expires_at > utcnow(),
+        )
+        session.execute(
+            update(BuyerOtpChallenge)
+            .where(BuyerOtpChallenge.link_id.in_(active_link_ids), BuyerOtpChallenge.status == "PENDING")
+            .values(status="REVOKED", demo_code=None)
+        )
         session.execute(
             update(ConfirmationLink)
             .where(
@@ -70,6 +81,14 @@ def delivery_link_policy(session, order):
 
 
 def revoke_phone_links(session, order):
+    link_ids = select(ConfirmationLink.id).where(
+        ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None)
+    )
+    session.execute(
+        update(BuyerOtpChallenge)
+        .where(BuyerOtpChallenge.link_id.in_(link_ids), BuyerOtpChallenge.status == "PENDING")
+        .values(status="REVOKED", demo_code=None)
+    )
     session.execute(
         update(ConfirmationLink)
         .where(ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None))
@@ -118,6 +137,14 @@ class BuyerConfirmationService:
                 "Order needs a valid phone and pre-dispatch review status.",
             )
         now = utcnow()
+        old_link_ids = select(ConfirmationLink.id).where(
+            ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None)
+        )
+        self.session.execute(
+            update(BuyerOtpChallenge)
+            .where(BuyerOtpChallenge.link_id.in_(old_link_ids), BuyerOtpChallenge.status == "PENDING")
+            .values(status="REVOKED", demo_code=None)
+        )
         self.session.execute(
             update(ConfirmationLink)
             .where(ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None))
@@ -149,6 +176,14 @@ class BuyerConfirmationService:
 
     def revoke(self, order_id, actor):
         order = self.management_order(order_id, actor)
+        active_link_ids = select(ConfirmationLink.id).where(
+            ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None)
+        )
+        self.session.execute(
+            update(BuyerOtpChallenge)
+            .where(BuyerOtpChallenge.link_id.in_(active_link_ids), BuyerOtpChallenge.status == "PENDING")
+            .values(status="REVOKED", demo_code=None)
+        )
         result = self.session.execute(
             update(ConfirmationLink)
             .where(ConfirmationLink.order_id == order.id, ConfirmationLink.revoked_at.is_(None))
@@ -232,46 +267,9 @@ class BuyerConfirmationService:
             )
 
     def verify(self, token, body):
-        link, order, _ = self.link(token, mutate=True)
-        self.mutable(link, order)
-        if not order.customer_phone or not hmac.compare_digest(
-            body.last_four, order.customer_phone[-4:]
-        ):
-            link.failed_attempts += 1
-            if link.failed_attempts >= 3:
-                link.locked_at = utcnow()
-                link.generation += 1
-            self.event(
-                order,
-                "BUYER_SECURITY",
-                {
-                    "link_id": str(link.id),
-                    "action": "LOCKED" if link.locked_at else "VERIFICATION_FAILED",
-                },
-            )
-            self.session.commit()  # A failed attempt must survive the error response.
-            raise OrderAPIError(
-                403, "BUYER_VERIFICATION_FAILED", "Verification failed; contact the shop if needed."
-            )
-        link.generation += (
-            1  # Re-verification rotates authorization, not the failed-attempt budget.
-        )
-        link.verified_at = utcnow()
-        credential = secrets.token_urlsafe(32)
-        expires = min(
-            link.expires_at, utcnow() + timedelta(minutes=self.settings.buyer_session_minutes)
-        )
-        self.session.add(
-            BuyerSession(
-                link_id=link.id,
-                token_hash=digest(credential),
-                generation=link.generation,
-                expires_at=expires,
-            )
-        )
-        self.event(order, "BUYER_SECURITY", {"link_id": str(link.id), "action": "VERIFIED"})
-        self.session.commit()
-        return {"access_token": credential, "token_type": "Bearer", "expires_at": expires}
+        from app.services.buyer_otp import BuyerOtpService
+
+        return BuyerOtpService(self.session, self.settings).verify(token, body.code)
 
     def authorize(self, token, credential):
         link, order, _ = self.link(token, mutate=True)

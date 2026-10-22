@@ -5,19 +5,21 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic import SecretStr
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 from sqlalchemy.exc import OperationalError
 
 from app.core.access_logging import HideQueryString
 from app.core.config import Settings
-from app.db.buyer_models import BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
+from app.db.buyer_models import BuyerOtpChallenge, BuyerRequest, BuyerSession, ConfirmationLink, LocationReference
 from app.db.migrations import upgrade_database
 from app.db.models import DeliveryEvent, Order, User, utcnow
 from app.db.session import Database
 from app.domain.lifecycle import OrderStatus, UserRole
 from app.main import create_app
 from app.services.buyer_confirmation import BuyerConfirmationService, digest
+from app.services.buyer_otp import normalize_phone
 from app.services.buyer_policy import TownshipBoundaryResolver, distance_meters
 
 DEV_TOKEN = "buyer-fixture-private-dispatcher-token-" + "x" * 32
@@ -113,7 +115,12 @@ def linked(env):
 
 
 def verified(linked):
-    response = linked["client"].post(linked["path"] + "/verify", json={"last_four": "4567"})
+    start = linked["client"].post(linked["path"] + "/otp", json={})
+    assert start.status_code == 200, start.text
+    with linked["db"].sessions() as session:
+        challenge = session.get(BuyerOtpChallenge, UUID(start.json()["challenge_id"]))
+        code = challenge.demo_code
+    response = linked["client"].post(linked["path"] + "/verify", json={"code": code})
     assert response.status_code == 200, response.text
     return {"Authorization": "Bearer " + response.json()["access_token"]}
 
@@ -178,12 +185,271 @@ def test_hashed_credentials_minimal_card_and_details(linked):
     assert client.get("/api/orders", headers=auth).status_code == 401
 
 
+def test_otp_start_returns_only_safe_challenge_state(linked):
+    response = linked["client"].post(linked["path"] + "/otp", json={})
+    assert response.status_code == 200, response.text
+    payload = response.json()
+    assert set(payload) == {"challenge_id", "destination_masked", "expires_at", "resend_after", "mode"}
+    assert payload["destination_masked"].endswith("4567")
+    assert payload["mode"] == "DEMO"
+    assert "code" not in payload and "09791234567" not in response.text
+
+
 @pytest.mark.parametrize(
-    "last_four", ["", "123", "12345", "၄၅၆၇", 4567, None, True, " 4567", "4567\n"]
+    "value", ["09791234567", "+959791234567", "959791234567"]
 )
-def test_verification_input_validation(linked, last_four):
+def test_myanmar_phone_normalization(value):
+    assert normalize_phone(value) == "+959791234567"
+
+
+def test_last_four_is_not_accepted_as_public_verification(linked):
+    response = linked["client"].post(linked["path"] + "/verify", json={"last_four": "4567"})
+    assert response.status_code == 422
+
+
+def test_otp_resend_cooldown_and_replacement(linked, monkeypatch):
+    start = linked["client"].post(linked["path"] + "/otp", json={})
+    assert start.status_code == 200
+    challenge_id = UUID(start.json()["challenge_id"])
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 429
+    now = utcnow() + timedelta(seconds=61)
+    monkeypatch.setattr("app.services.buyer_otp.utcnow", lambda: now)
+    resent = linked["client"].post(linked["path"] + "/otp", json={})
+    assert resent.status_code == 200
+    with linked["db"].sessions() as session:
+        previous = session.get(BuyerOtpChallenge, challenge_id)
+        replacement = session.get(BuyerOtpChallenge, UUID(resent.json()["challenge_id"]))
+        assert previous.status == "REPLACED" and previous.demo_code is None
+        assert replacement.status == "PENDING"
+        assert previous.code_digest != replacement.code_digest
+
+
+def test_otp_expires_rejects_replay_and_is_link_bound(linked, monkeypatch):
+    started = linked["client"].post(linked["path"] + "/otp", json={}).json()
+    challenge_id = UUID(started["challenge_id"])
+    with linked["db"].sessions.begin() as session:
+        session.get(BuyerOtpChallenge, challenge_id).expires_at = utcnow() - timedelta(seconds=1)
+    assert linked["client"].post(linked["path"] + "/verify", json={"code": "000000"}).status_code == 403
+    with linked["db"].sessions() as session:
+        assert session.get(BuyerOtpChallenge, challenge_id).status == "EXPIRED"
+    auth = verified(linked)
+    assert linked["client"].get(linked["path"] + "/details", headers=auth).status_code == 200
+    with linked["db"].sessions() as session:
+        assert session.scalar(select(BuyerOtpChallenge).where(BuyerOtpChallenge.status == "CONSUMED"))
+    assert linked["client"].post(linked["path"] + "/verify", json={"code": "000000"}).status_code in {403, 423}
+
+
+def test_otp_is_invalid_after_link_revocation_or_phone_change(linked):
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 200
+    revoked = linked["client"].post(
+        f"/api/orders/{linked['order']['id']}/confirmation-link/revoke", headers=ADMIN
+    )
+    assert revoked.status_code == 200
+    assert linked["client"].post(linked["path"] + "/verify", json={"code": "000000"}).status_code == 404
+
+
+def test_phone_change_revokes_pending_otp(linked):
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    challenge_id = UUID(started.json()["challenge_id"])
+    order = saved(linked)
+    changed = linked["client"].patch(
+        f"/api/orders/{order['id']}",
+        headers=ADMIN,
+        json={"expected_version": order["version"], "customer_phone": "09961234567"},
+    )
+    assert changed.status_code == 200
+    with linked["db"].sessions() as session:
+        challenge = session.get(BuyerOtpChallenge, challenge_id)
+        assert challenge.status == "REVOKED" and challenge.demo_code is None
+    assert linked["client"].post(linked["path"] + "/verify", json={"code": "000000"}).status_code == 404
+
+
+def test_same_phone_challenges_serialize_across_distinct_links(linked, monkeypatch):
+    other_order = order_create(linked)
+    other_link = linked["client"].post(
+        f"/api/orders/{other_order['id']}/confirmation-link", headers=ADMIN
+    ).json()
+    other_path = "/api" + other_link["confirmation_url"]
+    first = linked["client"].post(linked["path"] + "/otp", json={})
+    assert first.status_code == 200
+    assert linked["client"].post(other_path + "/otp", json={}).status_code == 429
+    with linked["db"].sessions() as session:
+        assert session.scalar(select(func.count()).select_from(BuyerOtpChallenge).where(BuyerOtpChallenge.status == "PENDING")) == 1
+    monkeypatch.setattr("app.services.buyer_otp.utcnow", lambda: utcnow() + timedelta(seconds=61))
+    replacement = linked["client"].post(other_path + "/otp", json={})
+    assert replacement.status_code == 200
+    with linked["db"].sessions() as session:
+        previous = session.scalar(select(BuyerOtpChallenge).where(BuyerOtpChallenge.id == UUID(first.json()["challenge_id"])))
+        assert previous.status == "REPLACED" and previous.demo_code is None
+        assert session.scalar(select(func.count()).select_from(BuyerOtpChallenge).where(BuyerOtpChallenge.status == "PENDING")) == 1
+
+
+def test_concurrent_first_challenges_for_same_phone_serialize(linked):
+    other_order = order_create(linked)
+    other_link = linked["client"].post(
+        f"/api/orders/{other_order['id']}/confirmation-link", headers=ADMIN
+    ).json()
+    other_path = "/api" + other_link["confirmation_url"]
+
+    def start(path):
+        with TestClient(linked["app"], client=("127.0.0.1", 50002)) as client:
+            return client.post(path + "/otp", json={}).status_code
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        statuses = list(pool.map(start, [linked["path"], other_path]))
+    assert sorted(statuses) == [200, 429]
+    with linked["db"].sessions() as session:
+        assert session.scalar(select(func.count()).select_from(BuyerOtpChallenge).where(
+            BuyerOtpChallenge.status == "PENDING"
+        )) == 1
+
+
+def test_twilio_resend_cancels_and_checks_the_stored_sid(linked, monkeypatch):
+    import app.services.buyer_otp as otp
+
+    linked["settings"].buyer_otp_mode = "twilio"
+    linked["settings"].buyer_otp_external_sends_enabled = True
+    linked["settings"].buyer_twilio_account_sid = "ACtest"
+    linked["settings"].buyer_twilio_auth_token = SecretStr("test-token")
+    linked["settings"].buyer_twilio_verify_service_sid = "VAtest"
+    calls = []
+
+    class Response:
+        status_code = 200
+        def __init__(self, payload): self.payload = payload
+        def json(self): return self.payload
+
+    class Client:
+        def __init__(self, **kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def post(self, url, data, auth):
+            calls.append((url, data, auth))
+            if url.endswith("/VerificationCheck"):
+                return Response({"status": "approved"})
+            if url.endswith("/Verifications/VEold"):
+                return Response({"status": "canceled"})
+            return Response({"sid": "VEold" if len(calls) == 1 else "VEnew"})
+
+    monkeypatch.setattr(otp.httpx, "Client", Client)
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 200
+    monkeypatch.setattr(otp, "utcnow", lambda: utcnow() + timedelta(seconds=61))
+    replacement = linked["client"].post(linked["path"] + "/otp", json={})
+    assert replacement.status_code == 200
+    check = linked["client"].post(linked["path"] + "/verify", json={"code": "123456"})
+    assert check.status_code == 200
+    assert any(url.endswith("/Verifications/VEold") and data == {"Status": "canceled"} for url, data, _ in calls)
+    assert calls[-1][0].endswith("/VerificationCheck")
+    assert calls[-1][1]["VerificationSid"] == "VEnew"
+
+
+def test_twilio_expired_challenge_is_cancelled_before_replacement(linked, monkeypatch):
+    import app.services.buyer_otp as otp
+
+    linked["settings"].buyer_otp_mode = "twilio"
+    linked["settings"].buyer_otp_external_sends_enabled = True
+    linked["settings"].buyer_twilio_account_sid = "ACtest"
+    linked["settings"].buyer_twilio_auth_token = SecretStr("test-token")
+    linked["settings"].buyer_twilio_verify_service_sid = "VAtest"
+    calls = []
+
+    class Response:
+        status_code = 200
+
+        def __init__(self, payload):
+            self.payload = payload
+
+        def json(self):
+            return self.payload
+
+    class Client:
+        def __init__(self, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def post(self, url, data, auth):
+            calls.append((url, data, auth))
+            if url.endswith("/Verifications/VEold"):
+                return Response({"status": "canceled"})
+            return Response({"sid": "VEold" if len(calls) == 1 else "VEnew"})
+
+    monkeypatch.setattr(otp.httpx, "Client", Client)
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    assert started.status_code == 200
+    challenge_id = UUID(started.json()["challenge_id"])
+    monkeypatch.setattr(otp, "utcnow", lambda: utcnow() + timedelta(minutes=6))
+
+    replacement = linked["client"].post(linked["path"] + "/otp", json={})
+    assert replacement.status_code == 200
+    cancel_index = next(i for i, (url, _, _) in enumerate(calls) if url.endswith("/Verifications/VEold"))
+    replacement_index = next(i for i, (url, _, _) in enumerate(calls) if url.endswith("/Verifications") and i > 0)
+    assert cancel_index < replacement_index
+    with linked["db"].sessions() as session:
+        assert session.get(BuyerOtpChallenge, challenge_id).status == "REPLACED"
+
+
+def test_twilio_cancellation_failure_revokes_local_challenge_and_keeps_cooldown(linked, monkeypatch):
+    import app.services.buyer_otp as otp
+
+    linked["settings"].buyer_otp_mode = "twilio"
+    linked["settings"].buyer_otp_external_sends_enabled = True
+    linked["settings"].buyer_twilio_account_sid = "ACtest"
+    linked["settings"].buyer_twilio_auth_token = SecretStr("test-token")
+    linked["settings"].buyer_twilio_verify_service_sid = "VAtest"
+
+    class Response:
+        def __init__(self, status_code, payload): self.status_code, self.payload = status_code, payload
+        def json(self): return self.payload
+
+    class Client:
+        def __init__(self, **kwargs): pass
+        def __enter__(self): return self
+        def __exit__(self, *args): return False
+        def post(self, url, data, auth):
+            if url.endswith("/Verifications/VEold"):
+                return Response(500, {})
+            return Response(200, {"sid": "VEold"})
+
+    monkeypatch.setattr(otp.httpx, "Client", Client)
+    first = linked["client"].post(linked["path"] + "/otp", json={})
+    challenge_id = UUID(first.json()["challenge_id"])
+    now = utcnow() + timedelta(seconds=61)
+    monkeypatch.setattr(otp, "utcnow", lambda: now)
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 503
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 429
+    with linked["db"].sessions() as session:
+        challenge = session.get(BuyerOtpChallenge, challenge_id)
+        assert challenge.status == "CANCEL_FAILED" and challenge.demo_code is None
+
+
+def test_twilio_outage_fails_closed_and_production_rejects_demo(linked, monkeypatch):
+    linked["settings"].buyer_otp_mode = "twilio"
+    linked["settings"].buyer_otp_external_sends_enabled = True
+    linked["settings"].buyer_twilio_account_sid = "ACtest"
+    linked["settings"].buyer_twilio_auth_token = "test-token"
+    linked["settings"].buyer_twilio_verify_service_sid = "VAtest"
+    from app.core.order_errors import OrderAPIError
+    monkeypatch.setattr(
+        "app.services.buyer_otp._twilio",
+        lambda *args, **kwargs: (_ for _ in ()).throw(OrderAPIError(503, "BUYER_OTP_UNAVAILABLE", "Phone verification is temporarily unavailable.")),
+    )
+    response = linked["client"].post(linked["path"] + "/otp", json={})
+    assert response.status_code == 503 and "ACtest" not in response.text
+    with pytest.raises(Exception):
+        Settings(_env_file=None, environment="production")
+
+
+@pytest.mark.parametrize(
+    "code", ["", "123", "1234567", "၁၂٣٤٥٦", 123456, None, True, " 123456", "123456\n"]
+)
+def test_verification_input_validation(linked, code):
     assert (
-        linked["client"].post(linked["path"] + "/verify", json={"last_four": last_four}).status_code
+        linked["client"].post(linked["path"] + "/verify", json={"code": code}).status_code
         == 422
     )
     with linked["db"].sessions() as session:
@@ -191,18 +457,19 @@ def test_verification_input_validation(linked, last_four):
 
 
 def test_three_failed_attempts_lock_all_sessions(linked):
-    auth = verified(linked)
+    start = linked["client"].post(linked["path"] + "/otp", json={})
+    assert start.status_code == 200
     for _ in range(3):
-        response = linked["client"].post(linked["path"] + "/verify", json={"last_four": "0000"})
+        response = linked["client"].post(linked["path"] + "/verify", json={"code": "000000"})
         assert response.status_code == 403
         assert "0000" not in response.text and "4567" not in response.text
     assert (
-        linked["client"].post(linked["path"] + "/verify", json={"last_four": "4567"}).status_code
+        linked["client"].post(linked["path"] + "/verify", json={"code": "123456"}).status_code
         == 423
     )
     assert linked["client"].get(linked["path"]).json()["state"] == "LOCKED"
     assert (
-        linked["client"].patch(linked["path"] + "/location", headers=auth, json=pin()).status_code
+        linked["client"].patch(linked["path"] + "/location", json=pin()).status_code
         == 423
     )
     with linked["db"].sessions() as session:
@@ -210,14 +477,15 @@ def test_three_failed_attempts_lock_all_sessions(linked):
         events = session.scalars(
             select(DeliveryEvent).where(DeliveryEvent.event_type == "BUYER_SECURITY")
         ).all()
-        assert len(events) == 4
+        assert len(events) == 3
         assert all("last_four" not in str(row.event_metadata) for row in events)
 
 
 def test_concurrent_failure_limit(linked):
+    assert linked["client"].post(linked["path"] + "/otp", json={}).status_code == 200
     def attempt(_):
         with TestClient(linked["app"], client=("127.0.0.1", 50001)) as client:
-            return client.post(linked["path"] + "/verify", json={"last_four": "0000"}).status_code
+            return client.post(linked["path"] + "/verify", json={"code": "000000"}).status_code
 
     with ThreadPoolExecutor(max_workers=6) as pool:
         statuses = list(pool.map(attempt, range(6)))
@@ -249,7 +517,7 @@ def test_invalid_expired_revoked_and_replaced_links(linked):
     assert fresh.status_code == 201
     assert linked["client"].get(linked["path"]).status_code == 404
     new_path = "/api" + fresh.json()["confirmation_url"]
-    auth = linked["client"].post(new_path + "/verify", json={"last_four": "4567"}).json()
+    auth = verified({**linked, "path": new_path})
     revoked = linked["client"].post(
         f"/api/orders/{linked['order']['id']}/confirmation-link/revoke", headers=ADMIN
     )
@@ -257,7 +525,7 @@ def test_invalid_expired_revoked_and_replaced_links(linked):
     assert linked["client"].get(new_path).status_code == 404
     assert (
         linked["client"]
-        .get(new_path + "/details", headers={"Authorization": "Bearer " + auth["access_token"]})
+            .get(new_path + "/details", headers=auth)
         .status_code
         == 404
     )
@@ -565,7 +833,7 @@ def test_closed_order_never_accepts_buyer_changes(linked, status):
     for suffix, body in (
         ("location", pin()),
         ("response", {"request_id": str(uuid4()), "action": "AVAILABLE"}),
-        ("verify", {"last_four": "4567"}),
+        ("verify", {"code": "123456"}),
     ):
         response = (linked["client"].post if suffix == "verify" else linked["client"].patch)(
             linked["path"] + "/" + suffix, headers=auth, json=body
@@ -635,17 +903,32 @@ def test_rate_limit_shared_db_and_ignored_forwarded_ip(linked):
         assert client.get(linked["path"]).status_code == 429
 
 
-def test_verification_rate_limit_even_with_correct_digits(linked):
+def test_verification_rate_limit_even_with_correct_digits(linked, monkeypatch):
+    class FrozenDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return datetime(2026, 10, 22, 12, 0, tzinfo=tz or UTC)
+
+    monkeypatch.setattr("app.core.buyer_access.datetime", FrozenDateTime)
     linked["settings"].buyer_verify_limit_per_minute = 1
-    verified(linked)
-    assert (
-        linked["client"].post(linked["path"] + "/verify", json={"last_four": "4567"}).status_code
-        == 429
-    )
+    start = linked["client"].post(linked["path"] + "/otp", json={})
+    assert start.status_code == 200
+    with linked["db"].sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(start.json()["challenge_id"])).demo_code
+    assert linked["client"].post(linked["path"] + "/verify", json={"code": code}).status_code == 429
 
 
 def test_public_production_fail_closed_without_db(env):
-    settings = Settings(_env_file=None, environment="production", order_management_enabled=True)
+    settings = Settings(
+        _env_file=None,
+        environment="production",
+        order_management_enabled=True,
+        buyer_otp_mode="twilio",
+        buyer_otp_external_sends_enabled=True,
+        buyer_twilio_account_sid="ACtest",
+        buyer_twilio_auth_token="test-token",
+        buyer_twilio_verify_service_sid="VAtest",
+    )
     with TestClient(create_app(settings), client=("127.0.0.1", 50000)) as client:
         assert client.get("/api/confirm/" + "x" * 43).status_code == 503
 
@@ -880,13 +1163,18 @@ def test_malformed_requests_safe_errors_and_cors(linked):
 
 def test_failed_budget_never_resets_after_success(linked):
     client = linked["client"]
+    start = client.post(linked["path"] + "/otp", json={})
+    with linked["db"].sessions() as session:
+        code = session.get(BuyerOtpChallenge, UUID(start.json()["challenge_id"])).demo_code
     for _ in range(2):
         assert (
-            client.post(linked["path"] + "/verify", json={"last_four": "0000"}).status_code == 403
+            client.post(linked["path"] + "/verify", json={"code": "000000"}).status_code == 403
         )
-    verified(linked)
-    assert client.post(linked["path"] + "/verify", json={"last_four": "0000"}).status_code == 403
-    assert client.post(linked["path"] + "/verify", json={"last_four": "4567"}).status_code == 423
+    assert client.post(linked["path"] + "/verify", json={"code": code}).status_code == 200
+    start = client.post(linked["path"] + "/otp", json={})
+    assert start.status_code == 200
+    assert client.post(linked["path"] + "/verify", json={"code": "000000"}).status_code == 403
+    assert client.post(linked["path"] + "/verify", json={"code": "123456"}).status_code == 423
 
 
 def test_cutoff_boundary_exact_hour(linked, monkeypatch):

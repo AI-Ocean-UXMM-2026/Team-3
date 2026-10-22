@@ -1,4 +1,6 @@
+import hashlib
 import logging
+import re
 import secrets
 import tempfile
 import threading
@@ -11,7 +13,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select, update
 
 from app.core.config import Settings
-from app.db.buyer_models import BuyerSession, ConfirmationLink
+from app.db.buyer_models import BuyerOtpChallenge, BuyerSession, ConfirmationLink
 from app.db.migrations import upgrade_database
 from app.db.models import User
 from app.db.session import Database
@@ -105,6 +107,8 @@ class Sandbox:
                 buyer_session_minutes=15,
                 buyer_request_limit_per_minute=60,
                 buyer_verify_limit_per_minute=10,
+                buyer_otp_mode="demo",
+                buyer_otp_external_sends_enabled=False,
                 buyer_rescheduling_enabled=False,
                 buyer_leave_with_security_enabled=False,
                 buyer_cutoff_hour=15,
@@ -157,6 +161,35 @@ class Sandbox:
                     .values(expires_at=when)
                 )
         return True
+
+    def demo_otp(self, handle, owner):
+        buyer = self.buyers.get(handle)
+        link_id = None
+        if buyer is not None and buyer["owner"] == owner:
+            link_id = UUID(buyer["link_id"])
+        elif (owner, handle) in self.workspace_buyers and re.fullmatch(r"[A-Za-z0-9_-]{43}", handle):
+            with self.database.sessions() as session:
+                link = session.scalar(select(ConfirmationLink).where(
+                    ConfirmationLink.token_hash == hashlib.sha256(handle.encode()).hexdigest()
+                ))
+                link_id = link.id if link else None
+        if link_id is None:
+            return None
+        with self.database.sessions() as session:
+            challenge = session.scalar(
+                select(BuyerOtpChallenge)
+                .where(
+                    BuyerOtpChallenge.link_id == link_id,
+                    BuyerOtpChallenge.status == "PENDING",
+                    BuyerOtpChallenge.provider == "DEMO",
+                    BuyerOtpChallenge.expires_at > datetime.now(UTC),
+                    BuyerOtpChallenge.demo_code.is_not(None),
+                )
+                .order_by(BuyerOtpChallenge.created_at.desc())
+            )
+            if challenge is None:
+                return None
+            return {"simulation": True, "code": challenge.demo_code, "expires_at": challenge.expires_at}
 
     def reset(self):
         with self.lock:

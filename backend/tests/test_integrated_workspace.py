@@ -65,8 +65,11 @@ def test_persistent_workspace_and_native_buyer_capability_survive_restart(tmp_pa
             call(client, "GET", "/api/confirm/@buyer/details", buyer_handle=handle).status_code
             == 401
         )
+        call(client, "POST", "/api/confirm/@buyer/otp", {}, buyer_handle=handle)
+        demo_code = client.get("/dashboard/buyer-otp", params={"buyer_handle": handle}).json()
+        assert demo_code["simulation"] is True
         verified = call(
-            client, "POST", "/api/confirm/@buyer/verify", {"last_four": "0000"}, buyer_handle=handle
+            client, "POST", "/api/confirm/@buyer/verify", {"code": demo_code["code"]}, buyer_handle=handle
         )
         assert verified.status_code == 200
         assert "access_token" not in json.dumps(verified.json())

@@ -44,6 +44,31 @@ class BuyerSession(Base):
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 
+class BuyerOtpChallenge(Base):
+    __tablename__ = "buyer_otp_challenges"
+    __table_args__ = (
+        CheckConstraint("attempts BETWEEN 0 AND 3", name="ck_buyer_otp_attempts"),
+        CheckConstraint("generation >= 0", name="ck_buyer_otp_generation"),
+        Index("ix_buyer_otp_link_status", "link_id", "status"),
+        Index("ix_buyer_otp_phone_status", "phone_binding", "status"),
+    )
+    id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
+    link_id: Mapped[UUID] = mapped_column(ForeignKey("confirmation_links.id", ondelete="RESTRICT"))
+    phone_binding: Mapped[str] = mapped_column(String(64))
+    generation: Mapped[int] = mapped_column(Integer)
+    code_digest: Mapped[str] = mapped_column(String(64))
+    # Only local/test challenges retain a retrievable code for the loopback demo boundary.
+    demo_code: Mapped[str | None] = mapped_column(String(6))
+    provider: Mapped[str] = mapped_column(String(16))
+    verification_sid: Mapped[str | None] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(String(16), default="PENDING")
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    expires_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    resend_after: Mapped[datetime] = mapped_column(UTCDateTime())
+    consumed_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
+    created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
+
+
 class LocationReference(Base):
     """Dispatcher-attested anchor. Buyer-submitted coordinates never become anchors."""
 
