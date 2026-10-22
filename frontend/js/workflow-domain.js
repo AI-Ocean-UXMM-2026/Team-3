@@ -24,12 +24,12 @@
   // Demo hub until the shop enters its own in Hub policy.
   const HUB = { name: 'Hledan hub', address: 'No. 12, Hledan Road, Kamayut', landmark: 'Next to the Hledan Centre car park', lat: 16.8262, lng: 96.1286, demo: true };
   // Riders added from the Riders page join the built-in two at load time.
-  const registerRiders = list => { for (const r of list || []) ACTORS[r.id] ??= { id: r.id, role: 'rider', hubId: 'H-1', name: r.name, phone: r.phone, vehicle: r.vehicle }; };
+  const registerRiders = list => { for (const r of list || []) ACTORS[r.id] ??= { id: r.id, role: 'rider', hubId: 'H-1', name: r.name, phone: r.phone, vehicle: r.vehicle, availability: r.availability || 'AVAILABLE' }; };
   const ACTORS = {
     admin: { id: 'admin-1', role: 'admin', hubId: 'H-1', name: 'Admin' },
     customer: { id: 'customer-preview', role: 'customer', hubId: 'H-1', name: 'Customer' },
-    rider: { id: 'rider-1', role: 'rider', hubId: 'H-1', name: 'Ko Aung', phone: '09 4500 12345', vehicle: 'Motorbike' },
-    rider2: { id: 'rider-2', role: 'rider', hubId: 'H-1', name: 'Ko Wai', phone: '09 7700 54321', vehicle: 'Motorbike' }
+    rider: { id: 'rider-1', role: 'rider', hubId: 'H-1', name: 'Ko Aung', phone: '09 4500 12345', vehicle: 'Motorbike', availability: 'AVAILABLE' },
+    rider2: { id: 'rider-2', role: 'rider', hubId: 'H-1', name: 'Ko Wai', phone: '09 7700 54321', vehicle: 'Motorbike', availability: 'AVAILABLE' }
   };
   // Deliberately small fixture geography. These rectangles are NOT real township boundaries.
   const PLACES = [
@@ -169,7 +169,7 @@
     }
     function closeRoute(r,actor){r.state='closed';r.closedAt=now();event('close_route',null,r.id,actor);}
     function allocate(o,actor){
-      admin(actor);const riders=Object.values(ACTORS).filter(a=>a.role==='rider'&&a.availability!=='UNAVAILABLE'&&!o.declinedRiders?.includes(a.id)&&!state.routes.some(r=>r.riderId===a.id&&r.state!=='closed'&&r.orderIds.some(orderId=>{const item=state.orders.find(x=>x.id===orderId);return item&&!['delivered','returned','cancelled'].includes(item.state);}))).sort((a,b)=>a.id.localeCompare(b.id));
+      admin(actor);const riders=Object.values(ACTORS).filter(a=>a.role==='rider'&&a.availability==='AVAILABLE'&&!o.declinedRiders?.includes(a.id)&&!state.routes.some(r=>r.riderId===a.id&&r.state!=='closed'&&r.orderIds.some(orderId=>{const item=state.orders.find(x=>x.id===orderId);return item&&!['delivered','returned','cancelled'].includes(item.state);}))).sort((a,b)=>a.id.localeCompare(b.id));
       if(!riders.length){o.allocationStatus='WAITING_FOR_RIDER';event('rider_allocation_waiting',o.id,'No available rider without an active assignment',actor);return null;}
       const rider=riders[0],id=`RT-${uid().slice(-8)}`,r={id,riderId:rider.id,date:o.date,state:'draft',orderIds:[o.id],active:null,handover:null};state.routes.push(r);o.routeId=id;o.state='assigned';o.responseStatus='PENDING';o.offerVersion=(o.offerVersion||0)+1;o.allocationStatus='ASSIGNED';o.accepted=null;event('rider_offer_sent',o.id,`Offer ${o.offerVersion} sent to ${rider.name}`,actor);return r;
     }

@@ -48,6 +48,17 @@ test('free automatic assignment sends a pending offer; decline replaces it; acce
  const replacement=s.snapshot().routes.find(r=>r.id===o.routeId);command(s,'offer_response',{id,action:'ACCEPT',offerVersion:o.offerVersion},W.ACTORS.rider2);
  o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'assigned');command(s,'dispatch',{routeId:replacement.id});assert.equal(s.order(id).state,'out_for_delivery');
 });
+test('prototype automatic assignment excludes riders unless availability is exactly AVAILABLE',()=>{
+ const prior=[W.ACTORS.rider.availability,W.ACTORS.rider2.availability];
+ try{
+  for(const availability of ['ON_BREAK','OFFLINE','UNAVAILABLE','UNKNOWN']){
+   W.ACTORS.rider.availability=availability;W.ACTORS.rider2.availability=availability;
+   const s=make();confirm(s);command(s,'auto_assign',{id:'LP-2045'});
+   assert.equal(s.order('LP-2045').allocationStatus,'WAITING_FOR_RIDER',availability);
+   assert.equal(s.order('LP-2045').routeId,null,availability);
+  }
+ }finally{W.ACTORS.rider.availability=prior[0];W.ACTORS.rider2.availability=prior[1];}
+});
 test('reissued/revoked/expired links never grant old access',()=>{
  const s=make();command(s,'issue_link',{id:'LP-2045'});assert.equal(s.customer('demo-2045').available,false);
  const token=s.order('LP-2045').link.token;command(s,'revoke_link',{id:'LP-2045'});assert.equal(s.customer(token).status,'revoked');

@@ -95,6 +95,35 @@ test('stale rider-offer reply refreshes the queue and never fabricates acceptanc
  assert.equal(store.order('synthetic-order').responseStatus,'PENDING');
 });
 
+test('dispatcher refresh uses the replacement route and rider returned after a declined offer',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));const {api,store}=await setup();
+ let backendOrder={...structuredClone(original),status:'READY_FOR_DISPATCH',version:2};
+ let backendRoutes=[];let queue=[];
+ const route=(id,riderId,items)=>({id,rider_id:riderId,day:'2026-10-23',state:'draft',items});
+ api.all=async(side,path)=>path==='/api/orders'?[structuredClone(backendOrder)]:path==='/api/routes'?structuredClone(backendRoutes):path==='/api/riders'?[{id:'rider-one',name:'First fictional rider'},{id:'rider-two',name:'Replacement fictional rider'}]:path.endsWith('/queue')?{items:structuredClone(queue)}:path.endsWith('/route-plans')?{items:[]}:[];
+ api.order=async()=>structuredClone(backendOrder);
+ api.autoAssignment=async()=>{
+  backendOrder={...backendOrder,status:'ASSIGNED',version:3,parsing_metadata:{parcel:{...backendOrder.parsing_metadata.parcel,route_id:'first-route'}}};
+  backendRoutes=[route('first-route','rider-one',[{id:original.id,status:'ASSIGNED'}])];
+  return {allocation_status:'ASSIGNED',assignment:{id:'first-offer',rider_id:'rider-one',offer_version:1},route:{id:'first-route'}};
+ };
+ api.call=async(side,path)=>path.endsWith('/queue')?{items:structuredClone(queue)}:path.endsWith('/route-plans')?{items:[]}:{};
+ api.respondToOffer=async()=>{
+  backendOrder={...backendOrder,version:4,parsing_metadata:{parcel:{...backendOrder.parsing_metadata.parcel,route_id:'replacement-route'}}};
+  backendRoutes=[route('first-route','rider-one',[]),route('replacement-route','rider-two',[{id:original.id,status:'ASSIGNED'}])];queue=[];
+  return {allocation_status:'ASSIGNED',replacement_assignment:{rider_id:'rider-two'},replacement_route:{id:'replacement-route'}};
+ };
+ await store.sync('dispatch');await store.execute('assign',{id:original.id,acknowledge:true});
+ queue=[{order_id:original.id,order_version:3,assignment_id:'first-offer',offer_version:1,response_status:'PENDING',status:'ASSIGNED',customer_name:'Fictional buyer',route_id:'first-route',allocation_status:'ASSIGNED'}];
+ await store.selectRider('rider-one');
+ await store.execute('offer_response',{id:original.id,action:'DECLINE'},{id:'rider-one'});
+ await store.sync('dispatch');
+ assert.equal(store.order(original.id).routeId,'replacement-route');
+ assert.equal(store.order(original.id).assignedRiderId,'rider-two');
+ assert.equal(store.order(original.id).state,'assigned');
+ assert.equal(store.snapshot().routes.find(r=>r.id==='replacement-route').riderId,'rider-two');
+});
+
 test('live buyer OTP preview is separate from the public challenge and is cleared after verification',async()=>{
  const token='a'.repeat(43),f=apiFixture();f.api.openBuyer=()=>{f.api.buyer={card:async()=>({state:'VERIFICATION_REQUIRED'}),requestOtp:async()=>({challenge_id:'challenge',destination_masked:'••••4567',expires_at:'later',resend_after:'soon',mode:'DEMO'}),demoCode:async()=>({simulation:true,code:'123456',notice:'SIMULATION ONLY'}),verify:async code=>assert.equal(code,'123456'),details:async()=>({order_reference:'buyer-ref',status:'CONFIRMED'})};};
  const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'track/'+token});await store.requestOtp(token);

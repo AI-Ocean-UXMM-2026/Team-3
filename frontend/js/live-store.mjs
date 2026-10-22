@@ -13,7 +13,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   let state={orders:[],routes:[],plans:[],riderPlans:[],riders:[],events:[],outbox:[],downloads:{},policy:{areas:[],cutoff:900,enforceCutoff:true,maxRetries:0,radius:500,linkDays:3,version:1,noteLimit:2000},policyHistory:[],clockMode:'live'};
   const all=(side,path)=>api.all(side,path),call=(path,method='GET',body,side='admin')=>api.call(side,path,{method,body});
   function rows(routes){routeRows.clear();return routes.map(r=>{routeRows.set(r.id,r);return {...r,riderId:r.rider_id,date:r.day,orderIds:r.items.map(o=>o.id),active:null};});}
-  function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r),allocation=allocationStates.get(r.id);if(links.has(r.id))o.link=links.get(r.id);if(allocation){o.allocationStatus=allocation.status;o.allocationReason=allocation.reason;if(allocation.routeId)o.routeId=allocation.routeId;if(allocation.riderId)o.assignedRiderId=allocation.riderId;}return o;});}
+  function remember(data){native.clear();state.orders=data.map(r=>{native.set(r.id,r);const o=projectOrder(r),allocation=allocationStates.get(r.id);if(links.has(r.id))o.link=links.get(r.id);if(o.routeId)allocationStates.delete(r.id);else if(allocation){o.allocationStatus=allocation.status;o.allocationReason=allocation.reason;}const route=o.routeId&&routeRows.get(o.routeId);if(route)o.assignedRiderId=route.rider_id;return o;});}
   function applyBuyerReviews(id,updates){
     requests=updates;const pending=updates.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution),o=state.orders.find(o=>o.id===id);
     if(o){o.pendingBuyerReviewCount=pending.length;o.buyerResponseRecorded=updates.some(r=>r.kind==='RESPONSE');const location=pending.find(r=>r.kind==='LOCATION');o.proposedPin=location?point(location.submitted_values.latitude,location.submitted_values.longitude):null;}
@@ -49,7 +49,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     const [orders,routes,riders]=await Promise.all([all('admin','/api/orders'),all('admin','/api/routes'),all('admin','/api/riders')]);
     state.riders=riders;state.riderPlans=[];
     state.plans=target.split('/')[0]==='routes'?await all('admin','/api/routes/plans'):[];
-    remember(orders);state.routes=rows(routes);
+    state.routes=rows(routes);remember(orders);
     Object.keys(W.ACTORS).filter(k=>W.ACTORS[k].role==='rider').forEach(k=>delete W.ACTORS[k]);
     riders.forEach((r,i)=>W.ACTORS[i?'rider'+(i+1):'rider']={id:r.id,role:'rider',name:r.name,hubId:'local'});
     state.events=[];requests=[];
@@ -102,13 +102,14 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       const current=await api.order(p.id),key=`${p.id}:${current.version}`;native.set(p.id,current);
       let requestId=pendingAutoRequests.get(key);if(!requestId){requestId=crypto.randomUUID();pendingAutoRequests.set(key,requestId);}
       let allocation;try{allocation=await api.autoAssignment(current,{acknowledge:!!p.acknowledge,received:!!p.received},requestId);}catch(e){throw e;}
-      pendingAutoRequests.delete(key);allocationStates.set(p.id,{status:allocation.allocation_status,reason:allocation.reason||'',routeId:allocation.route?.id||null,riderId:allocation.assignment?.rider_id||null});
+      pendingAutoRequests.delete(key);allocationStates.set(p.id,{status:allocation.allocation_status,reason:allocation.reason||''});
     }else if(type==='offer_response'){
       await connect('rider',actor.id);const q=queueRows.find(q=>q.order_id===p.id);if(!q)throw Error('This offer is not in the selected rider queue. Refresh before retrying.');
       const assignmentId=q.assignment_id;if(!assignmentId||!Number.isInteger(q.offer_version))throw Error('This offer is stale. Refresh the rider queue before responding.');
       let requestId=pendingOfferRequests.get(assignmentId);if(!requestId){requestId=crypto.randomUUID();pendingOfferRequests.set(assignmentId,requestId);}
       try{value=await api.respondToOffer(q,p.action,requestId);}catch(e){await sync().catch(()=>{});throw e;}
       pendingOfferRequests.delete(assignmentId);
+      if(value?.allocation_status==='WAITING_FOR_RIDER')allocationStates.set(p.id,{status:value.allocation_status,reason:value.reason||''});else allocationStates.delete(p.id);
     }else if(type==='unassign'){await call(`/api/orders/${p.id}/unassign`,'POST',{expected_version:row(p.id).version});
     }else if(type==='dispatch'){await api.routeAction('admin',routeRows.get(p.routeId),'DISPATCH');
     }else if(type==='cancel'){await api.status(row(p.id),'CANCELLED');
