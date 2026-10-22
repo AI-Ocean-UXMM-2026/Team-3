@@ -57,6 +57,12 @@ describe("Layer 1: COD and prepaid (HLR-03)", () => {
     expect(extractPayment("ဂါဝန် 25000 ks + ပို့ခ 3000 ks\nCOD 28000")).toMatchObject({ codAmount: 28000 });
   });
 
+  it("keeps the COD when the chat says the money is still to be paid", () => {
+    expect(extractPayment("COD 25000 to be paid on delivery")).toMatchObject({ codAmount: 25000, prepaid: false });
+    expect(extractPayment("COD 18000 not paid yet")).toMatchObject({ codAmount: 18000, prepaid: false });
+    expect(extractPayment("Paid by KPay")).toMatchObject({ codAmount: 0, prepaid: true });
+  });
+
   it("treats KBZPay / WavePay / AYA Pay transfers as prepaid with nothing to collect", () => {
     expect(extractPayment("KPay နဲ့ ငွေလွှဲပြီးပါပြီ")).toEqual({ codAmount: 0, prepaid: true, method: "KBZPay" });
     expect(extractPayment("Wave pay prepaid")).toEqual({ codAmount: 0, prepaid: true, method: "WavePay" });

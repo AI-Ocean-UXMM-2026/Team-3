@@ -14,6 +14,7 @@ function memory(){const data=new Map();return {getItem:k=>data.get(k)||null,setI
 test('browser bundle runs without Node globals and the prototype detects it',()=>{
  assert.equal(typeof P.parseRules,'function');assert.equal(W.enhanced(),true);
  assert.equal(P.parseRules('Ma Thida\n09 777 123 456').phones[0].number,'09777123456');
+ {const r=P.parseRules('COD 25000 to be paid on delivery');assert.deepEqual([r.codAmount,r.prepaid],[25000,false]);assert.equal(P.parseRules('Already paid, KPay').prepaid,true);}
 });
 test('unlabelled Burmese chat order fills name, phone, township, street and COD',()=>{
  const p=W.parse('Ko Min\n09 794 339 082\nအမှတ် ၁၂ သီရိမင်္ဂလာလမ်း ကမာရွတ်\n၃ သောင်း ၅ ထောင် ကျပ်');
