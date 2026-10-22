@@ -47,7 +47,7 @@ const WALLETS: [RegExp, WalletMethod][] = [
   [/\bwave\s?(?:pay|money)?\b/i, "WavePay"],
   [/\baya\s?pay\b/i, "AYA Pay"],
 ];
-const PAID_RE = /prepaid|\bpaid\b|(?:လွှဲ|ချေ|ရှင်း)(?:ထား)?ပြီး/i;
+const PAID_RE = /prepaid|(?<!\b(?:to\s+be|not|be|yet|unless)\s+)\bpaid\b(?!\s+(?:on|at|upon|when|after)\b)|(?:လွှဲ|ချေ|ရှင်း)(?:ထား)?ပြီး/i;
 const LABEL_RE = /(?:cod|total|amount|ငွေ|စုစုပေါင်း|ကောက်ရန်|ကျသင့်ငွေ)\s*[:=-]?\s*$/i;
 const CURRENCY_RE = /^\s*(?:ks\b|kyats?\b|mmk\b|ကျပ်|ကျ)/i;
 const UNIT_VALUES: Record<string, number> = { "သိန်း": 100_000, "သောင်း": 10_000, "ထောင်": 1_000 };

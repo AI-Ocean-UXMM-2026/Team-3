@@ -88,3 +88,28 @@ Any future Burmese wording changes need another review. Refresh source reference
 | အချိန်မရွေး | Any time | Slot card |
 | သိမ်းပြီးပါပြီ | Saved (your answer is saved) | Buyer page, saved answer card |
 | ပြင်မည် | Edit (my answer) | Buyer page, Edit button |
+
+## Added 22 Oct 2026: sign-in, sign-out and accept alerts (needs native review)
+
+| Burmese | English meaning | Where |
+| --- | --- | --- |
+| လိပ်စာလည်းမှန် အချိန်လည်းမှန် | Right address, right time (motto, given by the project owner) | Both sign-in pages |
+| ပို့ဆောင်သူ | Rider | Rider sign-in role chip; buyer text-message banner |
+| ဝင်ရောက်ရန် | Sign in (page title) | Rider sign-in |
+| ပထမဆုံးအကြိမ် | First time here | Rider invite-code view |
+| ဖိတ်ခေါ်ကုဒ် | Invite code | Rider invite-code view |
+| ဖုန်းနံပါတ် | Phone number | Rider sign-in, shop account form |
+| လျှို့ဝှက်နံပါတ် ၄ လုံး | 4-digit PIN | Rider sign-in |
+| ဝင်မည် / ဆက်လုပ်မည် | Sign in / Continue (button) | Rider sign-in |
+| ဆိုင်အမည် | Shop name | Create shop account |
+| ဖုန်း / အီးမေးလ် | Phone or email | Dispatcher sign-in |
+| စကားဝှက် | Password | Dispatcher sign-in |
+| ထွက်မည် | Sign out | Rider menu |
+| ဤဖုန်းမှ ထွက်မည်လား | Sign out of this phone? | Rider sign-out confirm |
+| ပို့ဆောင်သူ {name} က သင့်ပါဆယ် {ref} ကို လက်ခံပြီးပါပြီ။ | Rider {name} accepted your parcel {ref}. | Buyer text-message banner |
+| သင့်ဆီ ရောက်လာတော့မည် | You're the next stop (wording given by the project owner) | Buyer page heading when the rider's next stop is the buyer |
+| ပစ္စည်းယူရန် ဂိုဒေါင်သို့ အရင်သွားပါ | Pick up at the hub first | Rider hub pickup card heading |
+| ပစ္စည်းယူရန် ဂိုဒေါင် | Pickup hub | Rider hub sign and hub map |
+| ပို့ဆောင်သူများ | Riders | Dispatcher More menu, Riders page title |
+| အမည် | Name | Add rider form |
+| မြေပုံ | Map (button label) | Rider hub card, open the hub map |

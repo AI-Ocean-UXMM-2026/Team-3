@@ -20,16 +20,25 @@
     { time: '16:00–18:00', label: 'Evening', my: 'ညနေ' }
   ];
   const REASONS = ['Buyer not answering', 'Not at home', 'Can’t find the place', 'Buyer refused'];
+  const VEHICLES = ['Motorbike','Bicycle','Car'];
+  // Demo hub until the shop enters its own in Hub policy.
+  const HUB = { name: 'Hledan hub', address: 'No. 12, Hledan Road, Kamayut', landmark: 'Next to the Hledan Centre car park', lat: 16.8262, lng: 96.1286, demo: true };
+  // Riders added from the Riders page join the built-in two at load time.
+  const registerRiders = list => { for (const r of list || []) ACTORS[r.id] ??= { id: r.id, role: 'rider', hubId: 'H-1', name: r.name, phone: r.phone, vehicle: r.vehicle }; };
   const ACTORS = {
     admin: { id: 'admin-1', role: 'admin', hubId: 'H-1', name: 'Admin' },
     customer: { id: 'customer-preview', role: 'customer', hubId: 'H-1', name: 'Customer' },
-    rider: { id: 'rider-1', role: 'rider', hubId: 'H-1', name: 'Ko Aung' },
-    rider2: { id: 'rider-2', role: 'rider', hubId: 'H-1', name: 'Ko Wai' }
+    rider: { id: 'rider-1', role: 'rider', hubId: 'H-1', name: 'Ko Aung', phone: '09 4500 12345', vehicle: 'Motorbike' },
+    rider2: { id: 'rider-2', role: 'rider', hubId: 'H-1', name: 'Ko Wai', phone: '09 7700 54321', vehicle: 'Motorbike' }
   };
   // Deliberately small fixture geography. These rectangles are NOT real township boundaries.
   const PLACES = [
-    { id: 'kamayut', name: 'Kamayut', aliases: ['kamayut','ကမာရွတ်','hledan','လှည်းတန်း'], lat: 16.8254, lng: 96.1309, streets: ['Hledan Road','University Avenue','Thiri Mingalar Road'], bounds: [16.818,16.845,96.121,96.147] },
-    { id: 'sanchaung', name: 'Sanchaung', aliases: ['sanchaung','စမ်းချောင်း'], lat: 16.8034, lng: 96.132, streets: ['Baho Road','Bargayar Road'], bounds: [16.789,16.817,96.117,96.146] }
+    { id: 'kamayut', name: 'Kamayut', aliases: ['kamayut','ကမာရွတ်','hledan','လှည်းတန်း'], lat: 16.8254, lng: 96.1309, streets: ['Hledan Road','University Avenue','Thiri Mingalar Road'], bounds: [16.818,16.845,96.121,96.147],
+      points: { 'hledan road': [16.8247,96.1293], 'university avenue': [16.8320,96.1350], 'thiri mingalar road': [16.8370,96.1290] },
+      landmarks: [[/junction square/i,[16.8196,96.1306]],[/hledan cent(?:er|re)|လှည်းတန်း/i,[16.8255,96.1290]]] },
+    { id: 'sanchaung', name: 'Sanchaung', aliases: ['sanchaung','စမ်းချောင်း'], lat: 16.8034, lng: 96.132, streets: ['Baho Road','Bargayar Road'], bounds: [16.789,16.817,96.117,96.146],
+      points: { 'baho road': [16.8040,96.1270], 'bargayar road': [16.8010,96.1330] },
+      landmarks: [[/sanchaung market|စမ်းချောင်းဈေး/i,[16.8030,96.1300]]] }
   ];
   const copy = x => JSON.parse(JSON.stringify(x));
   const uid = () => root.crypto?.randomUUID?.() || `demo-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
@@ -43,6 +52,15 @@
   const readyFrom = (prepId,today) => {const p=PREP.find(x=>x.id===prepId);return p?addDays(today,p.days):today;};
   const validWindow = time => time===ANY_TIME||WINDOWS.includes(time);
   const distance = (a,b) => {const rad=x=>x*Math.PI/180;const h=Math.sin(rad(b.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(b.lat))*Math.sin(rad(b.lng-a.lng)/2)**2;return 6371000*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));};
+  // Auto pin: the closest point the address supports. Landmark beats street; a street we don't know falls back to the township centre.
+  function addressPoint(areaId,street,landmark,text=''){
+    const area=PLACES.find(a=>a.id===areaId);if(!area)return null;
+    const at=([lat,lng],precision)=>({point:{lat,lng},precision});
+    const hay=[landmark,street,text].filter(Boolean).join(' ');
+    const lm=(area.landmarks||[]).find(([re])=>re.test(hay));if(lm)return at(lm[1],'landmark');
+    const st=area.points?.[String(street||'').trim().toLowerCase()];if(st)return at(st,'street');
+    return String(street||'').trim()||String(landmark||'').trim()?at([area.lat,area.lng],'township'):null;
+  }
   const inside = (p,area) => !!p && Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.lat>=area.bounds[0] && p.lat<=area.bounds[1] && p.lng>=area.bounds[2] && p.lng<=area.bounds[3];
   // Optional LannPya AI order parser (vendor/lannpya-order-parser.js): Zawgyi conversion and Burmese rules/dictionary.
   // Deterministic and local; it only fills fields the labelled rules below leave empty.
@@ -64,8 +82,8 @@
     const prepaid=/^prepaid$/i.test(field('Payment'))||!!ruled?.prepaid;
     const encodingReview=/[\u1060-\u108f]/.test(text);
     const landmark=field('Landmark'), vague=/near|နား|အနီး|somewhere/i.test(landmark) && !/gate|building|တိုက်|အမှတ်/i.test(landmark);
-    const anchor=street && area?.streets.includes(street) ? {lat:area.lat,lng:area.lng}:null;
-    const fields={name:field('Name')||take('name',extra?.name||''),phone:phones.length===1?phones[0]:'',areaId:area?.id||'',street,landmark,floor:field('Floor'),note:field('Note'),reference:field('Invoice'),item:field('Item')||'Parcel',payment:prepaid?'prepaid':Number.isSafeInteger(amount)&&amount>0?'cod':'unknown',expected:prepaid?0:amount,anchor,pin:anchor?{...anchor}:null,location:anchor&&!vague?'dictionary_matched':'unresolved',encodingReview,normalized:text,time:WINDOWS.includes(field('Time'))?field('Time'):WINDOWS[0],date:field('Date')||null};
+    const known=!!(street && area?.streets.includes(street)), auto=addressPoint(area?.id,street,landmark,text), anchor=auto?{...auto.point}:null;
+    const fields={name:field('Name')||take('name',extra?.name||''),phone:phones.length===1?phones[0]:'',areaId:area?.id||'',street,landmark,floor:field('Floor'),note:field('Note'),reference:field('Invoice'),item:field('Item')||'Parcel',payment:prepaid?'prepaid':Number.isSafeInteger(amount)&&amount>0?'cod':'unknown',expected:prepaid?0:amount,anchor,pin:anchor?{...anchor}:null,pinFrom:auto?.precision||null,location:known&&!vague?'dictionary_matched':'unresolved',encodingReview,normalized:text,time:WINDOWS.includes(field('Time'))?field('Time'):WINDOWS[0],date:field('Date')||null};
     const provenance=Object.fromEntries(['phone','expected','payment'].map(k=>[k,{source:'rule',evidence:k==='phone'?phones.join(', '):amountText||field('Payment')||(ruled?(ruled.prepaid?`Prepaid${ruled.paymentMethod?' via '+ruled.paymentMethod:''}`:String(ruled.codAmount)):'')} ]));
     for(const k of ['areaId','street','anchor'])provenance[k]={source:'dictionary',evidence:area?.name||'No supported match'};
     for(const k of ['name','item','landmark','floor','note'])provenance[k]={source:'rule',evidence:fields[k]||'Not extracted'};
@@ -117,13 +135,14 @@
       state=JSON.parse(storage?.getItem(KEY)||'null');
     }catch{persistent=false;}
     if(!state||state.version!==4)state=copy(options.initialState||seed());
+    registerRiders(state.riders);
     const sessions=new Map();
     const now=()=>options.now?options.now():state.clockMode==='fixed'?state.clock:Date.now();
     const get=id=>{const o=state.orders.find(x=>x.id===id);if(!o)throw Error('Order not found.');return o;};
     const route=id=>{const r=state.routes.find(x=>x.id===id);if(!r)throw Error('Route not found.');return r;};
     const write=()=>{try{storage?.setItem(KEY,JSON.stringify(state));if(!storage)persistent=false;}catch{persistent=false;}};
     write();
-    const refresh=()=>{try{const other=JSON.parse(storage?.getItem(KEY)||'null');if(other?.version===4&&other.revision>state.revision)state=other;}catch{persistent=false;}};
+    const refresh=()=>{try{const other=JSON.parse(storage?.getItem(KEY)||'null');if(other?.version===4&&other.revision>state.revision){state=other;registerRiders(state.riders);}}catch{persistent=false;}};
     const event=(type,id,text,actor)=>state.events.unshift({id:uid(),at:now(),type,orderId:id,text,actor:actor.id});
     const admin=a=>{if(a?.role!=='admin'||a.hubId!=='H-1')throw Error('Admin access required.');};
     const staff=(a,o)=>{if(a?.hubId!==o.hubId||a?.role!=='admin')throw Error('You cannot access this order.');};
@@ -169,6 +188,7 @@
         if(f.lat!==''&&f.lat!=null||f.lng!==''&&f.lng!=null){point={lat:Number(f.lat),lng:Number(f.lng)};if(f.lat===''||f.lng===''||!inside(point,area))throw Error('Enter both coordinates inside the selected demo township, or leave both empty for customer location submission.');}
         const id=`LP-${String(state.nextOrderNumber++).padStart(4,'0')}`;
         const fields={...parse(''),name:String(f.name).trim(),phone,item:String(f.item).trim(),sender:String(f.sender||'LannPya Delivery').trim(),reference:String(f.reference||'').trim(),areaId:area.id,street:String(f.street||'').trim(),landmark:String(f.landmark||'').trim(),floor:String(f.floor||'').trim(),note:String(f.note||''),payment:f.payment,expected:f.expected,date:f.date,time:f.time,prep:f.prep||'',readyDate:f.prep?readyFrom(f.prep,day(now())):'',encodingReview:false,raw:'Manually entered by admin',normalized:'',anchor:point&&p.locationReviewed?point:null,pin:point,proposedPin:point&&!p.locationReviewed?point:null,location:point&&p.locationReviewed?'dispatcher_verified':point?'buyer_submitted':'unresolved',received:!!p.received};
+        if(!point){const auto=addressPoint(area.id,fields.street,fields.landmark);if(auto){fields.anchor={...auto.point};fields.pin={...auto.point};fields.pinFrom=auto.precision;}}
         fields.provenance=Object.fromEntries(Object.keys(fields).filter(k=>!['raw','normalized','provenance'].includes(k)).map(k=>[k,{source:'manual',evidence:'Admin manual entry',actor:actor.id,at:now()}]));
         const item=newOrder(fields,id);item.link={token:uid(),status:'active',failures:0,issued:now(),expires:now()+state.policy.linkDays*86400000,shared:false};state.orders.push(item);recalc(item);event('order_created',id,'Manual admin order created',actor);event('buyer_link_issued',id,'Customer confirmation link created',actor);return id;
       }
@@ -182,6 +202,32 @@
       if(type==='clock_live'){admin(actor);state.clockMode='live';return;}
       if(type==='prepare_offline'){if(actor.role!=='rider')throw Error('Rider access required.');state.downloads=state.downloads||{};state.downloads[actor.id]={at:now(),orderIds:state.orders.filter(x=>x.routeId&&route(x.routeId).riderId===actor.id&&['dispatched','in_progress'].includes(route(x.routeId).state)).map(x=>x.id)};event('queue_prepared',null,'Assigned queue prepared on this device',actor);return;}
       if(type==='policy'){admin(actor);if(!Number.isInteger(p.cutoff)||p.cutoff<0||p.cutoff>1439||!Number.isInteger(p.maxRetries)||p.maxRetries<0||p.maxRetries>3||!Number.isInteger(p.linkDays)||p.linkDays<1||p.linkDays>30)throw Error('Invalid cutoff, retry limit or link lifetime.');if(p.areas&&(!Array.isArray(p.areas)||!p.areas.length||p.areas.some(id=>!PLACES.some(a=>a.id===id))))throw Error('Enable at least one supported demo township.');state.policyHistory.push(copy(state.policy));Object.assign(state.policy,{areas:p.areas||state.policy.areas||PLACES.map(p=>p.id),cutoff:p.cutoff,maxRetries:p.maxRetries,linkDays:p.linkDays,enforceCutoff:p.enforceCutoff??state.policy.enforceCutoff,version:state.policy.version+1});state.orders.forEach(recalc);event('policy_changed',null,`Policy version ${state.policy.version}`,actor);return;}
+      if(type==='set_hub'){
+        admin(actor);const lat=Number(p.lat),lng=Number(p.lng);
+        if(!String(p.name||'').trim()||!String(p.address||'').trim())throw Error('Enter the hub name and address.');
+        if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<16.6||lat>17.1||lng<95.9||lng>96.4)throw Error('Enter coordinates inside Yangon, for example 16.8262 and 96.1286.');
+        state.hub={name:String(p.name).trim(),address:String(p.address).trim(),landmark:String(p.landmark||'').trim(),lat,lng,demo:false};event('hub_updated',null,state.hub.name,actor);return;
+      }
+      if(type==='pickup'){
+        if(actor?.role!=='rider')throw Error('Assigned rider access required.');const r=route(p.routeId);if(r.riderId!==actor.id)throw Error('This route belongs to another rider.');
+        if(!['dispatched','in_progress'].includes(r.state))throw Error('The hub hasn’t sent this route yet.');if(r.pickedUpAt)return;
+        r.pickedUpAt=now();r.pickedUp=r.orderIds.slice();event('route_picked_up',null,`${r.id}: ${r.orderIds.length} parcels collected`,actor);return;
+      }
+      if(type==='add_rider'){
+        admin(actor);const name=String(p.name||'').trim(),phone=digits(p.phone||'').replace(/[^\d]/g,'').replace(/^95/,'0');
+        if(!name)throw Error('Enter the rider’s name.');if(!/^09\d{7,9}$/.test(phone))throw Error('Enter a Myanmar mobile number that starts with 09.');
+        if(!VEHICLES.includes(p.vehicle))throw Error('Choose what the rider rides.');
+        if(Object.values(ACTORS).some(a=>a.role==='rider'&&digits(a.phone||'').replace(/[^\d]/g,'')===phone))throw Error('A rider with this phone number is already on the list.');
+        state.riders??=[];const id=`rider-${Object.values(ACTORS).filter(a=>a.role==='rider').length+1}`;
+        const letters='ABCDEFGHJKMNPQRSTUVWXYZ23456789',code='LP-'+Array.from({length:4},(_,i)=>letters[parseInt(uid().replace(/[^0-9a-f]/g,'').slice(i*2,i*2+2)||'0',16)%letters.length]).join('');
+        const rider={id,name,phone:phone.replace(/^(09)(\d{4})(\d+)$/,'$1 $2 $3'),vehicle:p.vehicle,addedAt:now(),invite:{code,expires:now()+86400000,used:false}};
+        state.riders.push(rider);registerRiders([rider]);event('rider_added',null,`${name} added; invite ${code}`,actor);return {id,code};
+      }
+      if(type==='use_invite'){
+        const code=String(p.code||'').trim().toUpperCase(),r=(state.riders||[]).find(x=>x.invite?.code===code);
+        if(!r||r.invite.used||r.invite.expires<now())throw Error('That code doesn’t work. Ask your hub for a new one.');
+        r.invite.used=true;event('rider_joined',null,`${r.name} used their invite`,{id:r.id});return {id:r.id};
+      }
       if(type==='new_route'){admin(actor);if(!Object.values(ACTORS).some(a=>a.role==='rider'&&a.id===p.riderId)||!validDay(p.date))throw Error('Choose rider and delivery date.');const id=`RT-${uid().slice(-8)}`;state.routes.push({id,riderId:p.riderId,date:p.date,state:'draft',orderIds:[],active:null,handover:null});return id;}
       if(type==='dispatch'){
         admin(actor);const r=route(p.routeId);if(r.state!=='draft'||!r.orderIds.length)throw Error('Choose a nonempty draft route.');
@@ -205,7 +251,7 @@
         if(!validWindow(o.time)||!validDay(o.date))throw Error('Choose a valid delivery date and window.');
         if(changed.includes('prep'))o.readyDate=o.prep?readyFrom(o.prep,day(now())):'';
         if(o.readyDate&&o.date<o.readyDate)throw Error(`The stock is ready on ${o.readyDate}. Move the delivery day to then or later.`);
-        if(changed.some(k=>['areaId','street','landmark'].includes(k))){o.location='unresolved';o.anchor=null;o.pin=null;}
+        if(changed.some(k=>['areaId','street','landmark'].includes(k))){const auto=addressPoint(o.areaId,o.street,o.landmark);o.location='unresolved';o.anchor=auto?{...auto.point}:null;o.pin=auto?{...auto.point}:null;o.pinFrom=auto?.precision||null;}
         if(changed.some(k=>['phone','name','sender','areaId','street','landmark','payment','expected','item'].includes(k))){o.confirmation=null;if(o.link)o.link.status='revoked';}
         if(o.routeId&&(readiness(o).length||o.date!==route(o.routeId).date))throw Error('Unassign this draft route order before introducing a hold or changing its delivery day.');
         o.corrections.push({at:now(),actor:actor.id,reason:p.reason,changes:edits});event('field_corrected',o.id,`${changed.join(', ')} · ${p.reason}`,actor);
@@ -244,7 +290,7 @@
     }
     // Days the buyer can choose: three days from when the stock is ready, never before today, fixed once routed.
     function buyerDates(o){const today=day(now());if(o.routeId)return [o.date];const start=[o.readyDate||today,today].sort()[1];const list=[0,1,2].map(n=>addDays(start,n));if(o.date>=start&&!list.includes(o.date))list.push(o.date);return list.sort();}
-    function customer(token){const o=state.orders.find(x=>x.link?.token===token);if(!o||activeLink(o)!=='active')return {available:false,status:o?activeLink(o):'invalid'};const publicData={available:true,id:o.id,sender:o.sender||'LannPya Delivery',item:o.item,reference:o.reference,payment:o.payment,expected:o.expected,state:o.state,version:o.version,verified:sessions.has(token),editable:deadline(o),remaining:3-o.link.failures};return sessions.has(token)?{...publicData,order:copy(Object.fromEntries(['id','name','item','payment','expected','state','date','time','prep','readyDate','anchor','pin','areaId','proposedPin','confirmation','note','version'].map(k=>[k,o[k]??null]))),dates:buyerDates(o),phoneEnd:String(o.phone||'').slice(-4),collection:o.collection?{actual:o.collection.actual}:null}:publicData;}
+    function customer(token){const o=state.orders.find(x=>x.link?.token===token);if(!o||activeLink(o)!=='active')return {available:false,status:o?activeLink(o):'invalid'};const publicData={available:true,id:o.id,sender:o.sender||'LannPya Delivery',item:o.item,reference:o.reference,payment:o.payment,expected:o.expected,state:o.state,version:o.version,verified:sessions.has(token),editable:deadline(o),remaining:3-o.link.failures};return sessions.has(token)?{...publicData,order:copy(Object.fromEntries(['id','name','item','payment','expected','state','date','time','prep','readyDate','anchor','pin','pinFrom','areaId','proposedPin','confirmation','note','version'].map(k=>[k,o[k]??null]))),dates:buyerDates(o),phoneEnd:String(o.phone||'').slice(-4),collection:o.collection?{actual:o.collection.actual}:null}:publicData;}
     return {
       snapshot:()=>copy(state), now, persistent:()=>persistent, refresh,
       order(id,actor=ACTORS.admin){refresh();const o=get(id);scope(actor,o);return actor.role==='rider'?riderProjection(o):copy(o);},
@@ -280,6 +326,6 @@
       export:()=>JSON.stringify(state,null,2)
     };
   }
-  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,PREP,SLOTS,addDays,readyFrom,REASONS,ACTORS,PLACES,SAMPLE,parse,split,enhanced:()=>!!enhancer(),triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
+  const api={KEY,RESET_MARKER,LEGACY_KEYS,ANY_TIME,WINDOWS,PREP,SLOTS,addDays,readyFrom,REASONS,ACTORS,VEHICLES,HUB,PLACES,SAMPLE,addressPoint,parse,split,enhanced:()=>!!enhancer(),triage,blockers,createStore,distance,day,minute,startMinute,endMinute,uid,seed,fixtures};
   if(typeof module!=='undefined')module.exports=api;else root.Workflow=api;
 })(typeof window==='undefined'?globalThis:window);

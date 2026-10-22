@@ -126,7 +126,7 @@ Panels and signs use `--r: 10px`; buttons, inputs and board cards use `--r-sm: 8
 
 ### Signboards and counts
 
-Navy sign, Cream name, Burmese above English, count aligned to the far edge. Needs you uses Saffron with Navy text. Empty lanes use the secondary Cream ground. Lane descriptions stay available to assistive technology without repeating below every sign. Cards show the order ID and exact cash with Ks, omitting the repeated delivery date. Card padding is 16px on desktop and 18px on mobile; status copy uses a lighter 500 weight to separate it from names. The only authored animation is the lane-count flip: 240ms, `cubic-bezier(.16,1,.3,1)`, transform and opacity only. Reduced motion disables it. No board or card entrance animations; navigation, disclosures and theme switching are immediate.
+Navy sign, Cream name, Burmese above English, count aligned to the far edge. Needs you uses Saffron with Navy text. Empty lanes use the secondary Cream ground. Lane descriptions stay available to assistive technology without repeating below every sign. Cards show the order ID and exact cash with Ks, omitting the repeated delivery date. Card padding is 16px on desktop and 18px on mobile; status copy uses a lighter 500 weight to separate it from names. The board's only authored animation is the lane-count flip: 240ms, `cubic-bezier(.16,1,.3,1)`, transform and opacity only. Reduced motion disables it. No board or card entrance animations; navigation, disclosures and theme switching are immediate.
 
 ### Buttons and navigation
 
@@ -158,3 +158,18 @@ The project owner approved the current Burmese UI inventory on 21 October 2026, 
 - **Don't** add entry animations to the service board or animate frequent navigation.
 - **Don't** change workflow command names, form hooks, or field values while rewriting copy.
 - **Don't** claim Burmese has native approval until a named reviewer signs off.
+
+## Motion (added 22 Oct 2026)
+
+Motion lives in `frontend/css/motion.css`. Tokens: `--ease-out: cubic-bezier(.23,1,.32,1)` for entering and leaving, `--ease-in-out: cubic-bezier(.77,0,.175,1)` for movement on screen, `--ease-drawer: cubic-bezier(.32,.72,0,1)` for sheets. Only transform, opacity and clip-path animate. Nothing starts from `scale(0)`. Hover effects sit behind `(hover:hover) and (pointer:fine)`. Reduced motion keeps the fades that explain a change and drops travel.
+
+- **Buttons:** press is `scale(.97)` over 140ms. Saving buttons show three dots, then a tick. A wrong password or PIN shakes the form once.
+- **Sign-in:** the logo builds once on load (loop, handle, parcel, dots, pin), about 900ms in total. The motto **လိပ်စာလည်းမှန် အချိန်လည်းမှန်** / "Right address, right time." sits under the wordmark and always shows both languages. Rider sign-in puts Burmese first.
+- **Read orders pop-up:** opens with a 260ms rise (a bottom sheet under 640px). Boxes stagger 40ms. Edit opens in place with a 240ms row expand. A saved box flashes a Saffron edge.
+- **Accept alerts:** the dispatcher gets a toast. The buyer gets a text-message-style banner that drops from the top, can be swiped up, and hides after 7s.
+- **Buyer road:** the LannPya mark rides along a dotted road from Hub to You. The wheels spin and the frame bobs only while the parcel is out. Position moves over 900ms in-out.
+- **Map swap:** "See your rider on the map" grows a full-screen map out of the road card with a 380ms clip-path, and shrinks back over 300ms. The Road/Map pill or a downward drag/flick on the bottom card closes it. The rider's point is estimated from the stops left until rider GPS exists.
+- **Language switch:** the pill slides 220ms and the page text fades in over 180ms.
+- **Auto-pin:** a pin set from the address drops once (260ms) with one ring pulse. It never replays on re-render. The pin stays draggable, and the row says whether it came from a landmark, a street or only the township.
+- **Hub pickup:** after accepting, the rider sees the hub card before any stop. Ticking a parcel is a 160ms check, no confetti. "Open the hub map" grows the in-app map (Google, or Leaflet as the fallback) out of the mini map with the same 380ms clip-path as the buyer map swap; Back, Escape or a downward drag closes it. After "Picked up", the first stop card rises in over 260ms.
+- **Riders:** a new rider row flashes Saffron once. The invite code types in letter by letter (about 40ms each) so it reads as freshly made. Reduced motion shows it at once.
