@@ -23,21 +23,33 @@
   function destroy(){while(mounted.length)mounted.pop()();}
 
   function attachStreetTiles(map){
-    const hot=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
-      subdomains:['a','b'],
+    if(!map||map._tilesAttached)return;
+    map._tilesAttached=true;
+    const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
       maxZoom:19,
-      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank" rel="noopener noreferrer">HOT</a>'
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+      referrerPolicy:'origin'
     }).addTo(map);
-    hot.on('tileerror',()=>{
-      if(!map._esriFallback){
-        map._esriFallback=true;
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{
+    tiles.on('tileerror',()=>{
+      if(!map._hotFallback){
+        map._hotFallback=true;
+        const hot=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
+          subdomains:['a','b'],
           maxZoom:19,
-          attribution:'Tiles &copy; Esri'
+          attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank" rel="noopener noreferrer">HOT</a>'
         }).addTo(map);
+        hot.on('tileerror',()=>{
+          if(!map._esriFallback){
+            map._esriFallback=true;
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{
+              maxZoom:19,
+              attribution:'Tiles &copy; Esri'
+            }).addTo(map);
+          }
+        });
       }
     });
-    return hot;
+    return tiles;
   }
 
   // Editable pin bound to a form's latitude/longitude fields.
@@ -75,7 +87,7 @@
       for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
       if(start)say(start.lat,start.lng);
       // Google mode needs no OpenStreetMap button or notice.
-      form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.hidden=true);
+      form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.remove());
       mounted.push(()=>{cleanup.forEach(f=>f());node.replaceChildren();});
       return;
     }
@@ -91,14 +103,8 @@
     const sync=()=>{const p=current();if(p){place(p.lat,p.lng,false);map.setView([p.lat,p.lng],16);}};
     for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
     if(start)place(start.lat,start.lng,false);
-    const tilesButton=form.querySelector('[data-load-tiles],#load-street-tiles');
-    if(tilesButton)tilesButton.onclick=()=>{
-      const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);
-      tiles.on('tileerror',()=>{
-        attachStreetTiles(map);
-      });
-      tilesButton.disabled=true;
-    };
+    attachStreetTiles(map);
+    form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.remove());
     map.whenReady(()=>map.invalidateSize());
     node.closest('details')?.addEventListener('toggle',()=>map.invalidateSize(),{signal:off.signal});
     mounted.push(()=>{off.abort();map.remove();});
@@ -116,15 +122,10 @@
       node.replaceChildren();
       const map=L.map(node).setView([a,b],16);
       L.marker([a,b],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Saved delivery point'}).addTo(map);
-      const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-      button.onclick=()=>{
-        const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);
-        tiles.on('tileerror',()=>{
-          attachStreetTiles(map);
-        });
-        button.disabled=true;
-      };
-      map.whenReady(()=>map.invalidateSize());mounted.push(()=>{map.remove();button.remove();});return;
+      attachStreetTiles(map);
+      map.whenReady(()=>map.invalidateSize());
+      mounted.push(()=>{map.remove();});
+      return;
     }
     node.replaceChildren();node.classList.add('is-google');
     const map=new g.Map(node,{center:{lat:a,lng:b},zoom:17,disableDefaultUI:true,gestureHandling:'cooperative',clickableIcons:false});
@@ -153,9 +154,9 @@
     const map=L.map(node),line=L.geoJSON(geometry,{style:{color:'#D23F2E',weight:4}}).addTo(map);
     for(const stop of stops)L.marker([stop.latitude,stop.longitude],{title:`Stop ${stop.sequence}`,icon:L.divIcon({className:'buyer-map-pin',html:`<b>${Number(stop.sequence)}</b>`,iconSize:[28,28]})}).addTo(map);
     map.fitBounds(line.getBounds(),{padding:[20,20],maxZoom:17});
-    const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>button.textContent='Tiles unavailable; route geometry remains visible.');button.disabled=true;};
-    mounted.push(()=>{map.remove();button.remove();});
+    attachStreetTiles(map);
+    map.whenReady(()=>map.invalidateSize());
+    mounted.push(()=>{map.remove();});
   }
   // Buyer's map while the parcel is out: their delivery point and the rider's position. Returns its own cleanup.
   async function riderView(node,{dest,rider}){
@@ -176,10 +177,9 @@
     L.marker([dest.lat,dest.lng],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Your delivery point'}).addTo(map);
     L.marker([rider.lat,rider.lng],{icon:L.divIcon({className:'rider-map-dot',html:'<i></i>',iconSize:[24,24],iconAnchor:[12,12]}),title:'Your rider'}).addTo(map);
     map.fitBounds([[dest.lat,dest.lng],[rider.lat,rider.lng]],{padding:[72,72],maxZoom:16});
-    const button=document.createElement('button');button.type='button';button.className='btn sm map-tiles';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>{button.textContent='Tiles unavailable; the pins remain.';});button.disabled=true;};
+    attachStreetTiles(map);
     map.whenReady(()=>map.invalidateSize());
-    return ()=>{map.remove();button.remove();};
+    return ()=>{map.remove();};
   }
   // Rider's way to the hub. provider 'google' needs a browser key; otherwise Leaflet. Returns {off, setMe}.
   async function hubView(node,{hub,provider,mini=false}){
