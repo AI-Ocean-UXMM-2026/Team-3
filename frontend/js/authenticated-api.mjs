@@ -19,5 +19,6 @@ export class AuthenticatedWorkspaceApi extends WorkspaceApi {
     if(side==='admin'&&!['Admin','Dispatcher'].includes(actor.role)||side==='rider'&&actor.role!=='Rider'||actorId&&actor.id!==actorId)throw Error('This account cannot open that workspace.');
     this.connections[side]={client,actor,baseUrl:this.baseUrl};return actor;
   }
-  openBuyer(_baseUrl,token){this.buyer?.clear();this.buyer=createBuyerApi({baseUrl:this.baseUrl,linkToken:token});return this.buyer;}
+  openBuyer(_baseUrl,token,initialAuth){this.buyer?.clear();this.buyer=createBuyerApi({baseUrl:this.baseUrl,linkToken:token,initialAuthorization:initialAuth});return this.buyer;}
+  async lookupBuyer(trackingId,phone){return (await import('./backend-client.mjs')).lookupBuyerOrder({baseUrl:this.baseUrl,trackingId,phone});}
 }

@@ -14,6 +14,8 @@ from app.schemas.buyer import (
     BuyerHistoryPage,
     BuyerOtpChallengeResult,
     BuyerLocation,
+    BuyerLookup,
+    BuyerLookupResult,
     BuyerResponse,
     BuyerRequestSubmission,
     BuyerReviewResult,
@@ -90,6 +92,12 @@ def buyer_history(
     page_size: PageSize = 20,
 ):
     return service(request, session).history(order_id, actor, page, page_size)
+
+
+@public_router.post("/lookup", response_model=BuyerLookupResult)
+def lookup(body: BuyerLookup, request: Request, session: PublicSession):
+    consume_rate_limit(request, verify=True)
+    return service(request, session).lookup(body.tracking_id, body.phone)
 
 
 @public_router.get("/{token}", response_model=BuyerCardResult)

@@ -40,20 +40,22 @@ export async function startAuthentication(runtime){
     function render(){
       document.body.classList.add('signed-out');
       const code=['verify','signupVerify','recoverVerify'].includes(mode),newPassword=['signup','password'].includes(mode),emailInput=['signin','signup','code','recover'].includes(mode);
+      const isRider=location.hash.startsWith('#/ride');
       const shell=document.createElement('div');
-      shell.innerHTML=existingSignInView('admin',mode==='signup'?'create':'signin');
+      shell.innerHTML=existingSignInView(isRider?'rider':'admin',mode==='signup'?'create':'signin');
       const existing=shell.firstElementChild;
       const originalForm=existing.querySelector('#signin-form');
       originalForm.id='auth-form';
       originalForm.setAttribute('aria-label','Sign in');
       originalForm.querySelector('.demo-hint')?.remove();
       originalForm.querySelectorAll('[data-action="signin-mode"]').forEach(button=>{button.removeAttribute('data-action');button.dataset.authMode=button.dataset.id==='create'?'signup':'signin';});
-      let pane=originalForm.querySelector('.signin-pane');
+      let pane=originalForm.querySelector('.signin-pane') || originalForm;
       const tabs=originalForm.querySelector('.signin-tabs');
-      if(!['signin','signup'].includes(mode)){tabs.remove();pane.innerHTML='<h1>'+title()+'</h1>';}
+      if(!['signin','signup'].includes(mode)){tabs?.remove();pane.innerHTML='<h1>'+title()+'</h1>';}
       if(mode==='signin'){
-        const identifier=pane.querySelector('[name="phone"]');identifier.name='email';identifier.id='auth-email';identifier.value=email;identifier.required=true;identifier.autocomplete='username';
-        const password=pane.querySelector('[name="password"]');password.id='auth-password';password.setAttribute('aria-label','Password');
+        const identifier=pane.querySelector('[name="phone"]')||pane.querySelector('[name="email"]');
+        if(identifier){identifier.name='email';identifier.id='auth-email';identifier.value=email;identifier.required=true;identifier.autocomplete='username';}
+        const password=pane.querySelector('[name="password"]');if(password){password.id='auth-password';password.setAttribute('aria-label','Password');}
       }else if(mode==='signup'){
         const password=pane.querySelector('[name="password"]');password.id='auth-password';password.minLength=12;password.maxLength=128;password.setAttribute('aria-label','Password');
         password.parentElement.firstChild.textContent='Password, at least 12 characters';

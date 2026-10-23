@@ -173,3 +173,21 @@ test('after an accepted offer the rider collects every parcel at the hub before 
 test('Riders page lists the built-in riders and opens the add form',async()=>{
  const e=boot('#/riders');assert.match(e.root.textContent,/Ko Aung/);assert.match(e.root.textContent,/Ko Wai/);await e.action('rider-form','open');assert.ok(e.find('#rider-form'));
 });
+test('rider displays route map for accepted order and selecting another stop updates route destination',async()=>{
+ const e=boot('#/ride',departed);
+ await e.action('pick','RT-001|LP-2046');
+ await e.action('picked-up','RT-001');
+ const map=e.find('[data-rider-route-map]');
+ assert.ok(map,'Rider must render OpenStreetMap route container');
+ assert.equal(map.dataset.orderId,'LP-2046');
+ const tag=e.find('.queue-route-tag.active');
+ assert.ok(tag,'Active route tag must indicate current route');
+ assert.match(tag.textContent,/Active route/);
+});
+test('opening #/customer?id=LP-4B5EDA pre-fills tracking id and renders customer portal',async()=>{
+ const e=boot('#/customer?id=LP-4B5EDA');
+ assert.ok(e.find('#customer-link-form'),'Customer form must be rendered');
+ assert.equal(e.find('[name="trackingId"]').attributes.value,'LP-4B5EDA');
+ assert.ok(!e.find('.board-head'),'Dispatcher board must not be rendered on customer route');
+});
+

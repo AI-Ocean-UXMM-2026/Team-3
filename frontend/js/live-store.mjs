@@ -9,7 +9,9 @@ export function projectOrder(row){
   return {id:row.id,version:row.version,name:row.customer_name||'',phone:row.customer_phone||'',raw:row.original_message||'',normalized:row.normalized_message||'',areaId:row.township,street:row.street||'',landmark:row.landmark||'',floor:row.building_floor_unit||row.floor||'',item:p.item||'',sender:p.sender||'',reference:p.reference||'',date:p.delivery_day||'',time:row.delivery_time_window||'Any time',payment:row.cod_amount==null?'unknown':Number(row.cod_amount)===0?'prepaid':'cod',expected:row.cod_amount==null?null:Number(row.cod_amount),note:row.delivery_instructions||'',state:p.return_received_at?'returned':states[row.status]||'held',location:pin?(row.field_sources?.latitude?.method==='buyer_confirmation'?'buyer_confirmed':'manual_unverified'):'unknown',anchor:null,pin,routeId:p.route_id||null,received:!!p.hub_received_at,collection:p.collection?{...p.collection,discrepancy:p.collection.actual!==p.collection.expected}:null,incident:p.incident||null,attempts:[],encodingReview:false,confidence:row.confidence_level,reasons:(row.confidence_reasons||[]).map(x=>x.message),fieldSources:row.field_sources,ai:row.ai_availability_status};
 }
 export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=location.origin,route=location.hash.slice(2)}={}){
-  const links=new Map(),linkStates=new Map(),buyerStates=new Map(),native=new Map(),routeRows=new Map(),allocationStates=new Map(),pendingAutoRequests=new Map(),pendingOfferRequests=new Map();
+  const loadLinks=()=>{try{const raw=sessionStorage.getItem('lannpya.live.links');return raw?new Map(Object.entries(JSON.parse(raw))):new Map();}catch{return new Map();}};
+  const links=loadLinks(),linkStates=new Map(),buyerStates=new Map(),native=new Map(),routeRows=new Map(),allocationStates=new Map(),pendingAutoRequests=new Map(),pendingOfferRequests=new Map();
+  const saveLinks=()=>{try{sessionStorage.setItem('lannpya.live.links',JSON.stringify(Object.fromEntries(links.entries())));}catch{}};
   let lastRoute=route||'dispatch',queueRows=[],requests=[],activeBuyer=null;
   let state={orders:[],routes:[],plans:[],riderPlans:[],riders:[],events:[],outbox:[],downloads:{},policy:{areas:[],cutoff:900,enforceCutoff:true,maxRetries:0,radius:500,linkDays:3,version:1,noteLimit:2000},policyHistory:[],clockMode:'live'};
   const all=(side,path)=>api.all(side,path),call=(path,method='GET',body,side='admin')=>api.call(side,path,{method,body});
@@ -22,12 +24,13 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   }
   async function checkBuyerReviews(id){return applyBuyerReviews(id,await all('admin',`/api/orders/${id}/buyer-requests`));}
   async function connect(side,id){if(!api.connections[side]||id&&api.connections[side].actor.id!==id)await api.connect(side,origin,id||'');}
-  async function loadBuyer(token){
-    if(activeBuyer!==token){api.openBuyer(origin,token);activeBuyer=token;}
+  async function loadBuyer(token,initialAuth){
+    if(activeBuyer!==token||initialAuth){api.openBuyer(origin,token,initialAuth);activeBuyer=token;}
     try{const card=await api.buyer.card();const prior=buyerStates.get(token);buyerStates.set(token,{...prior,card,status:card.state==='LOCKED'?'locked':'active',available:card.state!=='LOCKED'});}
     catch(e){buyerStates.set(token,{available:false,status:e.code||'unavailable'});throw e;}
   }
   async function sync(target=lastRoute){
+    target=(target||'').replace(/^#\/?/,'').split('?')[0];
     lastRoute=target;
     if(target.startsWith('track/')){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];await loadBuyer(decodeURIComponent(target.slice(6))).catch(()=>{});return;}
     if(target==='customer'){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];return;}
@@ -71,6 +74,15 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       const f=p.fields;if(f.prep&&f.date<W.readyFrom(f.prep,W.day(Date.now())))throw Error('Delivery day precedes the selected shop preparation timeline.');
       const structured={customer_name:f.name,customer_phone:f.phone,township:f.areaId,street:f.street||null,landmark:f.landmark||null,floor:f.floor||null,cod_amount:f.payment==='prepaid'?'0':String(f.expected??''),delivery_instructions:f.note||null,delivery_time_window:f.time||W.ANY_TIME};
       const result=await call('/api/orders','POST',{structured,parcel:{item:f.item,sender:f.sender||null,reference:f.reference||null,delivery_day:f.date,hub_received:!!p.received}});value=result.id;
+      try{
+        const l=await call(`/api/orders/${result.id}/confirmation-link`,'POST',{});
+        const token=l.buyer_handle||l.confirmation_url?.match(/(?:confirm\/|track\/)([A-Za-z0-9_-]{43})/)?.[1]||'';
+        if(token){
+          links.set(result.id,{token,expires:Date.parse(l.expires_at),shared:false});
+          linkStates.set(result.id,'active');
+          saveLinks();
+        }
+      }catch{}
     }else if(type==='edit'){
       const r=row(p.id),f=p.fields,o=order(p.id);
       if(f.item!==o.item||f.sender!==o.sender||f.reference!==o.reference||f.date!==o.date||f.prep)throw Error('Parcel/preparation changes require a reviewed backend contract extension. Address fields can be corrected here.');
@@ -83,8 +95,17 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
         catch(e){await sync();throw Error(`${value.length} order(s) persisted before this error: ${e.message}. Review the board before retrying to avoid duplicates.`);}
       }
     }else if(type==='issue_link'){
-      let r=row(p.id);if(r.status==='DRAFT')r=await api.status(r,'NEEDS_REVIEW');const l=await call(`/api/orders/${p.id}/confirmation-link`,'POST',{});links.set(p.id,{token:l.buyer_handle,expires:Date.parse(l.expires_at),shared:false});linkStates.set(p.id,'active');
-    }else if(type==='revoke_link'){await call(`/api/orders/${p.id}/confirmation-link/revoke`,'POST',{});links.delete(p.id);linkStates.set(p.id,'revoked');
+      let r=row(p.id);if(r.status==='DRAFT')r=await api.status(r,'NEEDS_REVIEW');
+      const l=await call(`/api/orders/${p.id}/confirmation-link`,'POST',{});
+      const token=l.buyer_handle||l.confirmation_url?.match(/(?:confirm\/|track\/)([A-Za-z0-9_-]{43})/)?.[1]||'';
+      links.set(p.id,{token,expires:Date.parse(l.expires_at),shared:false});
+      linkStates.set(p.id,'active');
+      saveLinks();
+    }else if(type==='revoke_link'){
+      await call(`/api/orders/${p.id}/confirmation-link/revoke`,'POST',{});
+      links.delete(p.id);
+      linkStates.set(p.id,'revoked');
+      saveLinks();
     }else if(type==='shared'){throw Error('Chat-sharing acknowledgements are not persisted by the backend; share the private link manually.');
     }else if(['receive','return_received','incident','resolve_discrepancy'].includes(type)){
       await api.operation(row(p.id),{receive:'RECEIVE',return_received:'RETURN_RECEIVED',incident:p.resolve?'RESOLVE_INCIDENT':'INCIDENT',resolve_discrepancy:'RESOLVE_DIFFERENCE'}[type],p.reason);
@@ -118,6 +139,13 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       if(type==='fail'&&p.resolution==='retry')throw Error('Same-day retry is not supported by the persistent workflow. Choose return to hub.');
       const reason={'Buyer not answering':'CUSTOMER_UNAVAILABLE','Not at home':'CUSTOMER_UNAVAILABLE','Can’t find the place':'ADDRESS_NOT_FOUND','Buyer refused':'CUSTOMER_REFUSED'}[p.reason]||'OTHER';
       await api.delivery(q,type==='start'?'START':type==='complete'?'DELIVERED':'FAILED',type==='start'?{}:type==='complete'?{actual_amount:p.amount,cod_collected:!!p.codCollected,difference_reason:p.reason||null}:{failure_reason:reason,failure_note:p.reason||null});
+    }else if(type==='add_rider'){
+      const res=await call('/api/riders','POST',{
+        name:p.name,
+        contact_phone:p.phone,
+        operational_status:'AVAILABLE'
+      });
+      value={id:res.id,name:res.name,code:'RIDER-'+res.id.slice(0,6).toUpperCase()};
     }else if(['submit_cash','receive_cash','close_route'].includes(type)){
       const r=routeRows.get(p.routeId),side=type==='submit_cash'?'rider':'admin';if(side==='rider')await connect(side,actor.id);
       const result=await api.routeAction(side,r,{submit_cash:'HANDOVER',receive_cash:'RECEIVE_CLOSE',close_route:'CLOSE'}[type],{...(type==='close_route'?{}:{amount:p.amount,recorded_total:r.recorded_total,reason:p.reason||null,resolve:!!p.resolve})});value={closed:result.state==='closed'};
@@ -137,7 +165,16 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     requests:()=>copy(requests.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution)),
     async selectRider(id){await connect('rider',id);await sync('ride');},
     async verifyRefresh(token){await loadBuyer(token);const b=buyerStates.get(token);if(b.details)b.details=await api.buyer.details();},
-    async requestOtp(token){await loadBuyer(token);const b=buyerStates.get(token),challenge=await api.buyer.requestOtp();b.challenge=challenge;b.otpPreview=challenge.mode==='DEMO'?await api.buyer.demoCode():null;return copy(challenge);},
+    async requestOtp(token){await loadBuyer(token);const b=buyerStates.get(token),challenge=await api.buyer.requestOtp();b.challenge=challenge;b.otpPreview=challenge.mode==='DEMO'?(await api.buyer.demoCode?.()):null;return copy(challenge);},
+    async lookupBuyer(trackingId,phone){
+      if(!api.lookupBuyer)throw Error('Buyer lookup is unavailable.');
+      const res=await api.lookupBuyer(trackingId,phone);
+      await loadBuyer(res.token,res.access_token);
+      const b=buyerStates.get(res.token);
+      b.details=await api.buyer.details();
+      b.verified=true;
+      return res;
+    },
     async parse(raw_text){await connect('admin');const r=await call('/api/orders/parse','POST',{raw_text}),a=r.address;return {name:a.customer_name||'',phone:a.phone_number||'',areaId:a.township||'',street:a.street||'',landmark:a.landmark||'',floor:a.building_floor_unit||'',expected:a.cod_amount,payment:a.cod_amount===0?'prepaid':a.cod_amount==null?'unknown':'cod',note:a.delivery_instructions||'',warnings:[...r.validation_reasons.map(v=>v.message),`AI: ${r.ai.status}. ${r.ai.message}`],confidence:r.confidence.toLowerCase(),pin:null};},
     triage:id=>{const o=order(id);return {level:(o.confidence||'AMBER').toLowerCase(),reasons:o.reasons||['Location accuracy is not independently verified.']};},
     blockers:id=>{const o=order(id);return [...(o.confidence==='RED'?['Correct critical address validation failures']:[]),...(!o.pin?['Location needed']:[]),...(o.pendingBuyerReviewCount?[`${o.pendingBuyerReviewCount} buyer requests awaiting review`]:[]),...(!o.received?['Physical hub receipt required']:[])];},

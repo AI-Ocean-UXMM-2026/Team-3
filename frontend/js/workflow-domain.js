@@ -320,6 +320,23 @@
       execute,
       customer,
       requestOtp,
+      lookupBuyer(trackingId,phone){
+        refresh();
+        const rawClean=s=>String(s||'').replace(/[၀-၉]/g,d=>d.charCodeAt(0)-0x1040).replace(/\D/g,'');
+        const targetPhone=rawClean(phone);
+        const tid=String(trackingId||'').trim().toUpperCase().replace(/^LP-/,'');
+        const o=state.orders.find(x=>{
+          const oId=String(x.id||'').toUpperCase().replace(/^LP-/,'').slice(0,6);
+          const oPhone=rawClean(x.phone);
+          const matchId=oId===tid||String(x.id||'').toUpperCase()===tid||(x.reference&&String(x.reference).toUpperCase()===tid);
+          const matchPhone=oPhone===targetPhone||(oPhone.length>=7&&targetPhone.length>=7&&oPhone.slice(-7)===targetPhone.slice(-7));
+          return matchId&&matchPhone;
+        });
+        if(!o||activeLink(o)!=='active')throw Error('No active delivery found matching this Tracking ID and phone number. Check your details.');
+        sessions.set(o.link.token,true);
+        state.revision++;write();
+        return {token:o.link.token,order:customer(o.link.token)};
+      },
       verify(token,value){refresh();const o=state.orders.find(x=>x.link?.token===token),challenge=o?.link?.otp;if(!o||activeLink(o)!=='active')throw Error('This link is unavailable. Contact the delivery admin.');if(sessions.has(token))return customer(token);if(!/^\d{6}$/.test(String(value)))throw Error('Enter the six-digit code.');if(!challenge||challenge.expiresAt<=now())throw Error('Request a new code; this code has expired.');if(value!==challenge.code){challenge.attempts++;if(challenge.attempts>=3){o.link.status='locked';delete o.link.otp;event('buyer_link_locked',o.id,'Admin action required',{id:'customer'});}state.revision++;write();throw Error(challenge.attempts>=3?'Link locked. Contact the delivery admin.':`Incorrect code. ${3-challenge.attempts} attempts remaining.`);}delete o.link.otp;sessions.set(token,true);state.revision++;write();return customer(token);},
       confirm(token,p){
         refresh();const o=state.orders.find(x=>x.link?.token===token);

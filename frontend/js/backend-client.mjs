@@ -55,19 +55,35 @@ export function createDevelopmentApi({ baseUrl, token }) {
     path === "/health" || path.split("?")[0] === "/api/orders/parse" ? {} : { "X-Dev-Access-Token": token }, options);
 }
 
-export function createBuyerApi({ baseUrl, linkToken }) {
+export async function lookupBuyerOrder({ baseUrl, trackingId, phone }) {
+  const base = apiBase(baseUrl);
+  return jsonRequest(base, "/api/confirm/lookup", {}, {
+    method: "POST",
+    body: { tracking_id: trackingId, phone: phone },
+  });
+}
+
+export function createBuyerApi({ baseUrl, linkToken, initialAuthorization }) {
   const base = apiBase(baseUrl);
   if (!/^[A-Za-z0-9_-]{43}$/.test(linkToken)) throw new Error("Use the complete confirmation-link token");
   const path = `/api/confirm/${encodeURIComponent(linkToken)}`;
-  let authorization;
+  let authorization = initialAuthorization;
+  let lastChallenge = null;
   const call = (suffix, options) => jsonRequest(base, path + suffix,
     authorization ? { Authorization: `Bearer ${authorization}` } : {}, options);
   return {
     card: (signal) => call("", { signal }),
-    requestOtp: () => {
+    requestOtp: async () => {
       authorization = undefined;
-      return call("/otp", { method: "POST", body: {} });
+      const res = await call("/otp", { method: "POST", body: {} });
+      lastChallenge = res;
+      return res;
     },
+    demoCode: async () => ({
+      code: lastChallenge?.demo_code || "123456",
+      simulation: true,
+    }),
+    setAuthorization: (token) => { authorization = token; },
     async verify(code) {
       if (!/^[0-9]{6}$/.test(String(code))) throw new Error("Enter the six-digit code sent to your phone.");
       authorization = undefined;

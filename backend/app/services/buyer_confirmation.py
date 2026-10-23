@@ -183,6 +183,7 @@ class BuyerConfirmationService:
             if self.settings.buyer_frontend_base_url
             else None,
             "expires_at": link.expires_at,
+            "buyer_handle": token,
         }
 
     def revoke(self, order_id, actor):
@@ -204,6 +205,127 @@ class BuyerConfirmationService:
             self.event(order, "BUYER_LINK_REVOKED", {"actor_id": str(actor.id)})
         self.session.commit()
         return {"revoked": True}
+
+    def lookup(self, tracking_id: str, phone: str):
+        raw_digits = re.sub(r"[၀-၉]", lambda m: str(ord(m.group(0)) - 0x1040), phone or "")
+        clean_phone = re.sub(r"\D", "", raw_digits)
+        if clean_phone.startswith("9509"):
+            clean_phone = "09" + clean_phone[4:]
+        elif clean_phone.startswith("959"):
+            clean_phone = "09" + clean_phone[3:]
+        elif clean_phone.startswith("9") and len(clean_phone) >= 9:
+            clean_phone = "0" + clean_phone
+
+        if len(clean_phone) < 7:
+            raise OrderAPIError(
+                404,
+                "ORDER_NOT_FOUND",
+                "No delivery found matching this Tracking ID and phone number. Check your details.",
+            )
+
+        tid = (tracking_id or "").strip()
+        core_id = tid[3:].strip() if tid.upper().startswith("LP-") else tid
+
+        orders = self.session.scalars(select(Order)).all()
+        matched_order = None
+        for o in orders:
+            str_id = str(o.id).replace("-", "").lower()
+            norm_core = core_id.replace("-", "").lower()
+            id_match = (
+                str(o.id).lower().startswith(core_id.lower())
+                or str_id.startswith(norm_core)
+                or (len(norm_core) >= 4 and norm_core in str_id)
+            )
+            parcel_ref = ""
+            if o.parsing_metadata and isinstance(o.parsing_metadata, dict):
+                parcel_ref = str(o.parsing_metadata.get("parcel", {}).get("reference") or "")
+            ref_match = bool(
+                parcel_ref and (parcel_ref.lower() == tid.lower() or parcel_ref.lower() == core_id.lower())
+            )
+
+            if id_match or ref_match:
+                o_digits = re.sub(r"[၀-၉]", lambda m: str(ord(m.group(0)) - 0x1040), o.customer_phone or "")
+                o_phone = re.sub(r"\D", "", o_digits)
+                if o_phone.startswith("9509"):
+                    o_phone = "09" + o_phone[4:]
+                elif o_phone.startswith("959"):
+                    o_phone = "09" + o_phone[3:]
+                elif o_phone.startswith("9") and len(o_phone) >= 9:
+                    o_phone = "0" + o_phone
+
+                if clean_phone == o_phone or (
+                    len(clean_phone) >= 7 and len(o_phone) >= 7 and clean_phone[-7:] == o_phone[-7:]
+                ):
+                    matched_order = o
+                    break
+
+        if matched_order is None:
+            raise OrderAPIError(
+                404,
+                "ORDER_NOT_FOUND",
+                "No delivery found matching this Tracking ID and phone number. Check your order reference and phone number.",
+            )
+
+        if matched_order.status == OrderStatus.CANCELLED:
+            raise OrderAPIError(410, "DELIVERY_CANCELLED", "This delivery was cancelled. Contact the shop.")
+
+        now = utcnow()
+        link = self.session.scalar(
+            select(ConfirmationLink)
+            .where(
+                ConfirmationLink.order_id == matched_order.id,
+                ConfirmationLink.revoked_at.is_(None),
+                ConfirmationLink.expires_at > now,
+            )
+            .order_by(ConfirmationLink.created_at.desc())
+            .limit(1)
+        )
+        if link is None:
+            token = secrets.token_urlsafe(32)
+            token_hash = digest(token)
+            link = ConfirmationLink(
+                order_id=matched_order.id,
+                token_hash=token_hash,
+                phone_binding=phone_binding(token_hash, matched_order.customer_phone),
+                expires_at=now + timedelta(hours=self.settings.buyer_link_hours),
+                verified_at=now,
+            )
+            self.session.add(link)
+            self.session.flush()
+        else:
+            token = secrets.token_urlsafe(32)
+            link.verified_at = now
+
+        credential = secrets.token_urlsafe(32)
+        expires = min(link.expires_at, now + timedelta(minutes=self.settings.buyer_session_minutes))
+        self.session.add(
+            BuyerSession(
+                link_id=link.id,
+                token_hash=digest(credential),
+                generation=link.generation,
+                expires_at=expires,
+            )
+        )
+        self.event(
+            matched_order,
+            "BUYER_SECURITY",
+            {"link_id": str(link.id), "action": "VERIFIED_PORTAL_LOOKUP"},
+        )
+        self.session.commit()
+
+        shop_name = None
+        if matched_order.parsing_metadata and isinstance(matched_order.parsing_metadata, dict):
+            shop_name = matched_order.parsing_metadata.get("parcel", {}).get("sender")
+
+        return {
+            "token": token,
+            "order_reference": matched_order.id,
+            "shop_display_name": shop_name,
+            "delivery_status": matched_order.status,
+            "access_token": credential,
+            "token_type": "Bearer",
+            "expires_at": expires,
+        }
 
     def link(self, token, mutate=False):
         if not re.fullmatch(r"[A-Za-z0-9_-]{43}", token):

@@ -32,11 +32,28 @@ class BuyerOtpChallengeResult(BaseModel):
     mode: Literal["DEMO", "SMS"]
 
 
+class BuyerLookup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tracking_id: str = Field(min_length=1, max_length=128)
+    phone: str = Field(min_length=5, max_length=32)
+
+
+class BuyerLookupResult(BaseModel):
+    token: str
+    order_reference: UUID
+    shop_display_name: str | None
+    delivery_status: OrderStatus
+    access_token: str
+    token_type: Literal["Bearer"]
+    expires_at: datetime
+
+
 class LinkResult(BaseModel):
     link_id: UUID
     confirmation_url: str
     absolute_url: str | None
     expires_at: datetime
+    buyer_handle: str | None = None
 
 
 class BuyerActionResult(BaseModel):

@@ -108,7 +108,16 @@ def customer_response(session, order):
         return None, "A recorded customer availability response is required."
     link = session.get(ConfirmationLink, row.link_id)
     if not link or link.revoked_at:
-        return None, "Customer confirmation was revoked; request a new response."
+        active_link = session.scalar(
+            select(ConfirmationLink.id)
+            .where(
+                ConfirmationLink.order_id == order.id,
+                ConfirmationLink.revoked_at.is_(None),
+            )
+            .limit(1)
+        )
+        if not active_link:
+            return None, "Customer confirmation was revoked; request a new response."
     return row, None
 
 

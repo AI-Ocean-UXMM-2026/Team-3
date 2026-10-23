@@ -1622,3 +1622,43 @@ def test_migration_preserves_phase4_records(tmp_path):
         assert session.scalar(select(DeliveryEvent)).event_metadata == {"existing": True}
         assert session.get(User, merchant_id).name == "Existing"
     database.dispose()
+
+
+def test_buyer_lookup_by_tracking_id_and_phone(linked):
+    order_id = linked["order"]["id"]
+    short_id = f"LP-{str(order_id)[:6].upper()}"
+
+    # Lookup by short prefix (LP-XXXXXX)
+    res = linked["client"].post(
+        "/api/confirm/lookup",
+        json={"tracking_id": short_id, "phone": "09791234567"},
+    )
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["order_reference"] == order_id
+    assert data["token_type"] == "Bearer"
+    assert "access_token" in data
+    assert "token" in data
+
+    # Lookup by full UUID with formatted +959 phone
+    res2 = linked["client"].post(
+        "/api/confirm/lookup",
+        json={"tracking_id": order_id, "phone": "+95 9 791234567"},
+    )
+    assert res2.status_code == 200, res2.text
+    assert res2.json()["order_reference"] == order_id
+
+    # Lookup with wrong phone fails with 404
+    res_wrong = linked["client"].post(
+        "/api/confirm/lookup",
+        json={"tracking_id": short_id, "phone": "09799999999"},
+    )
+    assert res_wrong.status_code == 404
+
+    # Lookup with nonexistent tracking ID fails with 404
+    res_unknown = linked["client"].post(
+        "/api/confirm/lookup",
+        json={"tracking_id": "LP-000000", "phone": "09791234567"},
+    )
+    assert res_unknown.status_code == 404
+
