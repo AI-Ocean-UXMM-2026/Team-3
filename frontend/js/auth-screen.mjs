@@ -55,14 +55,38 @@ export async function startAuthentication(runtime){
       const demoEmail=isRider?'judge.rider@lannpya.dev':'judge.dispatch@lannpya.dev',demoPass='JudgeDemo2026!';
       if(mode==='signin'){
         const identifier=pane.querySelector('[name="phone"]')||pane.querySelector('[name="email"]');
-        if(identifier){identifier.name='email';identifier.id='auth-email';identifier.value=email;identifier.required=true;identifier.autocomplete='username';}
+        if(identifier){
+          identifier.name='email';
+          identifier.type='email';
+          identifier.id='auth-email';
+          identifier.value=email;
+          identifier.required=true;
+          identifier.autocomplete='username';
+          identifier.placeholder=isRider?'rider@example.com':'shop@example.com';
+          const label=identifier.closest('label');
+          if(label){
+            const enSpan=label.querySelector('.en');
+            if(enSpan) enSpan.textContent=isRider?'Rider email':'Shop email';
+            else label.firstChild.textContent=isRider?'Rider email':'Shop email';
+            const mySpan=label.querySelector('.my');
+            if(mySpan) mySpan.textContent='အီးမေးလ်';
+          }
+        }
         const password=pane.querySelector('[name="password"]');if(password){password.id='auth-password';password.setAttribute('aria-label','Password');if(email===demoEmail)password.value=demoPass;}
       }else if(mode==='signup'){
-        const password=pane.querySelector('[name="password"]');password.id='auth-password';password.minLength=12;password.maxLength=128;password.setAttribute('aria-label','Password');
-        password.parentElement.firstChild.textContent='Password, at least 12 characters';
-        pane.insertAdjacentHTML('beforeend','<label>Verification email<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="'+esc(email)+'"></label><label>Confirm password<input id="auth-confirm" name="confirm" type="password" autocomplete="new-password" required maxlength="128"></label><p class="sheet-copy">Use at least 12 characters. Your hub enables access after email verification.</p>');
+        const password=pane.querySelector('[name="password"]');
+        if(password){
+          password.id='auth-password';password.minLength=12;password.maxLength=128;password.setAttribute('aria-label','Password');
+          const passLabel=password.closest('label');
+          if(passLabel){
+            const enSpan=passLabel.querySelector('.en');
+            if(enSpan) enSpan.textContent='Password, at least 12 characters';
+            else passLabel.firstChild.textContent='Password, at least 12 characters';
+          }
+        }
+        pane.insertAdjacentHTML('beforeend','<label '+(isRider?'class="bi-field"':'')+'>'+(isRider?'<span class="en">Verification email</span><span class="my" lang="my">အီးမေးလ်</span>':'Verification email<span class="my" lang="my">အီးမေးလ်</span>')+'<input id="auth-email" name="email" type="email" autocomplete="email" required maxlength="254" value="'+esc(email)+'"></label><label '+(isRider?'class="bi-field"':'')+'>'+(isRider?'<span class="en">Confirm password</span><span class="my" lang="my">စကားဝှက်ကို ထပ်မံရိုက်ထည့်ပါ</span>':'Confirm password<span class="my" lang="my">စကားဝှက် အတည်ပြုပါ</span>')+'<input id="auth-confirm" name="confirm" type="password" autocomplete="new-password" required maxlength="128"></label><p class="sheet-copy">Use at least 12 characters. Your account is activated automatically after email verification.</p>');
       }else{
-        pane.insertAdjacentHTML('beforeend','<p class="sheet-copy">'+(code?'Enter the code sent to '+esc(email)+'. Check Spam if it hasn’t arrived.':mode==='password'?'Use a password you don’t use anywhere else.':mode==='pending'?'Your email is verified. Ask your hub to enable your account.':'Enter your account email. Gmail addresses work too.')+'</p>');
+        pane.insertAdjacentHTML('beforeend','<p class="sheet-copy">'+(code?'Enter the code sent to '+esc(email)+'. Check Spam if it hasn’t arrived.':mode==='password'?'Use a password you don’t use anywhere else.':mode==='pending'?'Your email is verified.':'Enter your account email.')+'</p>');
         if(emailInput)pane.insertAdjacentHTML('beforeend','<label>Email address<input id="auth-email" name="email" type="email" autocomplete="username" required maxlength="254" value="'+esc(email)+'"></label>');
         if(code)pane.insertAdjacentHTML('beforeend','<label>Email code<input id="auth-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6,10}" minlength="6" maxlength="10" required></label>');
         if(newPassword)pane.insertAdjacentHTML('beforeend','<label>New password · at least 12 characters<input id="auth-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required aria-label="Password"></label><label>Confirm password<input id="auth-confirm" name="confirm" type="password" autocomplete="new-password" required maxlength="128"></label>');
