@@ -26,8 +26,10 @@ test('two new orders confirm through the real API and the first remains authoriz
   await page.route(/^https:\/\/(?:[abc]\.)?tile\.openstreetmap\.org\//,r=>r.fulfill({status:200,contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/m9sAAAAASUVORK5CYII=','base64')}));
   const urls=[];
   for(const reference of ['NATIVE-A','NATIVE-B']){
-    await page.goto(origin+'/#/customer');
-    await page.locator('[name=trackingId]').fill(reference);await page.locator('[name=phone]').fill('09790000000');
+    await page.goto(origin+'/index.html#/customer?id='+encodeURIComponent(reference));
+    await expect(page.locator('[name=trackingId]')).toHaveValue(reference);
+    await expect(page.locator('#verify-form')).toHaveCount(0);
+    await page.locator('[name=phone]').fill('09790000000');
     await page.locator('#customer-link-form .customer-primary').click();
     await expect(page.locator('#customer-form')).toBeVisible();urls.push(page.url());
     await expect(page.locator('#buyer-map.leaflet-container')).toBeVisible();
