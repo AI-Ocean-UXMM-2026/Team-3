@@ -1,0 +1,38 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "web": {
+      "root": ".",
+      "installCommand": "npm ci",
+      "buildCommand": "LANNPYA_RUNTIME_CONFIG=server npm run build",
+      "outputDirectory": "frontend/dist"
+    },
+    "api": {
+      "root": "backend",
+      "framework": "fastapi",
+      "entrypoint": "vercel_app:app"
+    }
+  },
+  "redirects": [
+    { "source": "/", "destination": "/home.html", "permanent": false },
+    { "source": "/confirm/:token", "destination": "/index.html#/track/:token", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/api/:path*", "destination": { "service": "api" } },
+    { "source": "/health", "destination": { "service": "api" } },
+    { "source": "/runtime-config.js", "destination": { "service": "api" } },
+    { "source": "/maps-config.js", "destination": { "service": "api" } },
+    { "source": "/:path*", "destination": { "service": "web" } }
+  ],
+  "headers": [
+    {
+      "source": "/:path*",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=()" }
+      ]
+    }
+  ]
+}

@@ -27,7 +27,7 @@ function walk(directory){
 }
 walk(source);
 const {LANNPYA_SUPABASE_URL:supabaseUrl,LANNPYA_SUPABASE_PUBLISHABLE_KEY:supabaseKey,LANNPYA_API_BASE_URL:apiBase}=process.env;
-if(supabaseUrl||supabaseKey||apiBase){
+if((supabaseUrl||supabaseKey||apiBase)&&process.env.LANNPYA_RUNTIME_CONFIG!=='server'){
  if(!supabaseUrl||!supabaseKey||!apiBase)throw Error('Set all three public auth build variables, or use the secure server runtime.');
  const validKey=supabaseKey.startsWith('sb_publishable_')||(()=>{try{return JSON.parse(Buffer.from(supabaseKey.split('.')[1],'base64url').toString()).role==='anon';}catch{return false;}})();
  if(!validKey)throw Error('Only a Supabase publishable/anon key may enter a frontend build.');

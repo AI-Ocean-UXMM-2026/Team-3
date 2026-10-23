@@ -1,5 +1,8 @@
 # Codex Context
 
+## Vercel judge deployment — 2026-10-23
+Live at https://lannpya-ai.vercel.app using Vercel Services for static frontend and Python 3.12 API. Project lannpya-ai, team_AhdPy0HLVZUfpi4U1EPzMIO0, prj_6PmVqS7RJP1GgZdIK8ckt2XAm43S. Connector project creation returned403; user completed CLI device login, and authenticated CLI created the project. Required Supabase/PostgreSQL settings uploaded through stdin, private values as Secrets; local env files excluded. Current environment is judge demo (real Supabase Auth/PostgreSQL, demo buyer SMS). Migration0009 present. Background reminder timers are best effort on serverless. See docs/VERCEL_DEPLOYMENT.md. First build corrected to use API-served runtime configuration. Deployment dpl_8Vjao8muhiEgNPsVsFSGJikCcvqY READY. Public production home/workspace/health/runtime config200, both judge roles' database API200, anonymous orders401. Auto-review rejected disabling SSO; that action was not executed, and the existing production domain is public without changing protection. CLI deployments currently, no automatic Git connection.
+
 Working checkout: `ZawLwinHtoo/lannpya-ai`, branch `mtt`, cloned at `10daf38`
 into `lannpya-mtt`. The sibling `lannpya-ai` checkout was left untouched.
 
