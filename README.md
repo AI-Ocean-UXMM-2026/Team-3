@@ -1,4 +1,16 @@
-# LannPya AI - MTT local integration
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="frontend/assets/brand/mark-dark.svg">
+    <img src="frontend/assets/brand/mark-light.svg" alt="LannPya logo: a delivery scooter with a parcel and location pin" width="160" height="160">
+  </picture>
+</p>
+
+<h1 align="center">LannPya AI · လမ်းပြ</h1>
+
+<p align="center">
+  <strong>လိပ်စာလည်းမှန် အချိန်လည်းမှန်</strong><br>
+  Right address, right time.
+</p>
 
 ## Judges: demo access and connection notes
 
