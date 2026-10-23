@@ -37,8 +37,8 @@ browser never submits phone-last-four as verification and never receives a produ
 The standalone `/prototype.html` simulation uses a local test code (`123456`) only after
 the request action. Its simulated clock applies expiry, resend cooldown and failed-attempt
 limits. Its auto-allocation chooses a free simulated rider, creates a pending offer, and
-requires explicit accept or decline. Decline excludes that rider for replacement; dispatch
-and delivery stay unavailable until an offer is accepted.
+requires explicit accept or decline. Decline excludes that rider for replacement;
+acceptance starts the delivery and route automatically.
 
 ## Dispatcher and rider workflow
 
@@ -49,15 +49,17 @@ the dispatcher does not select a rider. The result may be an offer or a waiting 
 no eligible rider is free.
 
 The rider sees a pending offer with **Accept** and **Decline**. A decline triggers the
-server's replacement attempt and refreshed state. The accepted order keeps the existing
-route departure, delivery-window, COD, return and cash-closeout controls. Accepted work
-still waits for dispatcher departure before delivery actions become available.
+server's replacement attempt and refreshed state. Acceptance atomically starts the order
+and route; no dispatcher departure confirmation is needed. Rider routes remains available
+to the dispatcher with acceptance, delivery and handover progress plus Refresh progress.
+Delivery-day/window, COD, returns and cash-closeout checks remain enforced. The rider
+delivers and hands over cash; the dispatcher receives the handover and closes the route.
 
 ## Verification and boundaries
 
 Focused frontend tests, the API workspace HTTP integration test, build validation, selected
 backend regressions and a full local browser journey cover OTP request/verify, customer
-review, automatic allocation, decline/reassignment, acceptance, departure, COD delivery
+review, automatic allocation, decline/reassignment, automatic start on acceptance, COD delivery
 and hub closeout. Browser screenshots are written outside the repository by setting
 `LANNPYA_SCREENSHOT_DIR`.
 

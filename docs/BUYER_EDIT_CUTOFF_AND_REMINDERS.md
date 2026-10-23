@@ -2,6 +2,8 @@
 
 The requested day and selected delivery window are the ETA. Branded buyer submissions require a concrete window, including for “At home”; “Any time” cannot establish a safe cutoff. The buyer may make three materially changed submissions after the initial confirmation. The edit deadline is one hour before the selected window starts, using Asia/Yangon. An accepted reschedule updates the deadline only when submitted before the current deadline.
 
+The first address confirmation is exempt from the edit cutoff and advance-notice rule, including for a newly created draft. It may be saved after the cutoff on the selected delivery day; subsequent edits are then closed. Past calendar delivery dates, cancelled/delivered orders, invalid or locked links and unverified sessions remain disallowed. An evening confirmation on an earlier date does not close edits for a future delivery day.
+
 PATCH /api/confirm/{token}/request stores the buyer's pin, availability, requested window and instructions in one transaction. Existing /location and /response endpoints remain available with the same order-scoped edit policy. OTP/link/session state does not own the edit count. Authenticated details continue to return the current order and an editing_policy projection after edits close.
 
 Location and availability retain separate dispatcher review records: approving the pin does not approve an unsupported reschedule. A newer complete submission supersedes older pending submissions without removing their audit history or refunding edits. Assigned or departed orders retain their rider, route, stage and custody; material amendments require review before delivery can proceed. Reviewing a proposal submitted before the cutoff is still allowed afterward.

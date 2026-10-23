@@ -2,7 +2,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 from urllib.parse import urlencode
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select, update
 
@@ -14,6 +14,7 @@ from app.domain.lifecycle import ALLOWED_TRANSITIONS, OrderStatus, UserRole
 from app.schemas.riders import ActionResult, AssignmentResponse, QueueDelivery, RiderResponse
 from app.services.buyer_confirmation import delivery_link_policy, lock_order
 from app.services.order_management import OrderManagementService, recalculate
+from app.services.workspace_scope import order_scope
 
 
 def active_assignment(session, order_id):
@@ -174,6 +175,8 @@ class RiderService:
         return result
 
     def order(self, order_id, expected):
+        if self.actor.role in {UserRole.ADMIN, UserRole.DISPATCHER}:
+            OrderManagementService(self.session, self.actor, self.catalog).get(order_id)
         lock_order(self.session, order_id)
         order = self.session.get(Order, order_id)
         if order is None:
@@ -322,6 +325,8 @@ class RiderService:
         return self.assignment_result(order, assignment)
 
     def action(self, rider_id, order_id, body):
+        if self.actor.role in {UserRole.ADMIN, UserRole.DISPATCHER}:
+            OrderManagementService(self.session, self.actor, self.catalog).get(order_id)
         self.rider(rider_id)
         from app.services.automatic_assignment import lock_allocator
 
@@ -466,7 +471,7 @@ class RiderService:
     def offer_response(self, order, assignment, body, payload_hash):
         from app.db.rider_models import AutomaticAllocation
         from app.services.automatic_assignment import attempt, output, project
-        from app.services.workflow import detach_order, parcel, set_parcel
+        from app.services.workflow import detach_order, parcel, route_row, set_parcel
 
         if (
             body.assignment_id != assignment.id
@@ -490,10 +495,24 @@ class RiderService:
         order.updated_at = utcnow()
         replacement = None
         if body.action == "ACCEPT":
-            allocation.reason = "Rider accepted; awaiting dispatcher departure."
+            route_id = parcel(order).get("route_id")
+            if not route_id:
+                raise OrderAPIError(409, "ROUTE_REQUIRED", "Refresh the assigned delivery route.")
+            route = route_row(self.session, UUID(route_id), self.actor, lock=True)
+            if (route.data["state"] not in {"draft", "dispatched"}
+                    or str(order.id) not in route.data["order_ids"]):
+                raise OrderAPIError(409, "ROUTE_NOT_ASSIGNABLE", "Refresh the delivery route.")
+            data = {**route.data, "state": "dispatched"}
+            data["events"] = [*data.get("events", []), {
+                "action": "ACCEPT", "by": str(self.actor.id),
+                "at": assignment.responded_at.isoformat(), "reason": None,
+            }]
+            route.data = data
+            previous, order.status = order.status, OrderStatus.OUT_FOR_DELIVERY
+            allocation.reason = "Rider accepted; delivery in progress."
             project(order, allocation)
             self.event(
-                order, assignment, "STATUS_CHANGED", order.status, {"action": "OFFER_ACCEPTED"}
+                order, assignment, "DELIVERY_STARTED", previous, {"action": "OFFER_ACCEPTED"}
             )
             outcome = "ACCEPTED"
         else:
@@ -572,6 +591,7 @@ class RiderService:
                 DeliveryAssignment.rider_id == rider_id,
                 DeliveryAssignment.status == "ACTIVE",
                 Order.status.in_([OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY]),
+                *([order_scope(self.actor)] if self.actor.role != UserRole.RIDER else []),
             )
         )
         rows = list(rows)

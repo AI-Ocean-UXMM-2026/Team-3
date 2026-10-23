@@ -46,7 +46,7 @@ test('free automatic assignment sends a pending offer; decline replaces it; acce
  assert.equal(o.responseStatus,'PENDING');assert.equal(o.state,'assigned');assert.throws(()=>command(s,'dispatch',{routeId:route.id}),/accept/);
  command(s,'offer_response',{id,action:'DECLINE',offerVersion:o.offerVersion},first);o=s.order(id);assert.equal(o.responseStatus,'PENDING');assert.notEqual(o.routeId,route.id);assert.equal(s.snapshot().routes.find(r=>r.id===o.routeId).riderId,W.ACTORS.rider2.id);
  const replacement=s.snapshot().routes.find(r=>r.id===o.routeId);command(s,'offer_response',{id,action:'ACCEPT',offerVersion:o.offerVersion},W.ACTORS.rider2);
- o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'assigned');command(s,'dispatch',{routeId:replacement.id});assert.equal(s.order(id).state,'out_for_delivery');
+ o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'out_for_delivery');assert.equal(s.snapshot().routes.find(r=>r.id===replacement.id).state,'dispatched');
 });
 test('prototype automatic assignment excludes riders unless availability is exactly AVAILABLE',()=>{
  const prior=[W.ACTORS.rider.availability,W.ACTORS.rider2.availability];
@@ -96,8 +96,15 @@ test('security COD requires explicit ability to pay and stale versions reject sa
  command(s,'incident',{id:o.id,reason:'Record changed'});
  assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:o.time,answer:'At home'}),/Conflict/);
 });
-test('customer self service closes at cutoff and departed amendments require review',()=>{
- const s=make();clock(s,'09:00');assert.throws(()=>confirm(s),/cutoff/);
+test('first address confirmation is allowed after cutoff; only later changes close',()=>{
+ const s=make();clock(s,'16:00');confirm(s,{time:W.WINDOWS.at(-1)});
+ assert.equal(s.order('LP-2045').confirmation.answer,'At home');
+ assert.equal(s.customer(s.order('LP-2045').link.token).editingPolicy.edit_count,0);
+ assert.throws(()=>confirm(s,{time:W.WINDOWS.at(-1),note:'Later change'}),/cutoff/);
+});
+
+test('customer self service closes later edits at cutoff and departed amendments require review',()=>{
+ const s=make();confirm(s);clock(s,'09:00');assert.throws(()=>confirm(s,{note:'Later change'}),/cutoff/);
  const b=make();confirm(b);command(b,'assign',{id:'LP-2045',routeId:'RT-001'});command(b,'dispatch',{routeId:'RT-001'});confirm(b,{note:'Changed gate after departure'});
  assert.equal(b.order('LP-2045').state,'out_for_delivery');assert.ok(b.order('LP-2045').proposedPin);assert.equal(b.order('LP-2045').note,'Blue gate');
  clock(b,'10:00');assert.throws(()=>command(b,'complete',{id:'LP-2045',amount:28000},R),/review/);
@@ -222,7 +229,7 @@ test('manual creation is admin-only, validated and atomic; no seeded records or 
  const reloaded=W.createStore(storage);assert.equal(reloaded.snapshot().orders.length,1);assert.equal(reloaded.snapshot().routes.length,0);assert.equal(reloaded.snapshot().orders[0].id,o.id);
 });
 test('customer without an anchor can submit a proposal but cannot clear the admin review hold',()=>{
- const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
+ const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T06:00:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
  assert.throws(()=>command(s,'approve_customer_location',{id,reason:'Unauthorised'},R),/Admin/);command(s,'approve_customer_location',{id,reason:'Checked delivery pin'});assert.equal(s.order(id).state,'ready');assert.equal(s.order(id).confirmation.note,'Blue gate');assert.equal(s.customer(o.link.token).available,true);
 });
 test('manual orders leave location unknown until the buyer submits a pin',()=>{

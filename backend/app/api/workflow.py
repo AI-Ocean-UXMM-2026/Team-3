@@ -10,7 +10,6 @@ from app.api.order_management import Page, PageSize, SessionDep
 from app.api.riders import RiderActor
 from app.core.dev_access import require_dev_access
 from app.db.workflow_models import WorkflowRoute
-from app.domain.lifecycle import UserRole
 from app.schemas.management import OrderResponse
 from app.services import workflow
 
@@ -40,7 +39,8 @@ class OrderOperation(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
     action: Literal[
-        "RECEIVE", "RETURN_RECEIVED", "RESOLVE_DIFFERENCE", "INCIDENT", "RESOLVE_INCIDENT"
+        "RECEIVE", "RETURN_RECEIVED", "RESOLVE_DIFFERENCE", "INCIDENT", "RESOLVE_INCIDENT",
+        "REMOVE_FROM_BOARD",
     ]
     reason: str | None = Field(default=None, max_length=500)
 
@@ -83,9 +83,7 @@ def session_info(request: Request, actor: RiderActor) -> dict:
 def list_routes(
     session: SessionDep, actor: RiderActor, page: Page = 1, page_size: PageSize = 20
 ) -> dict:
-    query = select(WorkflowRoute)
-    if actor.role == UserRole.RIDER:
-        query = query.where(WorkflowRoute.rider_id == actor.id)
+    query = workflow.scoped_routes(session, actor)
     total = session.scalar(select(func.count()).select_from(query.subquery()))
     rows = session.scalars(
         query.order_by(WorkflowRoute.id).offset((page - 1) * page_size).limit(page_size)

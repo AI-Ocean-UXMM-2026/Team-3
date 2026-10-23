@@ -125,3 +125,49 @@ def test_private_supabase_keys_are_rejected_before_serving_them():
             supabase_url="https://example.supabase.co",
             supabase_publishable_key="sb_secret_never_public",
         )
+
+
+def test_auto_provision_verified_dispatcher(secure, monkeypatch):
+    client, _ = secure
+    new_uid = uuid4()
+
+    def fake_verify(settings, token, request=None):
+        if request is not None:
+            request.state.auth_user = {
+                "id": str(new_uid),
+                "email": "judge@example.com",
+                "email_confirmed_at": "2026-10-23T12:00:00Z",
+                "user_metadata": {"shop_name": "Judge Shop", "role": "Dispatcher"},
+            }
+        return new_uid
+
+    monkeypatch.setattr("app.core.supabase_auth.verify_user", fake_verify)
+    response = client.get("/api/session", headers={"Authorization": "Bearer judge-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(new_uid)
+    assert data["role"] == "Dispatcher"
+    assert data["name"] == "Judge Shop"
+
+
+@pytest.mark.parametrize("requested,expected", [("Rider", "Rider"), ("Admin", "Dispatcher")])
+def test_public_signup_role_and_rider_profile(secure, monkeypatch, requested, expected):
+    from app.db.rider_models import RiderProfile
+
+    client, _ = secure
+    identifier = uuid4()
+
+    def verified(settings, token, request=None):
+        request.state.auth_user = {
+            "email": f"{identifier}@example.test", "email_confirmed_at": "verified",
+            "user_metadata": {"role": requested},
+        }
+        return identifier
+
+    monkeypatch.setattr("app.core.supabase_auth.verify_user", verified)
+    result = client.get("/api/session", headers={"Authorization": "Bearer synthetic"})
+    assert result.status_code == 200, result.text
+    assert result.json()["role"] == expected
+    with client.app.state.database.sessions() as session:
+        assert (session.get(RiderProfile, identifier) is not None) == (expected == "Rider")
+

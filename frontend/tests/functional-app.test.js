@@ -15,6 +15,29 @@ async function bootLive(hash='#/manual'){
 function departed(s){for(const [t,p]of [['receive',{id:'LP-2046'}],['assign',{id:'LP-2046',routeId:'RT-001'}],['dispatch',{routeId:'RT-001'}],['clock',{value:'2026-10-20T10:00:00+06:30'}]])s.execute(t,p,A);}
 async function verify(e,code){if(!e.find('#verify-form'))await e.action('request-otp',e.ctx.location.hash.split('/').at(-1));await e.submit('#verify-form',{digits:code});}
 
+for(const stage of ['with rider','delivered','returned','cancelled'])test(`dispatcher can delete ${stage} card without losing route history`,async()=>{
+ const e=boot('#/dispatch',s=>{
+   if(stage==='cancelled'){s.execute('cancel',{id:'LP-2046',reason:'Duplicate order'},A);return;}
+   departed(s);
+   if(stage==='delivered')s.execute('complete',{id:'LP-2046',amount:s.order('LP-2046').expected},R);
+   if(stage==='returned'){s.execute('fail',{id:'LP-2046',reason:W.REASONS[0],resolution:'return'},R);s.execute('return_received',{id:'LP-2046'},A);}
+ });
+ const before=e.store().order('LP-2046');
+ const route=e.store().snapshot().routes.find(r=>r.id===before.routeId);
+ assert.ok(e.find('.card-del[data-id="LP-2046"]'));
+ await e.action('delete-order','LP-2046');
+ assert.match(e.find('dialog').textContent,/dispatcher board/);
+ await e.submit('dialog form');
+ assert.equal(e.find('.card-del[data-id="LP-2046"]'),null);
+ const after=e.store().order('LP-2046');assert.equal(after.state,before.state);assert.deepEqual(after.collection,before.collection);
+ assert.deepEqual(e.store().snapshot().routes.find(r=>r.id===before.routeId),route);
+ assert.ok(after.boardDeletedAt);
+ e.ctx.location.hash='#/metrics';e.ctx.location.hash='#/dispatch';
+ assert.equal(e.find('.card-del[data-id="LP-2046"]'),null);
+ e.store().execute('restore',{orderId:'LP-2046'},A);e.ctx.location.hash='#/metrics';e.ctx.location.hash='#/dispatch';
+ assert.ok(e.find('.card-del[data-id="LP-2046"]'));
+});
+
 test('created order confirmation can close or return to the board without deleting the order',async()=>{
  const e=boot('#/manual',null,true);
  const fields={name:'Test buyer',phone:'09794339082',item:'Envelope',payment:'prepaid',expected:'0',areaId:'kamayut',prep:'ready_now',date:W.day(e.store().now())};
@@ -55,12 +78,16 @@ test('customer verifies and saves one response through real form handlers',async
 });
 test('wrong checks and cutoff show recovery screens, not successful confirmation',async()=>{
  const e=boot('#/track/demo-2045');for(let i=0;i<3;i++)await verify(e,'000000');assert.match(e.root.textContent,/This link is locked/);assert.equal(e.store().customer('demo-2045').available,false);
- const b=boot('#/track/demo-2045',s=>s.execute('clock',{value:'2026-10-20T09:00:00+06:30'},A));await verify(b,'123456');assert.match(b.root.textContent,/view-only/);assert.equal(b.find('#customer-form'),null);
+ const b=boot('#/track/demo-2045',s=>{
+   const o=s.order('LP-2045');s.requestOtp(o.link.token);s.verify(o.link.token,'123456');
+   s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:W.WINDOWS[0],answer:'At home'});
+   s.execute('clock',{value:'2026-10-20T09:00:00+06:30'},A);
+ });await verify(b,'123456');assert.match(b.root.textContent,/view-only/);assert.equal(b.find('#customer-form'),null);
 });
 test('admin field corrections, hub receipt and assignment controls mutate shared records',async()=>{
  const e=boot('#/order/LP-2046');await e.submit('#edit-form',{reason:'Confirm item label',item:'Reviewed phone case'});assert.equal(e.store().order('LP-2046').item,'Reviewed phone case');
  await e.action('receive','LP-2046');await e.action('assign','LP-2046');await e.submit('dialog form',{acknowledge:true});const route=e.store().order('LP-2046').routeId;assert.equal(e.store().order('LP-2046').state,'assigned');assert.equal(e.store().order('LP-2046').responseStatus,'PENDING');
- e.ctx.location.hash='#/ride';await e.action('accept','LP-2046');e.ctx.location.hash='#/routes';assert.ok(e.find('a.route-tile'));e.ctx.location.hash='#/routes/'+route;assert.ok(e.find('#app-sheet'));await e.action('dispatch-route',route);await e.submit('dialog form');assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
+ e.ctx.location.hash='#/ride';await e.action('accept','LP-2046');e.ctx.location.hash='#/routes';assert.ok(e.find('a.route-tile'));e.ctx.location.hash='#/routes/'+route;assert.ok(e.find('#app-sheet'));assert.equal(e.find('[data-action="dispatch-route"]'),null);assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
 });
 test('delivered undo is exactly timed; cash dialog cancellation does not complete delivery',async()=>{
  const e=boot('#/ride',departed);await e.action('picked-up','RT-001');await e.action('delivered','LP-2046');await e.tick(1999);assert.equal(e.find('dialog'),null);await e.action('delivered','LP-2046');await e.tick(100);assert.equal(e.find('dialog'),null);assert.equal(e.store().order('LP-2046').state,'out_for_delivery');
@@ -128,7 +155,7 @@ test('empty workspace has exactly three app sides, manual entry and a useful cus
  e.ctx.location.hash='#/manual';assert.ok(e.find('#manual-form'));assert.equal(e.find('#manual-form').querySelector('[name="time"]').value,W.ANY_TIME);
 });
 test('manual order → buyer reviews → dispatcher approval → accepted offer → departure and delivery',async()=>{
- const e=boot('#/manual',null,true);
+ const e=boot('#/manual',s=>s.execute('clock',{value:'2026-10-20T08:00:00+06:30'},A),true);
  await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true,prep:'ready_now',date:W.day(e.store().now())});
  let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.equal(order.pin,null);assert.equal(order.anchor,null);assert.equal(order.location,'unresolved');assert.ok(order.link.token);assert.match(e.ctx.location.hash,/manual/);assert.match(e.find('dialog').textContent,/Order LP-0001 created/);
  e.ctx.location.hash='#/customer';assert.match(e.root.textContent,/Document envelope/);
@@ -136,10 +163,10 @@ test('manual order → buyer reviews → dispatcher approval → accepted offer 
  await verify(e,'123456');assert.ok(e.find('[name="latitude"]'));
  await e.action('preview-location','kamayut');await e.submit('#customer-form',{answer:'At home',time:W.WINDOWS[0],note:'Ring the bell'});
  order=e.store().order(order.id);assert.equal(order.state,'held');assert.equal(order.location,'buyer_submitted');assert.equal(order.confirmation.note,'Ring the bell');assert.match(e.root.textContent,/The shop is checking your pin/);
- e.ctx.location.hash='#/order/'+order.id;await e.action('approve-location',order.id);await e.submit('dialog form',{reason:'Admin checked the delivery point'});assert.equal(e.store().order(order.id).state,'ready');
+ e.ctx.location.hash='#/order/'+order.id;await e.action('approve-location',order.id);assert.notEqual(e.find('dialog [name=reason]').required,true);await e.submit('dialog form',{reason:''});assert.equal(e.store().order(order.id).state,'ready');
  e.ctx.location.hash='#/order/'+order.id;await e.action('assign',order.id);await e.submit('dialog form',{acknowledge:true});order=e.store().order(order.id);const route=order.routeId;assert.equal(order.responseStatus,'PENDING');
  e.ctx.location.hash='#/ride';assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='delivered'));await e.action('accept',order.id);assert.equal(e.store().order(order.id).responseStatus,'ACCEPTED');
- e.ctx.location.hash='#/routes/'+route;await e.action('dispatch-route',route);await e.submit('dialog form');assert.equal(e.store().order(order.id).state,'out_for_delivery');
+ e.ctx.location.hash='#/routes/'+route;assert.equal(e.find('[data-action="dispatch-route"]'),null);assert.equal(e.store().order(order.id).state,'out_for_delivery');
  e.ctx.location.hash='#/ride';assert.ok(e.find('.hub-pickup'));assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='delivered'));assert.ok(!e.all('[data-action]').some(b=>b.dataset.action==='submit-cash'));
  await e.action('pick',route+'|'+order.id);await e.action('picked-up',route);assert.match(e.root.textContent,/Delivery stop: Test customer/);e.store().execute('clock',{value:order.date+'T10:00:00+06:30'},A);await e.action('delivered',order.id);await e.tick(2000);await e.submit('dialog form',{amount:'100'});assert.equal(e.store().order(order.id).state,'delivered');assert.equal(e.store().order(order.id).collection.actual,100);
  e.ctx.location.hash='#/track/'+order.link.token;assert.match(e.root.textContent,/Your parcel was delivered/);
@@ -173,3 +200,21 @@ test('after an accepted offer the rider collects every parcel at the hub before 
 test('Riders page lists the built-in riders and opens the add form',async()=>{
  const e=boot('#/riders');assert.match(e.root.textContent,/Ko Aung/);assert.match(e.root.textContent,/Ko Wai/);await e.action('rider-form','open');assert.ok(e.find('#rider-form'));
 });
+test('rider displays route map for accepted order and selecting another stop updates route destination',async()=>{
+ const e=boot('#/ride',departed);
+ await e.action('pick','RT-001|LP-2046');
+ await e.action('picked-up','RT-001');
+ const map=e.find('[data-rider-route-map]');
+ assert.ok(map,'Rider must render OpenStreetMap route container');
+ assert.equal(map.dataset.orderId,'LP-2046');
+ const tag=e.find('.queue-route-tag.active');
+ assert.ok(tag,'Active route tag must indicate current route');
+ assert.match(tag.textContent,/Active route/);
+});
+test('opening #/customer?id=LP-4B5EDA pre-fills tracking id and renders customer portal',async()=>{
+ const e=boot('#/customer?id=LP-4B5EDA');
+ assert.ok(e.find('#customer-link-form'),'Customer form must be rendered');
+ assert.equal(e.find('[name="trackingId"]').attributes.value,'LP-4B5EDA');
+ assert.ok(!e.find('.board-head'),'Dispatcher board must not be rendered on customer route');
+});
+

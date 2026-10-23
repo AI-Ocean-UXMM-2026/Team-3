@@ -106,6 +106,15 @@ class AllocationCoordinator(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
 
 
+class DeliveryPosition(Base):
+    __tablename__ = "delivery_positions"
+    assignment_id: Mapped[UUID] = mapped_column(
+        ForeignKey("delivery_assignments.id", ondelete="CASCADE"), primary_key=True
+    )
+    captured_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    data: Mapped[dict] = mapped_column(JSON_VALUE)
+
+
 class AutomaticAllocation(Base):
     __tablename__ = "automatic_allocations"
     __table_args__ = (

@@ -13,7 +13,7 @@ BEGIN
     'allocation_coordinator', 'automatic_allocations', 'allocation_receipts',
     'buyer_otp_challenges', 'buyer_edit_policies', 'buyer_submission_receipts',
     'buyer_reminder_outbox',
-    'routing_plans', 'routing_rate_limits', 'alembic_version'
+    'routing_plans', 'routing_rate_limits', 'delivery_positions', 'alembic_version'
   ] LOOP
     IF to_regclass(format('public.%I', table_name)) IS NOT NULL THEN
       EXECUTE format('ALTER TABLE public.%I ENABLE ROW LEVEL SECURITY', table_name);

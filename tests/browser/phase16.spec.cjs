@@ -40,12 +40,12 @@ test('Chromium geolocation denial and granted synthetic sensor update only the l
   expect((await inspect(page,'/api/orders/'+id)).latitude).toBeNull();
 });
 
-test('street tiles are opt-in and mocked at the browser boundary without external requests',async({page})=>{
+test('street tiles load automatically and are mocked at the browser boundary without external requests',async({page})=>{
   await create(page);const url=await link(page);
   const buyer=await page.context().newPage();let tiles=0;
   await buyer.route('https://tile.openstreetmap.org/**',async route=>{tiles++;await route.fulfill({contentType:'image/png',body:Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl6d8sAAAAASUVORK5CYII=','base64')});});
-  await verify(buyer,url);await expect(buyer.locator('#buyer-map')).toBeVisible();expect(tiles).toBe(0);
-  await buyer.locator('#load-street-tiles').click();await expect.poll(()=>tiles).toBeGreaterThan(0);
+  await verify(buyer,url);await expect(buyer.locator('#buyer-map')).toBeVisible();
+  await expect.poll(()=>tiles).toBeGreaterThan(0);
   await expect(buyer.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap');
 });
 

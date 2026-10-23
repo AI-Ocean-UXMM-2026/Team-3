@@ -11,7 +11,7 @@ from datetime import date, datetime
 from types import SimpleNamespace
 from uuid import UUID, uuid4
 
-from sqlalchemy import update
+from sqlalchemy import or_, select, update
 
 from app.core.order_errors import OrderAPIError
 from app.db.models import DeliveryEvent, Order, User, utcnow
@@ -20,6 +20,7 @@ from app.domain.lifecycle import OrderStatus, UserRole
 from app.services.buyer_confirmation import YANGON, lock_order
 from app.services.order_management import OrderManagementService
 from app.services.riders import active_assignment, bump_queue
+from app.services.workspace_scope import order_scope
 
 
 def admin(actor):
@@ -36,6 +37,9 @@ def set_parcel(order, data):
 
 
 def route_row(session, identifier, actor, lock=False):
+    row = session.scalar(scoped_routes(session, actor).where(WorkflowRoute.id == identifier))
+    if row is None:
+        raise OrderAPIError(404, "ROUTE_NOT_FOUND", "Route not found.")
     if lock:
         session.execute(
             update(WorkflowRoute)
@@ -48,7 +52,33 @@ def route_row(session, identifier, actor, lock=False):
     if actor.role not in {UserRole.ADMIN, UserRole.DISPATCHER, UserRole.RIDER}:
         raise OrderAPIError(403, "ROLE_FORBIDDEN", "Route access is unavailable.")
     session.refresh(row)
+    if (
+        lock and actor.role in {UserRole.ADMIN, UserRole.DISPATCHER}
+        and not row.data.get("hub_account_id")
+    ):
+        row.data = {**row.data, "hub_account_id": str(actor.id)}
     return row
+
+
+def scoped_routes(session, actor):
+    query = select(WorkflowRoute)
+    if actor.role == UserRole.RIDER:
+        return query.where(WorkflowRoute.rider_id == actor.id)
+    admin(actor)
+    owner = WorkflowRoute.data["hub_account_id"].as_string()
+    # Older routes have no owner marker. Only recover ownership when every
+    # attached parcel belongs to this account; unattributed empty routes stay hidden.
+    legacy = session.scalars(query.where(owner.is_(None))).all()
+    legacy_ids = []
+    if legacy:
+        own_orders = {
+            str(i) for i in session.scalars(select(Order.id).where(order_scope(actor)))
+        }
+        legacy_ids = [
+            r.id for r in legacy if r.data.get("order_ids")
+            and all(i in own_orders for i in r.data["order_ids"])
+        ]
+    return query.where(or_(owner == str(actor.id), WorkflowRoute.id.in_(legacy_ids)))
 
 
 def attach_order(session, actor, order, assignment, route_id):
@@ -215,6 +245,7 @@ def create_route(session, actor, body, *, commit=True):
         id=uuid4(),
         rider_id=body.rider_id,
         data={
+            "hub_account_id": str(actor.id),
             "day": body.day.isoformat(),
             "state": "draft",
             "order_ids": [],
@@ -577,13 +608,18 @@ def order_operation(session, actor, identifier, body):
     session.refresh(order)
     OrderManagementService.check_version(order, body.expected_version)
     context = parcel(order)
-    if context.get("route_id"):
+    if context.get("route_id") and body.action != "REMOVE_FROM_BOARD":
         row = route_row(session, UUID(context["route_id"]), actor, True)
         if row.data["state"] == "closed":
             raise OrderAPIError(
                 409, "ROUTE_CLOSED", "Closed cash and custody records cannot be changed."
             )
-    if body.action == "RECEIVE":
+    if body.action == "REMOVE_FROM_BOARD":
+        context["dispatcher_deleted_at"] = utcnow().isoformat()
+        OrderManagementService(session, actor, None).event(
+            order, "ORDER_CORRECTED", order.status, {"action": "REMOVE_FROM_BOARD"}
+        )
+    elif body.action == "RECEIVE":
         if order.status in {
             OrderStatus.OUT_FOR_DELIVERY,
             OrderStatus.DELIVERED,

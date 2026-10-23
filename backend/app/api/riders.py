@@ -22,6 +22,7 @@ from app.schemas.riders import (
     SequencePatch,
     UnassignOrder,
 )
+from app.services import delivery_tracking
 from app.services.riders import RiderService
 
 router = APIRouter(
@@ -31,6 +32,23 @@ router = APIRouter(
     responses={code: {"model": ErrorResponse} for code in (401, 403, 404, 409, 422, 503)},
 )
 RiderActor = Annotated[User, Depends(get_rider_actor)]
+
+
+@router.get("/riders/{rider_id:uuid}/deliveries/{order_id:uuid}/tracking")
+def tracking(rider_id: UUID, order_id: UUID, session: SessionDep, actor: RiderActor):
+    order = delivery_tracking.rider_order(session, actor, rider_id, order_id)
+    return delivery_tracking.snapshot(session, order)
+
+
+@router.post("/riders/{rider_id:uuid}/deliveries/{order_id:uuid}/tracking")
+def share_position(
+    rider_id: UUID,
+    order_id: UUID,
+    body: delivery_tracking.PositionReport,
+    session: SessionDep,
+    actor: RiderActor,
+):
+    return delivery_tracking.publish(session, actor, rider_id, order_id, body)
 
 
 def service(request, session, actor):

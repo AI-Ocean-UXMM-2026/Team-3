@@ -32,11 +32,28 @@ class BuyerOtpChallengeResult(BaseModel):
     mode: Literal["DEMO", "SMS"]
 
 
+class BuyerLookup(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tracking_id: str = Field(min_length=1, max_length=128)
+    phone: str = Field(min_length=5, max_length=32)
+
+
+class BuyerLookupResult(BaseModel):
+    token: str
+    order_reference: UUID
+    shop_display_name: str | None
+    delivery_status: OrderStatus
+    access_token: str
+    token_type: Literal["Bearer"]
+    expires_at: datetime
+
+
 class LinkResult(BaseModel):
     link_id: UUID
     confirmation_url: str
     absolute_url: str | None
     expires_at: datetime
+    buyer_handle: str | None = None
 
 
 class BuyerActionResult(BaseModel):
@@ -213,11 +230,13 @@ class ReviewBuyerRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
     decision: Literal["APPROVE", "REJECT"]
-    reason: str = Field(min_length=5, max_length=500, strict=True)
+    reason: str | None = Field(default=None, max_length=500, strict=True)
 
     @field_validator("reason")
     @classmethod
-    def nonblank_reason(cls, value):
-        if len(value.strip()) < 5 or "\x00" in value:
-            raise ValueError("Review reason needs at least five nonblank characters")
-        return value.strip()
+    def optional_reason(cls, value):
+        if value is None:
+            return None
+        if "\x00" in value:
+            raise ValueError("Review reason cannot contain NUL characters")
+        return value.strip() or None

@@ -22,6 +22,36 @@
   const mounted=[];
   function destroy(){while(mounted.length)mounted.pop()();}
 
+  function attachStreetTiles(map){
+    if(!map||map._tilesAttached)return;
+    map._tilesAttached=true;
+    const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+      maxZoom:19,
+      attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
+      referrerPolicy:'origin'
+    }).addTo(map);
+    tiles.on('tileerror',()=>{
+      if(!map._hotFallback){
+        map._hotFallback=true;
+        const hot=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
+          subdomains:['a','b'],
+          maxZoom:19,
+          attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors, Tiles by <a href="https://www.hotosm.org/" target="_blank" rel="noopener noreferrer">HOT</a>'
+        }).addTo(map);
+        hot.on('tileerror',()=>{
+          if(!map._esriFallback){
+            map._esriFallback=true;
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',{
+              maxZoom:19,
+              attribution:'Tiles &copy; Esri'
+            }).addTo(map);
+          }
+        });
+      }
+    });
+    return tiles;
+  }
+
   // Editable pin bound to a form's latitude/longitude fields.
   async function picker(form,{node,search,status,note}){
     if(!node)return;
@@ -57,7 +87,7 @@
       for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
       if(start)say(start.lat,start.lng);
       // Google mode needs no OpenStreetMap button or notice.
-      form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.hidden=true);
+      form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.remove());
       mounted.push(()=>{cleanup.forEach(f=>f());node.replaceChildren();});
       return;
     }
@@ -73,12 +103,8 @@
     const sync=()=>{const p=current();if(p){place(p.lat,p.lng,false);map.setView([p.lat,p.lng],16);}};
     for(const f of [latitude,longitude])f.addEventListener('change',sync,{signal:off.signal});
     if(start)place(start.lat,start.lng,false);
-    const tilesButton=form.querySelector('[data-load-tiles],#load-street-tiles');
-    if(tilesButton)tilesButton.onclick=()=>{
-      const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);
-      tiles.on('tileerror',()=>{if(!form.querySelector('[data-map-error]')){const p=document.createElement('p');p.className='small';p.setAttribute('data-map-error','');p.textContent='Street tiles unavailable. Coordinate selection still works; no location has been verified.';node.after(p);}});
-      tilesButton.disabled=true;
-    };
+    attachStreetTiles(map);
+    form.querySelectorAll('[data-load-tiles],#load-street-tiles,[data-osm-note]').forEach(n=>n.remove());
     map.whenReady(()=>map.invalidateSize());
     node.closest('details')?.addEventListener('toggle',()=>map.invalidateSize(),{signal:off.signal});
     mounted.push(()=>{off.abort();map.remove();});
@@ -96,9 +122,10 @@
       node.replaceChildren();
       const map=L.map(node).setView([a,b],16);
       L.marker([a,b],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Saved delivery point'}).addTo(map);
-      const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-      button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>{button.textContent='Tiles unavailable; saved coordinates remain available.';});button.disabled=true;};
-      map.whenReady(()=>map.invalidateSize());mounted.push(()=>{map.remove();button.remove();});return;
+      attachStreetTiles(map);
+      map.whenReady(()=>map.invalidateSize());
+      mounted.push(()=>{map.remove();});
+      return;
     }
     node.replaceChildren();node.classList.add('is-google');
     const map=new g.Map(node,{center:{lat:a,lng:b},zoom:17,disableDefaultUI:true,gestureHandling:'cooperative',clickableIcons:false});
@@ -127,9 +154,9 @@
     const map=L.map(node),line=L.geoJSON(geometry,{style:{color:'#D23F2E',weight:4}}).addTo(map);
     for(const stop of stops)L.marker([stop.latitude,stop.longitude],{title:`Stop ${stop.sequence}`,icon:L.divIcon({className:'buyer-map-pin',html:`<b>${Number(stop.sequence)}</b>`,iconSize:[28,28]})}).addTo(map);
     map.fitBounds(line.getBounds(),{padding:[20,20],maxZoom:17});
-    const button=document.createElement('button');button.type='button';button.className='btn sm';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>button.textContent='Tiles unavailable; route geometry remains visible.');button.disabled=true;};
-    mounted.push(()=>{map.remove();button.remove();});
+    attachStreetTiles(map);
+    map.whenReady(()=>map.invalidateSize());
+    mounted.push(()=>{map.remove();});
   }
   // Buyer's map while the parcel is out: their delivery point and the rider's position. Returns its own cleanup.
   async function riderView(node,{dest,rider}){
@@ -150,10 +177,9 @@
     L.marker([dest.lat,dest.lng],{icon:L.divIcon({className:'buyer-map-pin',html:'<span aria-hidden="true">●</span>',iconSize:[30,38],iconAnchor:[15,30]}),title:'Your delivery point'}).addTo(map);
     L.marker([rider.lat,rider.lng],{icon:L.divIcon({className:'rider-map-dot',html:'<i></i>',iconSize:[24,24],iconAnchor:[12,12]}),title:'Your rider'}).addTo(map);
     map.fitBounds([[dest.lat,dest.lng],[rider.lat,rider.lng]],{padding:[72,72],maxZoom:16});
-    const button=document.createElement('button');button.type='button';button.className='btn sm map-tiles';button.textContent='Load street tiles (OpenStreetMap)';node.after(button);
-    button.onclick=()=>{const tiles=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);tiles.on('tileerror',()=>{button.textContent='Tiles unavailable; the pins remain.';});button.disabled=true;};
+    attachStreetTiles(map);
     map.whenReady(()=>map.invalidateSize());
-    return ()=>{map.remove();button.remove();};
+    return ()=>{map.remove();};
   }
   // Rider's way to the hub. provider 'google' needs a browser key; otherwise Leaflet. Returns {off, setMe}.
   async function hubView(node,{hub,provider,mini=false}){
@@ -174,13 +200,385 @@
     node.replaceChildren();
     const map=L.map(node,{zoomControl:false,dragging:!mini,scrollWheelZoom:!mini,doubleClickZoom:!mini,touchZoom:!mini,keyboard:!mini,attributionControl:!mini}).setView([h.lat,h.lng],mini?15:16);
     if(!mini)L.control.zoom({position:'topright'}).addTo(map);
-    // Leaflet tiles load here without a button: the rider asked for the map by opening it.
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',referrerPolicy:'origin'}).addTo(map);
+    attachStreetTiles(map);
     L.marker([h.lat,h.lng],{icon:L.divIcon({className:'',html:hubIcon,iconSize:[40,40],iconAnchor:[20,20]}),title:hub.name}).addTo(map);
     let me=null,line=null;map.whenReady(()=>map.invalidateSize());
     return {off(){map.remove();},
       setMe(p){if(!valid(p?.lat,p?.lng))return;me?.remove();line?.remove();me=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'rider-map-dot',html:'<i></i>',iconSize:[24,24],iconAnchor:[12,12]}),title:'You'}).addTo(map);
         line=L.polyline([[p.lat,p.lng],[h.lat,h.lng]],{color:'#16263A',weight:4,dashArray:'2 10',lineCap:'round'}).addTo(map);map.fitBounds(line.getBounds(),{padding:[80,80],maxZoom:17});}};
   }
-  globalThis.LannPyaCustomerMap={mount,destroy,routeView,riderView,hubView,viewOne:view,googleEnabled:()=>!!key()};
+
+  // Rider route to the selected delivery stop using OpenStreetMap.
+  function riderRouteView(node,{rider,dest,order,stopIndex=1,totalStops=1,loadTracking=null,readOnly=false,onTracking=null}){
+    const none={off(){},setRider(){},invalidate(){}};
+    if(!node?.isConnected)return none;
+    if(!valid(dest?.lat,dest?.lng)||!valid(rider?.lat,rider?.lng))return none;
+    if(!globalThis.L){
+      node.innerHTML=`<div class="route-map-fallback"><p>Map library unavailable.</p><a class="btn sm" href="https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving" target="_blank" rel="noopener">Open navigation</a></div>`;
+      return none;
+    }
+
+    node.replaceChildren();
+    const mapDiv=document.createElement('div');
+    mapDiv.className='rider-map-canvas';
+    node.append(mapDiv);
+
+    // Overlay controls container
+    const topBar=document.createElement('div');
+    topBar.className='rider-map-overlay-top';
+    const stopChip=document.createElement('span');
+    stopChip.className='route-chip-title';
+    const stopName=order?.name||'Delivery stop';
+    const landmark=order?.landmark||order?.street||'Yangon';
+    stopChip.innerHTML=`<b>Stop ${stopIndex}/${totalStops}</b> · ${stopName}`;
+    stopChip.title=`${stopName} · ${landmark}`;
+    const btnGroup=document.createElement('div');
+    btnGroup.className='route-map-btn-group';
+
+    const locateBtn=document.createElement('button');
+    locateBtn.type='button';
+    locateBtn.className='locate-rider-btn';
+    locateBtn.title='Locate my current position';
+    locateBtn.setAttribute('aria-label','Locate my position');
+    locateBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>';
+
+    const expandBtn=document.createElement('button');
+    expandBtn.type='button';
+    expandBtn.className='toggle-map-size-btn';
+    expandBtn.title='Expand map to full popup';
+    expandBtn.setAttribute('aria-label','Expand delivery map');
+    expandBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg><span>Expand</span>';
+
+    btnGroup.append(locateBtn, expandBtn);
+    if(readOnly)btnGroup.remove();
+    topBar.append(stopChip);if(!readOnly)topBar.append(btnGroup);
+    node.append(topBar);
+
+    const bottomBar=document.createElement('div');
+    bottomBar.className='rider-map-overlay-bottom';
+    const routeInfo=document.createElement('span');
+    routeInfo.className='route-info-badge';
+    routeInfo.innerHTML='<span>Calculating route…</span>';
+
+    // Route info sits on bottom-left, leaving bottom-right Leaflet zoom buttons completely unobstructed
+    bottomBar.append(routeInfo);
+    node.append(bottomBar);
+
+    // Initialize Leaflet map
+    const map=L.map(mapDiv,{zoomControl:false,attributionControl:false});
+    L.control.zoom({position:'bottomright'}).addTo(map);
+
+    // OpenStreetMap Humanitarian (HOT) tiles powered by OSM data; fast, free, no API key required, no watermarks
+    attachStreetTiles(map);
+
+    // Rider Icon
+    const riderIcon=L.divIcon({
+      className:'rider-live-marker',
+      html:'<div class="rider-marker-pin"><span class="rider-marker-pulse"></span><span class="rider-marker-icon">🛵</span></div>',
+      iconSize:[36,36],
+      iconAnchor:[18,18]
+    });
+    const isLive=Boolean(globalThis.__riderLivePos);
+    let currentRiderPos=rider;
+    let riderMarker=L.marker([rider.lat,rider.lng],{icon:riderIcon,title:isLive?'Your Location':'Pickup Hub (Starting Point)',zIndexOffset:1000}).addTo(map);
+    riderMarker.bindPopup(isLive?'<b>Your Current Location</b><br>Live GPS active':'<b>Pickup Hub (Hledan)</b><br><small>Default start point until device GPS is read</small>');
+
+    // Destination Icon
+    const destIcon=L.divIcon({
+      className:'dest-delivery-marker',
+      html:`<div class="dest-marker-pin"><span class="dest-marker-number">${stopIndex}</span></div>`,
+      iconSize:[32,32],
+      iconAnchor:[16,32]
+    });
+    const destMarker=L.marker([dest.lat,dest.lng],{icon:destIcon,title:stopName,zIndexOffset:500}).addTo(map);
+    destMarker.bindPopup(`<b>${stopName}</b><br>${landmark}<br>Stop ${stopIndex} of ${totalStops}`);
+
+    let routeLayer=null;
+    let lastGeometry=null;
+    let activeModal=null;
+    let disposed=false,trackingBusy=false,trackingTimer=null,watchId=null,lastPublished=0,pendingPosition=null,hasTrackingPosition=false;
+
+    function paintTracking(data){
+      if(disposed||!node.isConnected)return;
+      onTracking?.(data);
+      if(data.destination){dest=data.destination;destMarker.setLatLng([dest.lat,dest.lng]);}
+      if(routeLayer){map.removeLayer(routeLayer);routeLayer=null;}
+      lastGeometry=data.route?.geometry||null;
+      hasTrackingPosition=!!data.position;
+      if(!data.position){
+        riderMarker.remove();map.setView([dest.lat,dest.lng],16,{animate:false});
+        routeInfo.textContent=readOnly?'Waiting for the rider’s GPS':'Allow location access to show your road route';
+        activeModal?.updateTracking?.(data);return;
+      }
+      currentRiderPos=data.position;
+      riderMarker.setLatLng([data.position.lat,data.position.lng]).addTo(map);
+      riderMarker.bindPopup(data.state==='stale'?'Last reported rider location':'Rider GPS location');
+      const age=Math.max(0,Math.floor((Date.now()-Date.parse(data.updated_at))/1000));
+      const freshness=data.state==='stale'?`Last location ${Math.floor(age/60)} min ago`:'Live GPS';
+      if(lastGeometry){
+        routeLayer=L.geoJSON(lastGeometry,{style:{color:'#24384F',weight:6,opacity:.95}}).addTo(map);
+        routeInfo.textContent=`${freshness} · ${(data.route.distance_meters/1000).toFixed(1)} km · ~${Math.ceil(data.route.duration_seconds/60)} min`;
+        map.fitBounds(routeLayer.getBounds(),{padding:[45,65],maxZoom:17,animate:false});
+      }else{
+        routeInfo.textContent=`${freshness} · Road route unavailable`;
+        map.fitBounds([[data.position.lat,data.position.lng],[dest.lat,dest.lng]],{padding:[50,65],maxZoom:17,animate:false});
+      }
+      activeModal?.updateTracking?.(data);
+    }
+
+    async function refreshTracking(position){
+      if(disposed||!loadTracking)return;
+      if(trackingBusy){if(position)pendingPosition=position;return;}
+      trackingBusy=true;
+      try{paintTracking(await loadTracking(position));}
+      catch(error){if(!disposed){paintTracking({state:'unavailable',position:null,route:null});routeInfo.textContent=error.status===401?'Verification expired. Close this map and verify your delivery again.':'Tracking unavailable. Reconnecting…';}}
+      finally{trackingBusy=false;if(pendingPosition&&!disposed){const next=pendingPosition;pendingPosition=null;refreshTracking(next);}}
+    }
+
+    const fetchRoute=async(from,to)=>{
+      currentRiderPos=from;
+      if(routeLayer)map.removeLayer(routeLayer);
+      routeInfo.innerHTML='<span>Finding best route…</span>';
+
+      const rad=x=>x*Math.PI/180;
+      const dLat=rad(to.lat-from.lat),dLng=rad(to.lng-from.lng);
+      const a=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(rad(from.lat))*Math.cos(rad(to.lat))*Math.sin(dLng/2)*Math.sin(dLng/2);
+      const distMeters=6371000*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+
+      if(distMeters<30){
+        lastGeometry=null;
+        const msg='<b>You are here</b> · At delivery destination';
+        routeInfo.innerHTML=msg;
+        map.setView([to.lat,to.lng],17);
+        if(activeModal?.infoBadge)activeModal.infoBadge.innerHTML=msg;
+        return;
+      }
+
+      try{
+        const controller=new AbortController();
+        const timeout=setTimeout(()=>controller.abort(),4000);
+        const res=await fetch(`https://router.project-osrm.org/route/v1/driving/${from.lng},${from.lat};${to.lng},${to.lat}?overview=full&geometries=geojson`,{signal:controller.signal});
+        clearTimeout(timeout);
+        if(!res.ok)throw Error('OSRM error');
+        const data=await res.json();
+        if(!data?.routes?.length)throw Error('No route found');
+        const r=data.routes[0];
+        lastGeometry=r.geometry;
+        routeLayer=L.geoJSON(r.geometry,{
+          style:{color:'#2563EB',weight:5,opacity:0.9,lineCap:'round',lineJoin:'round'}
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(),{padding:[45,45],maxZoom:16});
+        const km=(r.distance/1000).toFixed(1);
+        const mins=Math.ceil(r.duration/60);
+        const infoHtml=`<b>${km} km</b> · ~${mins} min drive`;
+        routeInfo.innerHTML=infoHtml;
+        if(activeModal?.infoBadge)activeModal.infoBadge.innerHTML=infoHtml;
+      }catch{
+        // Graceful fallback to direct styled polyline
+        lastGeometry=null;
+        routeLayer=L.polyline([[from.lat,from.lng],[to.lat,to.lng]],{
+          color:'#2563EB',weight:4,dashArray:'6, 8',opacity:0.8
+        }).addTo(map);
+        map.fitBounds(routeLayer.getBounds(),{padding:[45,45],maxZoom:16});
+        const dKm=(distMeters/1000).toFixed(1);
+        const infoHtml=`<b>~${dKm} km direct</b>`;
+        routeInfo.innerHTML=infoHtml;
+        if(activeModal?.infoBadge)activeModal.infoBadge.innerHTML=infoHtml;
+      }
+    };
+
+    if(loadTracking){riderMarker.remove();refreshTracking();}
+    else fetchRoute(rider,dest);
+
+    // Open full modal popup screen for map view
+    function openMapModal(){
+      if(activeModal){try{activeModal.close();}catch{}}
+
+      const modal=document.createElement('div');
+      modal.className='rider-map-modal';
+      modal.setAttribute('role','dialog');
+      modal.setAttribute('aria-modal','true');
+      modal.setAttribute('aria-label',`Route map for ${stopName}`);
+
+      modal.innerHTML=`
+        <div class="rider-modal-backdrop"></div>
+        <div class="rider-modal-content">
+          <header class="rider-modal-header">
+            <div class="rider-modal-title">
+              <span class="rider-modal-stop-badge">Stop ${stopIndex}/${totalStops}</span>
+              <div>
+                <h3>${stopName}</h3>
+                <span class="rider-modal-landmark">${landmark}</span>
+              </div>
+            </div>
+            <button type="button" class="rider-modal-close-btn" aria-label="Close map popup">✕</button>
+          </header>
+          <div class="rider-modal-map-container"></div>
+          <footer class="rider-modal-footer">
+            <div class="rider-modal-route-info">
+              <span class="modal-route-stat">${routeInfo.innerHTML}</span>
+            </div>
+            <div class="rider-modal-actions">
+              <button type="button" class="btn sm quiet modal-gps-btn">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>
+              </button>
+              <a class="btn primary sm modal-nav-btn" href="https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving" target="_blank" rel="noopener noreferrer">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg> Google Maps
+              </a>
+            </div>
+          </footer>
+        </div>
+      `;
+      document.body.append(modal);
+
+      const modalMapContainer=modal.querySelector('.rider-modal-map-container');
+      const modalMap=L.map(modalMapContainer,{zoomControl:false,attributionControl:false});
+      L.control.zoom({position:'topright'}).addTo(modalMap);
+      attachStreetTiles(modalMap);
+
+      const mRider=L.marker([currentRiderPos.lat,currentRiderPos.lng],{icon:riderIcon,title:riderMarker.options.title,zIndexOffset:1000}).addTo(modalMap);
+      if(loadTracking&&!hasTrackingPosition)mRider.remove();
+      mRider.bindPopup(riderMarker.getPopup()?.getContent()||'<b>Rider Location</b>');
+
+      const mDest=L.marker([dest.lat,dest.lng],{icon:destIcon,title:stopName,zIndexOffset:500}).addTo(modalMap);
+      mDest.bindPopup(`<b>${stopName}</b><br>${landmark}<br>Stop ${stopIndex} of ${totalStops}`);
+
+      let mRoute=null;
+      if(lastGeometry){
+        mRoute=L.geoJSON(lastGeometry,{
+          style:{color:'#2563EB',weight:6,opacity:0.95,lineCap:'round',lineJoin:'round'}
+        }).addTo(modalMap);
+        modalMap.fitBounds(mRoute.getBounds(),{padding:[50,50],maxZoom:17,animate:false});
+      }else if(!loadTracking){
+        mRoute=L.polyline([[currentRiderPos.lat,currentRiderPos.lng],[dest.lat,dest.lng]],{
+          color:'#2563EB',weight:5,dashArray:'6, 8',opacity:0.85
+        }).addTo(modalMap);
+        modalMap.fitBounds(mRoute.getBounds(),{padding:[50,50],maxZoom:17,animate:false});
+      }else modalMap.setView([dest.lat,dest.lng],16);
+
+      const modalGpsBtn=modal.querySelector('.modal-gps-btn');
+      modalGpsBtn.onclick=()=>{
+        if(!navigator.geolocation)return;
+        modalGpsBtn.disabled=true;
+        modalGpsBtn.textContent='GPS…';
+        navigator.geolocation.getCurrentPosition(
+          pos=>{
+            modalGpsBtn.disabled=false;
+            modalGpsBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>';
+            applyLivePosition(pos);
+            mRider.setLatLng([pos.coords.latitude,pos.coords.longitude]);
+            if(mRoute&&!loadTracking){
+              try{modalMap.removeLayer(mRoute);}catch{}
+              mRoute=L.polyline([[pos.coords.latitude,pos.coords.longitude],[dest.lat,dest.lng]],{color:'#2563EB',weight:5,opacity:0.9}).addTo(modalMap);
+              modalMap.fitBounds(mRoute.getBounds(),{padding:[50,50],maxZoom:17,animate:false});
+            }
+          },
+          ()=>{
+            modalGpsBtn.disabled=false;
+            modalGpsBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>';
+          },
+          {enableHighAccuracy:true,timeout:8000}
+        );
+      };
+
+      const close=()=>{
+        try{modalMap.remove();}catch{}
+        modal.remove();
+        if(activeModal?.close===close)activeModal=null;
+        window.removeEventListener('keydown',onKey);
+      };
+      const onKey=e=>{if(e.key==='Escape')close();};
+      window.addEventListener('keydown',onKey);
+      modal.querySelector('.rider-modal-close-btn').onclick=close;
+      modal.querySelector('.rider-modal-backdrop').onclick=close;
+
+      activeModal={close,modal,modalMap,infoBadge:modal.querySelector('.modal-route-stat'),updateTracking(data){
+        if(mRoute){modalMap.removeLayer(mRoute);mRoute=null;}
+        if(data.destination){mDest.setLatLng([dest.lat,dest.lng]);modal.querySelector('.modal-nav-btn').href=`https://www.google.com/maps/dir/?api=1&destination=${dest.lat},${dest.lng}&travelmode=driving`;}
+        if(data.position)mRider.setLatLng([data.position.lat,data.position.lng]).addTo(modalMap);else mRider.remove();
+        if(data.route?.geometry){mRoute=L.geoJSON(data.route.geometry,{style:{color:'#24384F',weight:6}}).addTo(modalMap);modalMap.fitBounds(mRoute.getBounds(),{padding:[50,60],maxZoom:17,animate:false});}
+        this.infoBadge.textContent=routeInfo.textContent;
+      }};
+
+      setTimeout(()=>{
+        try{
+          modalMap.invalidateSize();
+          if(mRoute)modalMap.fitBounds(mRoute.getBounds(),{padding:[50,50],maxZoom:17,animate:false});
+        }catch{}
+      },120);
+    }
+
+    expandBtn.onclick=()=>openMapModal();
+
+    const applyLivePosition=(pos)=>{
+      locateBtn.disabled=false;
+      locateBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>';
+      const newPos={lat:pos.coords.latitude,lng:pos.coords.longitude};
+      globalThis.__riderLivePos=newPos;
+      if(loadTracking){
+        const now=Date.now();if(now-lastPublished<10000)return;lastPublished=now;
+        refreshTracking({latitude:newPos.lat,longitude:newPos.lng,accuracy:pos.coords.accuracy??null,captured_at:new Date(pos.timestamp||now).toISOString()});return;
+      }
+      riderMarker.setLatLng([newPos.lat,newPos.lng]);
+      riderMarker.bindPopup('<b>Your Current Location</b><br>Live GPS active');
+      fetchRoute(newPos,dest);
+    };
+
+    // Auto-detect rider GPS on mount if not yet established
+    if(!readOnly&&navigator.geolocation&&(!globalThis.__riderLivePos||loadTracking)){
+      navigator.geolocation.getCurrentPosition(
+        applyLivePosition,
+        ()=>{ /* Retain hub default if permission denied */ },
+        {enableHighAccuracy:true,timeout:6000,maximumAge:15000}
+      );
+    }
+
+    // Locate rider GPS button
+    locateBtn.onclick=()=>{
+      if(!navigator.geolocation)return;
+      locateBtn.disabled=true;
+      lastPublished=0;
+      locateBtn.textContent='Locating…';
+      navigator.geolocation.getCurrentPosition(
+        applyLivePosition,
+        ()=>{
+          locateBtn.disabled=false;
+          locateBtn.innerHTML='<svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Locate me</span>';
+        },
+        {enableHighAccuracy:true,timeout:8000}
+      );
+    };
+
+    map.whenReady(()=>map.invalidateSize());
+    if(loadTracking){
+      if(!readOnly&&navigator.geolocation?.watchPosition)watchId=navigator.geolocation.watchPosition(applyLivePosition,()=>{routeInfo.textContent='Location unavailable. Allow GPS and tap Locate me.';},{enableHighAccuracy:true,maximumAge:5000});
+      trackingTimer=setInterval(()=>{
+        if(document.hidden||disposed)return;
+        if(readOnly)refreshTracking();
+        else navigator.geolocation?.getCurrentPosition(applyLivePosition,()=>refreshTracking(),{enableHighAccuracy:true,timeout:8000,maximumAge:5000});
+      },15000);
+    }
+
+    const instance={
+      off(){
+        disposed=true;clearInterval(trackingTimer);if(watchId!==null)navigator.geolocation?.clearWatch(watchId);
+        if(activeModal){try{activeModal.close();}catch{} activeModal=null;}
+        try{map.remove();}catch{}
+        node.replaceChildren();
+      },
+      setRider(newPos){
+        if(!valid(newPos?.lat,newPos?.lng))return;
+        riderMarker.setLatLng([newPos.lat,newPos.lng]);
+        fetchRoute(newPos,dest);
+      },
+      invalidate(){
+        try{map.invalidateSize();}catch{}
+      },
+      refresh(){return refreshTracking();}
+    };
+    mounted.push(()=>instance.off());
+    return instance;
+  }
+
+  globalThis.LannPyaCustomerMap={mount,destroy,routeView,riderView,hubView,riderRouteView,viewOne:view,googleEnabled:()=>!!key()};
 })();

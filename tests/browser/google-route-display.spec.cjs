@@ -49,9 +49,8 @@ test('Leaflet continues rendering explicitly synthetic offline route geometry lo
   await page.addScriptTag({path:path.resolve('frontend/js/customer-map.js')});
   await page.evaluate(g => LannPyaCustomerMap.routeView(document.querySelector('#map'),g,'offline'),geometry);
   await expect(page.locator('.leaflet-container')).toHaveCount(1);
-  await expect(page.getByRole('button',{name:'Load street tiles (OpenStreetMap)'})).toBeVisible();
+  await expect(page.locator('.leaflet-tile-pane')).toHaveCount(1);
   await page.evaluate(() => LannPyaCustomerMap.destroy());
   // Leaflet retains its container CSS class on remove(); layers and controls are removed.
   await expect(page.locator('.leaflet-map-pane')).toHaveCount(0);
-  await expect(page.getByRole('button',{name:'Load street tiles (OpenStreetMap)'})).toHaveCount(0);
 });

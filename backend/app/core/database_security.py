@@ -22,7 +22,7 @@ def check_browser_grants(database):
                 'allocation_coordinator', 'automatic_allocations', 'allocation_receipts',
                 'buyer_otp_challenges', 'buyer_edit_policies', 'buyer_submission_receipts',
                 'buyer_reminder_outbox',
-                'routing_plans', 'routing_rate_limits', 'alembic_version')
+                'routing_plans', 'routing_rate_limits', 'delivery_positions', 'alembic_version')
               AND has_table_privilege(r.oid, c.oid, 'SELECT,INSERT,UPDATE,DELETE,TRUNCATE')
             LIMIT 1
         """)

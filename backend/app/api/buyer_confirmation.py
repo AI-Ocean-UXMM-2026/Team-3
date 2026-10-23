@@ -12,10 +12,12 @@ from app.schemas.buyer import (
     BuyerCardResult,
     BuyerDetailsResult,
     BuyerHistoryPage,
-    BuyerOtpChallengeResult,
     BuyerLocation,
-    BuyerResponse,
+    BuyerLookup,
+    BuyerLookupResult,
+    BuyerOtpChallengeResult,
     BuyerRequestSubmission,
+    BuyerResponse,
     BuyerReviewResult,
     LinkResult,
     LocationReferenceResult,
@@ -92,6 +94,12 @@ def buyer_history(
     return service(request, session).history(order_id, actor, page, page_size)
 
 
+@public_router.post("/lookup", response_model=BuyerLookupResult)
+def lookup(body: BuyerLookup, request: Request, session: PublicSession):
+    consume_rate_limit(request, verify=True)
+    return service(request, session).lookup(body.tracking_id, body.phone)
+
+
 @public_router.get("/{token}", response_model=BuyerCardResult)
 def card(token: str, request: Request, session: PublicSession):
     return service(request, session).card(token)
@@ -128,6 +136,16 @@ def details(
     token: str, request: Request, session: PublicSession, authorization: Authorization = None
 ):
     return service(request, session).details(token, credential(authorization))
+
+
+@public_router.get("/{token}/tracking")
+def tracking(
+    token: str, request: Request, session: PublicSession, authorization: Authorization = None
+):
+    from app.services.delivery_tracking import snapshot
+
+    _, order = service(request, session).authorize(token, credential(authorization))
+    return snapshot(session, order)
 
 
 @public_router.patch("/{token}/location", response_model=BuyerActionResult)

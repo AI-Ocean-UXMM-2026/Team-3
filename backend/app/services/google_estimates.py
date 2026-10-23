@@ -87,7 +87,10 @@ def estimate(session, actor, settings, body, *, transport=None):
     permitted(actor)
     if not enabled(settings):
         raise RoutingFailure("GOOGLE_DEMO_DISABLED")
-    order = session.get(Order, body.order_id)
+    from app.services.order_management import OrderManagementService
+
+    order = (session.get(Order, body.order_id) if actor.role == UserRole.RIDER
+             else OrderManagementService(session, actor, None).get(body.order_id))
     if order is None:
         raise OrderAPIError(404, "ORDER_NOT_FOUND", "Order not found.")
     if actor.role == UserRole.RIDER and not session.scalar(

@@ -2,6 +2,7 @@ import {WorkspaceApi} from './api-model.mjs';
 import {createBuyerApi,ApiError} from './backend-client.mjs';
 
 export class AuthenticatedWorkspaceApi extends WorkspaceApi {
+  #buyerClients=new Map();
   constructor(auth,baseUrl){super();this.auth=auth;this.baseUrl=baseUrl;}
   async connect(side,_baseUrl,actorId){
     const client=async(path,{method='GET',body}={})=>{
@@ -19,5 +20,11 @@ export class AuthenticatedWorkspaceApi extends WorkspaceApi {
     if(side==='admin'&&!['Admin','Dispatcher'].includes(actor.role)||side==='rider'&&actor.role!=='Rider'||actorId&&actor.id!==actorId)throw Error('This account cannot open that workspace.');
     this.connections[side]={client,actor,baseUrl:this.baseUrl};return actor;
   }
-  openBuyer(_baseUrl,token){this.buyer?.clear();this.buyer=createBuyerApi({baseUrl:this.baseUrl,linkToken:token});return this.buyer;}
+  openBuyer(_baseUrl,token,initialAuth){
+    let client=this.#buyerClients.get(token);
+    if(!client){client=createBuyerApi({baseUrl:this.baseUrl,linkToken:token,initialAuthorization:initialAuth});this.#buyerClients.set(token,client);}
+    else if(initialAuth)client.setAuthorization(initialAuth);
+    this.buyer=client;return client;
+  }
+  async lookupBuyer(trackingId,phone){return (await import('./backend-client.mjs')).lookupBuyerOrder({baseUrl:this.baseUrl,trackingId,phone});}
 }
