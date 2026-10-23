@@ -79,10 +79,12 @@ export function createBuyerApi({ baseUrl, linkToken, initialAuthorization }) {
       lastChallenge = res;
       return res;
     },
-    demoCode: async () => ({
-      code: lastChallenge?.demo_code || "123456",
-      simulation: true,
-    }),
+    demoCode: async () => {
+      if (lastChallenge?.mode !== "DEMO" || !/^[0-9]{6}$/.test(lastChallenge.demo_code || "")) {
+        throw new Error("Simulation code unavailable. Request a new code.");
+      }
+      return { code: lastChallenge.demo_code, simulation: true };
+    },
     setAuthorization: (token) => { authorization = token; },
     async verify(code) {
       if (!/^[0-9]{6}$/.test(String(code))) throw new Error("Enter the six-digit code sent to your phone.");

@@ -190,7 +190,7 @@ def test_otp_start_returns_only_safe_challenge_state(linked):
     response = linked["client"].post(linked["path"] + "/otp", json={})
     assert response.status_code == 200, response.text
     payload = response.json()
-    assert set(payload) == {"challenge_id", "destination_masked", "expires_at", "resend_after", "mode"}
+    assert set(payload) == {"challenge_id", "destination_masked", "expires_at", "resend_after", "mode", "demo_code"}
     assert payload["destination_masked"].endswith("4567")
     assert payload["mode"] == "DEMO"
     assert "code" not in payload and "09791234567" not in response.text
@@ -1751,3 +1751,29 @@ def test_buyer_lookup_by_tracking_id_and_phone(linked):
     )
     assert res_unknown.status_code == 404
 
+
+
+@pytest.mark.parametrize("use_fixed_code", [False, True])
+def test_demo_challenge_returns_the_code_that_verifies(linked, use_fixed_code):
+    response = linked["client"].post(linked["path"] + "/otp", json={})
+    assert response.status_code == 200
+    challenge = response.json()
+    assert challenge["mode"] == "DEMO"
+    code = "123456" if use_fixed_code else challenge["demo_code"]
+    assert len(code) == 6 and code.isdigit()
+    result = linked["client"].post(linked["path"] + "/verify", json={"code": code})
+    assert result.status_code == 200, result.text
+    headers = {"Authorization": "Bearer " + result.json()["access_token"]}
+    assert linked["client"].get(linked["path"] + "/details", headers=headers).status_code == 200
+
+
+def test_fixed_demo_code_is_not_a_production_verification_bypass(linked, monkeypatch):
+    import app.services.buyer_otp as otp
+    monkeypatch.setattr(otp.secrets, "randbelow", lambda _: 482931)
+    started = linked["client"].post(linked["path"] + "/otp", json={})
+    assert started.status_code == 200
+    linked["settings"].environment = "production"
+    with linked["db"].sessions() as session:
+        with pytest.raises(OrderAPIError) as rejected:
+            otp.BuyerOtpService(session, linked["settings"]).verify(linked["path"].rsplit("/", 1)[1], "123456")
+        assert rejected.value.code == "BUYER_VERIFICATION_FAILED"

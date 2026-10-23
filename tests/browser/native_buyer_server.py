@@ -55,13 +55,28 @@ def main():
                 "parcel": {"item": "Test parcel", "reference": reference, "delivery_day": day},
             })
             service.create(body, None, "structured")
-    database.dispose()
     settings = Settings(
         _env_file=None, environment="test", LANNPYA_DATABASE_URL=url,
         order_management_enabled=True, supabase_auth_enabled=True,
         supabase_url="https://auth.example.supabase.co",
         supabase_publishable_key="sb_publishable_test",
     )
+    if len(sys.argv) > 3 and sys.argv[3] == "demo-otp":
+        from app.services.buyer_confirmation import BuyerConfirmationService
+        previews = []
+        with database.sessions() as session:
+            actor = session.get(User, actor_id)
+            service = OrderManagementService(session, actor, LocationCatalog())
+            for index, phone in enumerate(["09790000001", "09790000002"]):
+                order = service.create(CreateOrder.model_validate({
+                    "structured": {"customer_name": "Demo OTP buyer", "customer_phone": phone,
+                                   "township": "Hlaing", "cod_amount": "0"},
+                    "parcel": {"item": "Test parcel", "reference": f"DEMO-OTP-{index}", "delivery_day": day},
+                }), None, "structured")
+                link = BuyerConfirmationService(session, settings, LocationCatalog(), None).generate(order.id, actor)
+                previews.append(link["confirmation_url"])
+        filename.with_suffix(".links.json").write_text(json.dumps(previews), encoding="utf-8")
+    database.dispose()
     assert settings.database_url.get_secret_value() == url
     if hub_mode:
         from app.core import supabase_auth

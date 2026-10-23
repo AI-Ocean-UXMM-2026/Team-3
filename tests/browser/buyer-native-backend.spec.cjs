@@ -7,7 +7,7 @@ test.beforeAll(async()=>{
   directory=fs.mkdtempSync(path.join(os.tmpdir(),'lannpya-native-buyer-'));
   const probe=net.createServer();probe.listen(0,'127.0.0.1');await once(probe,'listening');
   const port=probe.address().port;await new Promise(resolve=>probe.close(resolve));origin='http://127.0.0.1:'+port;
-  child=spawn(pythonPath(),[path.resolve('tests/browser/native_buyer_server.py'),String(port),path.join(directory,'buyer.sqlite3')],{cwd:path.resolve('.'),windowsHide:true,stdio:['pipe','ignore','pipe']});
+  child=spawn(pythonPath(),[path.resolve('tests/browser/native_buyer_server.py'),String(port),path.join(directory,'buyer.sqlite3'),'demo-otp'],{cwd:path.resolve('.'),windowsHide:true,stdio:['pipe','ignore','pipe']});
   let error='';child.stderr.on('data',chunk=>{error+=chunk.toString();});
   for(let i=0;i<250;i++){
     if(child.exitCode!==null)throw Error('Isolated buyer server failed: '+error);
@@ -50,4 +50,20 @@ test('two new orders confirm through the real API and the first remains authoriz
   await expect(page.locator('.delivery-request-confirmed')).toContainText('2 edits remain');
   expect(errors).toEqual([]);
   if(process.env.LANNPYA_SCREENSHOT_DIR)await page.screenshot({path:path.join(process.env.LANNPYA_SCREENSHOT_DIR,'buyer-native-authorization-saved.png'),fullPage:true});
+});
+
+
+for(const fixed of [false,true])test(`connected backend verifies ${fixed?'123456':'the displayed random demo code'} in browser`,async({page})=>{
+ const links=JSON.parse(fs.readFileSync(path.join(directory,'buyer.links.json'),'utf8'));
+ const token=links[fixed?1:0].split('/').at(-1);
+ await page.goto(origin+'/index.html#/track/'+token);
+ await page.getByRole('button',{name:'Send verification code'}).click();
+ await expect(page.locator('#verify-form')).toBeVisible();
+ const displayed=(await page.locator('.verification .num').first().textContent()).trim();
+ expect(displayed).toMatch(/^[0-9]{6}$/);
+ await page.locator('[name=digits]').fill(fixed?'123456':displayed);
+ const verified=page.waitForResponse(r=>r.url().endsWith('/verify')&&r.request().method()==='POST');
+ await page.getByRole('button',{name:'Verify code',exact:true}).click();
+ expect((await verified).status()).toBe(200);
+ await expect(page.locator('#customer-form')).toBeVisible();
 });

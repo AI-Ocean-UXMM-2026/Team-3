@@ -30,6 +30,7 @@ class BuyerOtpChallengeResult(BaseModel):
     expires_at: datetime
     resend_after: datetime
     mode: Literal["DEMO", "SMS"]
+    demo_code: str | None = Field(default=None, pattern=r"^[0-9]{6}$")
 
 
 class BuyerLookup(BaseModel):

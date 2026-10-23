@@ -125,7 +125,7 @@ def verify(token: str, body: VerifyBuyer, request: Request, session: PublicSessi
     return service(request, session).verify(token, body)
 
 
-@public_router.post("/{token}/otp", response_model=BuyerOtpChallengeResult)
+@public_router.post("/{token}/otp", response_model=BuyerOtpChallengeResult, response_model_exclude_none=True)
 def start_otp(token: str, request: Request, session: PublicSession):
     consume_rate_limit(request, verify=True)
     return BuyerOtpService(session, request.app.state.settings).start(token)

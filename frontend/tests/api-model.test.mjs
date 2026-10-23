@@ -61,3 +61,14 @@ test('automatic reconfirmation and offer replies use the exact versioned contrac
  assert.equal(calls[1].url,'http://127.0.0.1:8000/api/riders/rider-id/deliveries/o/status');
  assert.deepEqual(calls[1].body,{request_id:'offer-request',expected_version:3,action:'DECLINE',assignment_id:'assignment-1',offer_version:4});
 });
+
+
+test('native demo preview uses the issued code and never invents a fallback',async t=>{
+ const {createBuyerApi}=await import('../js/backend-client.mjs');
+ let challenge={mode:'DEMO',demo_code:'482931'};
+ t.mock.method(globalThis,'fetch',async()=>reply(challenge));
+ const buyer=createBuyerApi({baseUrl:'http://127.0.0.1:8000',linkToken:token});
+ await buyer.requestOtp();assert.equal((await buyer.demoCode()).code,'482931');
+ challenge={mode:'DEMO'};await buyer.requestOtp();await assert.rejects(buyer.demoCode(),/simulation code/i);
+ challenge={mode:'SMS',demo_code:'482931'};await buyer.requestOtp();await assert.rejects(buyer.demoCode(),/simulation code/i);
+});
