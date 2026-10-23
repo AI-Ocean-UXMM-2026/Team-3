@@ -10,6 +10,10 @@ Use **Fill Demo Credentials** on the Dispatcher or Rider sign-in page. You can a
 
 Dispatcher-shared customer links open the order ID and phone-number page. Enter the matching buyer phone number from your demo order to open its delivery edit page.
 
+## Illustrated workflow
+
+See the [step-by-step workflow with 17 screenshots](docs/workflow/README.md) for order creation, buyer phone confirmation, dispatcher review, rider acceptance and delivery, and hub handover/close-out.
+
 ## Local integration notes
 
 Supabase login/logout, email-code recovery, role provisioning, and secure deployment
