@@ -248,7 +248,7 @@ dialog h2{margin:0}
 
 /* Rider: one stop owns the screen */
 .rider-wrap{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:var(--cream)}
-.rider-head{display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--navy);color:var(--cream)}
+.rider-head{position:relative;z-index:20;display:flex;align-items:center;gap:10px;padding:12px 18px;background:var(--navy);color:var(--cream)}
 .rider-head h1{font-size:1.15rem;margin:0;flex:1}
 .rider-head .pill{background:var(--navy-2);color:#E8D9BC}
 .rider-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
@@ -283,7 +283,7 @@ dialog h2{margin:0}
 .rider-bottom-nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;color:var(--navy-ink);text-decoration:none;font-weight:700;font-size:.85rem;border-top:4px solid transparent}
 .rider-bottom-nav a:first-child{color:var(--cream);border-top-color:var(--saffron)}
 .rider-section{padding:0 18px}
-.route-map{position:relative;height:190px;background:#ECE2CF;overflow:hidden}
+.route-map{position:relative;isolation:isolate;height:190px;background:#ECE2CF;overflow:hidden}
 .route-map.rider-osm-route-map{height:255px;border-bottom:2px solid var(--line);border-radius:0 0 var(--r-sm) var(--r-sm);overflow:hidden}
 .rider-map-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .route-map-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#ECE2CF;color:var(--navy);font-weight:700;font-size:.9rem;z-index:2}
@@ -1079,3 +1079,33 @@ body.night select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://
 .created-actions .grow{display:none}
 .created-actions [data-created=board]{margin-right:auto}
 @media(max-width:640px){.record-controls{gap:8px}.record-controls>.btn{padding-inline:12px}.created-actions{gap:8px}}
+
+/* Shared markup keeps the phone flow; wide screens gain a working desktop layout. */
+.customer-overview,.customer-workflow{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rider-menu nav{max-height:calc(100dvh - 100px);overflow:auto}
+@media(min-width:1024px){
+  .rider-wrap{display:grid;grid-template-columns:160px minmax(0,1fr) minmax(320px,380px);grid-template-rows:auto 1fr;align-items:start;gap:24px;max-width:1440px;padding:24px;min-height:100dvh}
+  .rider-head{grid-column:1/-1;border-radius:var(--r);padding:16px 20px}
+  .rider-head h1{font-size:1.4rem}
+  .rider-wrap>.rider-osm-route-map{grid-column:2;grid-row:2;position:sticky;top:24px;height:clamp(420px,calc(100dvh - 160px),720px);border:var(--edge);border-radius:var(--r)}
+  .rider-body{grid-column:3;grid-row:2;min-width:0;padding:0;gap:20px}
+  .rider-wrap:not(:has(>.rider-osm-route-map)) .rider-body{grid-column:2/-1}
+  .rider-bottom-nav{grid-column:1;grid-row:2;grid-template-columns:1fr;position:sticky;top:24px;bottom:auto;margin:0;border-radius:var(--r);overflow:hidden}
+  .rider-bottom-nav a{flex-direction:row;justify-content:flex-start;gap:10px;padding:14px 10px;min-height:64px;font-size:.85rem;text-align:left;border-top:0;border-inline-start:4px solid transparent}
+  .rider-bottom-nav a[aria-current="page"]{border-inline-start-color:var(--saffron)}
+  .rider-bottom-nav .nav-count{position:static;margin-left:auto;flex-shrink:0}
+  .rider-bottom-nav .icon{flex-shrink:0}
+  .rider-bottom-nav .bi{min-width:0}
+  .rider-wrap .stop-actions{bottom:0;margin:0;padding:12px 0;z-index:2}
+  .rider-modal-content{max-width:1100px;height:88dvh;max-height:none}
+  body:has(.rider-wrap) .toast{bottom:24px}
+  .customer-wrap{max-width:1160px;padding:24px;min-height:100dvh}
+  .customer-wrap>.shop-bar{border-radius:var(--r);padding:18px 24px}
+  .customer-card.portal-layout{display:grid;grid-template-columns:minmax(280px,.85fr) minmax(0,1.15fr);align-items:start;gap:28px;padding:28px 0}
+  .customer-overview{position:sticky;top:24px;gap:24px}
+  .customer-sign{padding:24px}
+  .customer-sign h1{font-size:1.5rem}
+  .customer-card.portal-layout>.privacy{grid-column:1/-1;margin:0}
+  .customer-wrap .customer-manual-link{margin-top:0!important}
+  .customer-wrap .customer-step{margin:0}
+}
