@@ -12,6 +12,8 @@
   Right address, right time.
 </p>
 
+LannPya helps Myanmar shops acting as delivery hubs coordinate orders, buyer address confirmation, rider delivery, and cash handover.
+
 ## Judges: demo access and connection notes
 
 Open the [live demo](https://lannpya-ai.vercel.app). If the website, sign-in, or database connection does not work on your network, try using a VPN and refresh the page.
@@ -36,94 +38,40 @@ The [LannPya pitch deck](slides/LannPya%20pitch%20deck.pptx.pptx) is available i
 
 See the [step-by-step workflow with 17 screenshots](docs/workflow/README.md) for order creation, buyer phone confirmation, dispatcher review, rider acceptance and delivery, and hub handover/close-out.
 
-## Local integration notes
+## What LannPya does
 
-Supabase login/logout, email-code recovery, role provisioning, and secure deployment
-configuration: [authentication setup](docs/SUPABASE_AUTH_SETUP.md). The existing
-Signboard visual design is preserved. Live Supabase credentials and email delivery
-still need operator configuration; `npm start` remains the separate local sandbox.
+LannPya is a delivery management platform for Myanmar shops acting as delivery hubs, their buyers, and riders. Shops create orders, review buyer-confirmed delivery details, oversee rider assignments, and receive collected cash and returned parcels.
 
-Development reference: `mtt`. This feature worktree connects MTT's Signboard
-dispatcher/customer/rider UI to the existing FastAPI/SQLAlchemy backend through the
-protected local BFF. Private credentials stay server-side. Real rules parsing;
-AI enrichment remains MOCK. No final AI provider is selected.
+The shop's dispatcher can enter orders manually or paste order messages, check delivery details, and share a customer link. Buyers use their order reference and phone number to confirm their location, delivery time, and instructions. Riders receive delivery offers, follow route guidance, and record delivery results and cash collected.
 
-```powershell
-npm.cmd start -- --port 8781 --state mtt-local
-```
+## How the system works
 
-Open http://127.0.0.1:8781 (loopback only).
-[Mapping/routing MVP](docs/mapping-routing/ARCHITECTURE.md) adds explicit simulated
-route previews, OR-Tools multi-rider optimization and separate assignment commits.
-Live routing remains disabled pending approved server credentials and provider verification.
-[MTT startup and workflows](docs/mtt-integration/WORKFLOWS_AND_STARTUP.md),
-[baseline audit](docs/mtt-integration/MTT_BASELINE_AUDIT.md),
-[database](docs/mtt-integration/DATABASE_ARCHITECTURE.md),
-[services and keys](docs/mtt-integration/API_KEYS_AND_SERVICES.md),
-[verification](docs/mtt-integration/PHASE19_VERIFICATION.md).
-
-- frontend/: preserved MTT Signboard; root is LIVE_BACKEND under the local launcher,
-  prototype.html is DEMO_SIMULATION; static-only hosting is explicitly simulation.
-- backend/: FastAPI, migrations, buyer/rider services and preserved QA tools.
-- order-parser/: optional TypeScript AI/parser research; not the live API.
-- scripts/: local startup, Python environment selection and static frontend build.
-- docs/: contracts, source provenance and final verification.
-
-The advanced developer API UI remains at `/api.html`. Earlier final-integration and
-phase reports below describe their original snapshots. Production authorization,
-live PostgreSQL and trusted geospatial validation remain blockers. Local use only.
-
-## Previous backend notes (historical)
-
-# LannPya AI (လမ်းပြ)
-
-AI-assisted last-mile delivery middleware for Myanmar merchants and couriers,
-built for UXMM Hackathon Myanmar.
+1. **Create an order:** The shop's dispatcher enters buyer, parcel, address, and payment details.
+2. **Confirm delivery details:** The buyer opens the shared link, enters their phone number, and confirms the delivery pin and preferred time.
+3. **Review changes:** The shop's dispatcher resolves any buyer requests that need review.
+4. **Assign a rider:** The system offers eligible deliveries to available riders. Rider acceptance starts delivery without another dispatcher dispatch step.
+5. **Deliver and record:** The rider follows the route, delivers the parcel, and records the collection amount or delivery problem.
+6. **Handover and close:** The rider hands over collected cash and returned parcels back to the shop. The shop's dispatcher checks the handover and closes the route.
 
 ## Repository structure
 
 ```text
-lannpya-ai/
-├── backend/     # FastAPI application, migrations, scripts, and tests
-├── frontend/    # Reserved for the frontend team's application
-├── docs/        # API contract, integration guides, and verification reports
+Team-3/
+├── frontend/       # Dispatcher, buyer, and rider web interfaces
+├── backend/        # API, database models, migrations, and delivery services
+├── docs/           # Illustrated workflow, setup, and technical documentation
+├── slides/         # LannPya pitch deck
+├── pitch videos/   # Full-size pitch video and download notes
+├── tests/          # Browser and integration tests
+├── scripts/        # Build and local startup tools
+├── order-parser/   # Additional order-parsing research
 └── README.md
 ```
 
-## Backend
+## Frontend and backend
 
-The Python backend includes deterministic Burmese address parsing, a replaceable
-mock AI interface, persistent order management, secure buyer confirmation,
-dispatcher review, and rider delivery queues. It uses FastAPI, Pydantic,
-SQLAlchemy, and Alembic. SQLite supports local development; PostgreSQL is the
-production database target.
+The responsive web interfaces support desktop and mobile use. The frontend connects to a FastAPI backend, with Supabase Auth for account sign-in and Supabase PostgreSQL for persistent data.
 
-See [backend setup and commands](backend/README.md) to install dependencies,
-initialize a local database, start the API, and run tests.
+The backend manages order validation, buyer confirmation, dispatcher reviews, rider assignments, delivery status, cash collection, and route close-out. Address extraction uses rule-based parsing and township matching.
 
-## Frontend integration
-
-- [Frontend team setup and Git workflow](docs/FRONTEND_TEAM_SETUP.md)
-- [Phase 8 integration preparation](docs/PHASE8_FRONTEND_INTEGRATION.md)
-- [Frontend handoff](docs/FRONTEND_HANDOFF.md)
-- [REST API contract](docs/API_CONTRACT.md)
-- [OpenAPI schema](docs/OPENAPI.json)
-- [Repeatable local demo](docs/DEMO_GUIDE.md)
-- [Phase 7 verification](docs/PHASE7_VERIFICATION.md)
-- [Phase 8B integration audit and API inventory](docs/integration/README.md)
-- [Overnight reliability verification](docs/OVERNIGHT_VERIFICATION_SUMMARY.md)
-
-The frontend directory is a placeholder. No frontend framework is required by
-the backend API.
-
-## Development boundaries
-
-AI enrichment remains mocked. Production authentication, live PostgreSQL
-verification, and trusted geospatial verification are pending. Private APIs
-fail closed in production; local development access is not production
-authentication. See [production blockers](docs/PRODUCTION_BLOCKERS.md) before
-planning a public demo.
-
-Local environment files, credentials, databases, virtual environments, and demo
-access files are excluded from version control. Use `backend/.env.example` as
-the configuration reference.
+For technical details, see the [backend setup](backend/README.md), [deployment guide](docs/VERCEL_DEPLOYMENT.md), and [illustrated workflow](docs/workflow/README.md).
