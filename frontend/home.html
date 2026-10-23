@@ -3,6 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script>
+    // Preserve previously shared buyer links when / redirects to this home page.
+    if(/^#\/(?:track\/|customer(?:\?|$))/.test(location.hash))location.replace('index.html'+location.hash);
+  </script>
   <title>LannPya · deliveries from your chats</title>
   <meta name="description" content="LannPya turns Burmese and English chat orders into checked addresses, buyer-confirmed pins and clear rider routes for Yangon shops." />
   <meta name="theme-color" content="#16263A" />

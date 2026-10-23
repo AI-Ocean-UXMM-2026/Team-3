@@ -32,6 +32,24 @@ test.beforeAll(async()=>{
 });
 test.afterAll(()=>new Promise(resolve=>server.close(resolve)));
 test.beforeEach(()=>{lookups=0;submissions=0;delayed=false;expired=false;});
+
+for(const entry of ['index.html','home.html'])test(`shared buyer link opens verification from ${entry} without owner login`,async({page})=>{
+  await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
+  await page.goto(origin+'/'+entry+'#/track/'+tokens[0]);
+  await expect(page.locator('.verification')).toBeVisible();
+  await expect(page.locator('#auth-email')).toHaveCount(0);
+  await expect(page).toHaveURL(origin+'/index.html#/track/'+tokens[0]);
+  await page.getByRole('button',{name:'Send verification code'}).click();
+  await expect(page.locator('#verify-form')).toBeVisible();
+});
+
+test('old root buyer message link keeps its order reference after the home redirect',async({page})=>{
+  await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
+  await page.goto(origin+'/home.html#/customer?id=QA-NEW');
+  await expect(page.locator('#customer-link-form')).toBeVisible();
+  await expect(page.locator('[name=trackingId]')).toHaveValue('QA-NEW');
+  await expect(page.locator('#auth-email')).toHaveCount(0);
+});
 async function lookup(page,double=false){
   await page.route('https://fonts.googleapis.com/**',r=>r.fulfill({status:200,contentType:'text/css',body:''}));
   await page.goto(origin+'/#/customer');

@@ -73,7 +73,8 @@
   const ownOrders=()=>store.snapshot().orders;
   const boardOrders=()=>ownOrders().filter(o=>!o.boardDeletedAt);
   const tokenFor=o=>o.link?.token||'';
-  const customerURL=token=>`${location.href.split('#')[0]}#/track/${encodeURIComponent(token)}`;
+  const customerEntry=()=>secure?`${location.origin}/index.html`:location.href.split('#')[0];
+  const customerURL=token=>`${customerEntry()}#/track/${encodeURIComponent(token)}`;
   // What each saved command tells the person, so every step ends with a clear confirmation.
   const DONE={create_batch:'Orders added to the board.',edit:'Changes saved. LannPya checked the order again.',verify_location:'Location confirmed.',approve_customer_location:'Buyer’s pin checked.',receive:'Parcel marked as arrived at the hub.',new_route:'Route created.',assign:r=>r?.allocationStatus==='WAITING_FOR_RIDER'?'No rider is free. The order remains waiting.':'Offer sent to an available rider. Delivery starts when they accept.',unassign:'Parcel taken off the route.',dispatch:'Rider sent out with the route.',issue_link:'New buyer link made.',revoke_link:'Buyer link revoked.',shared:'Marked as shared with the buyer.',cancel:'Delivery cancelled.',incident:'Problem saved.',resolve_discrepancy:'Cash difference resolved.',return_received:'Return received at the hub.',replan:'New delivery day saved.',ack_route:'Route accepted.',accept:'Delivery accepted. Your route is now in progress.',complete:'Delivery recorded.',fail:'Delivery problem recorded.',submit_cash:'Cash handed over. The hub will count it.',receive_cash:'Cash received from the rider.',close_route:'Route complete.',policy:'Hub policy saved.'};
   let toastTimer;
@@ -624,7 +625,7 @@
   function wireRider(){const picker=$('#rider-picker');if(picker)picker.onchange=async e=>{try{actorKey=e.target.value;if(live)await store.selectRider(W.ACTORS[actorKey].id);selected=null;render();}catch(err){failure(err);}};mountRiderRouteMap();}
   function dialog(title,body,onSubmit,submitLabel='Confirm',riderMode=false){document.querySelector('dialog')?.remove();const d=document.createElement('dialog');d.className='delivery-dialog functional-dialog'+(riderMode?' rider-dialog':'');d.setAttribute?.('aria-labelledby','dialog-title');d.innerHTML=`<form><h2 id="dialog-title">${dialogText(title)}</h2>${body}${errorBox()}<div class="dialog-actions"><button type="button" class="btn" data-dismiss>${riderMode?dialogText(bilingual('မလုပ်တော့ပါ','Cancel')):'Cancel'}</button><button type="submit" class="btn green">${dialogText(submitLabel)}</button></div></form>`;document.body.append(d);d.showModal();const form=d.querySelector('form');form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;const submitButton=form.querySelector('button[type="submit"], .btn.green');submitButton.disabled=true;try{if(scenario==='slow')await new Promise(r=>setTimeout(r,750));await onSubmit(new FormData(form));d.close();render();}catch(err){failure(err,form);}finally{busy=false;submitButton.disabled=false;}};d.querySelector('[data-dismiss]').onclick=()=>d.close();d.onclose=()=>d.remove();return d;}
   function buyerMessage(o){
-    const portalUrl=`${location.origin}/#/customer?id=${encodeURIComponent(sid(o.id))}`;
+    const token=tokenFor(o),portalUrl=token&&store.linkStatus(o.id)==='active'?customerURL(token):`${customerEntry()}#/customer?id=${encodeURIComponent(sid(o.id))}`;
     return `မင်္ဂလာပါ ${o.name||'ဝယ်ယူသူ'} ရှင့်၊\n${o.sender||'LannPya'} မှ ပို့ဆောင်မည့် ပါဆယ် (${sid(o.id)}) အတွက် တည်နေရာနှင့် ပို့ဆောင်ချိန် အတည်ပြုပေးပါရန်:\n👉 ${portalUrl}\nပါဆယ်နံပါတ်: ${sid(o.id)}\nဖုန်းနံပါတ်: ${o.phone||''}\n(English: Please confirm your location & preferred delivery time at ${portalUrl})`;
   }
   async function copyBuyerMessage(id){

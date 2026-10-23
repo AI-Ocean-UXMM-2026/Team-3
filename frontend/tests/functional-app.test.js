@@ -15,6 +15,20 @@ async function bootLive(hash='#/manual'){
 function departed(s){for(const [t,p]of [['receive',{id:'LP-2046'}],['assign',{id:'LP-2046',routeId:'RT-001'}],['dispatch',{routeId:'RT-001'}],['clock',{value:'2026-10-20T10:00:00+06:30'}]])s.execute(t,p,A);}
 async function verify(e,code){if(!e.find('#verify-form'))await e.action('request-otp',e.ctx.location.hash.split('/').at(-1));await e.submit('#verify-form',{digits:code});}
 
+test('buyer message shares the same direct verification link as Copy link',async()=>{
+ const e=boot('#/order/LP-2045');let text='';e.ctx.navigator.clipboard.writeText=async value=>{text=value;};
+ await e.action('copy','LP-2045');const link=text;
+ assert.match(link,/#\/track\/demo-2045$/);
+ await e.action('copy-msg','LP-2045');assert.ok(text.includes(link));
+ assert.doesNotMatch(text,/#\/customer\?id=/);
+});
+
+test('buyer message without an active link uses the workspace customer entry',async()=>{
+ const e=boot('#/order/LP-2046');let text='';e.ctx.navigator.clipboard.writeText=async value=>{text=value;};
+ await e.action('copy-msg','LP-2046');
+ assert.match(text,/file:\/\/\/prototype\/index.html#\/customer\?id=LP-2046/);
+});
+
 for(const stage of ['with rider','delivered','returned','cancelled'])test(`dispatcher can delete ${stage} card without losing route history`,async()=>{
  const e=boot('#/dispatch',s=>{
    if(stage==='cancelled'){s.execute('cancel',{id:'LP-2046',reason:'Duplicate order'},A);return;}
