@@ -28,6 +28,8 @@ Dispatcher-shared customer links open the order ID and phone-number page. Enter 
 
 Watch or download the [full-size LannPya pitch video](pitch%20videos/LannPya-full-video-1080p.mp4) from the root [`pitch videos/` folder](pitch%20videos/).
 
+If you cannot access or play the video on GitHub, [watch the pitch video on Google Drive](https://drive.google.com/file/d/1dLavoPT6tBc1BnQ24pimZUomRcpYDGou/view?usp=sharing).
+
 **Exact duration: 4 minutes 48.134 seconds (04:48.134).** Original 1080p MP4, **108,440,934 bytes**, preserved without compression using Git LFS. If GitHub does not preview the video, use its download button or see the [video download notes](pitch%20videos/README.md).
 
 ## Pitch deck
