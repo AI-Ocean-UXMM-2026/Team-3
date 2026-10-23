@@ -1,5 +1,17 @@
 # LannPya AI - MTT local integration
 
+## Judges: demo access and connection notes
+
+Open the [live demo](https://lannpya-ai.vercel.app). If the website, sign-in, or database connection does not work on your network, try using a VPN and refresh the page.
+
+SMS verification is not working yet: this deployment uses simulated buyer verification and does not send real text messages. When a verification-code screen appears, use **123456** or the generated test code shown on that screen.
+
+Use **Fill Demo Credentials** on the Dispatcher or Rider sign-in page. You can add demo data, such as sample orders and buyer details, to test the full delivery flow. The demo uses a connected backend and Supabase database, so successfully saved demo data persists.
+
+Dispatcher-shared customer links open the order ID and phone-number page. Enter the matching buyer phone number from your demo order to open its delivery edit page.
+
+## Local integration notes
+
 Supabase login/logout, email-code recovery, role provisioning, and secure deployment
 configuration: [authentication setup](docs/SUPABASE_AUTH_SETUP.md). The existing
 Signboard visual design is preserved. Live Supabase credentials and email delivery

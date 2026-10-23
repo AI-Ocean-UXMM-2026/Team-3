@@ -2,6 +2,10 @@
 
 Live site: https://lannpya-ai.vercel.app
 
+If the site, sign-in, or database connection does not work on your network, try a VPN and refresh. Judges can use the sign-in page's **Fill Demo Credentials** button and add sample orders and buyer details to test the connected database.
+
+SMS verification is not available yet; no real SMS is sent. On a buyer verification-code screen, both **123456** and the displayed generated test code work in this judge deployment. Customer links shared by dispatchers first ask for the order ID and matching buyer phone number, then open the delivery edit page.
+
 Vercel project: `lannpya-ai` in `minthanttunmmgmailcoms-projects`.
 The frontend and FastAPI backend deploy together through Vercel Services (beta).
 The home page is `/home.html`; the workspace is `/index.html`.
