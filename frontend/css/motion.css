@@ -62,6 +62,9 @@ body.signed-out .content{padding:0}
 .judge-demo-creds{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--ink-2);line-height:1.4}
 .judge-demo-creds code{color:var(--navy);font-weight:600;user-select:all;background:rgba(22,38,58,.06);padding:2px 6px;border-radius:4px}
 .judge-demo-note{margin:0;font-size:.8rem;line-height:1.45;color:var(--ink-2)}
+.auth-role-switch{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--cream-2);border-radius:var(--r-sm);font-size:.82rem;font-weight:600;color:var(--navy);margin-bottom:10px}
+.auth-role-switch a{color:var(--navy);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.auth-role-switch a:hover{color:var(--saffron)}
 /* Rider: Burmese first, English under it, roomy targets */
 .rider-signin{max-width:420px;grid-template-columns:1fr;margin:16px auto}
 .rider-signin .signin-brand{align-items:center;text-align:center;padding:28px 20px 24px}

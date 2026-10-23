@@ -148,7 +148,20 @@ def provision_demo_accounts():
                 )
                 print(f"Inserted public.users for {email} ({role})")
 
-        print("\nAll public.users:")
+            if role == "Rider":
+                existing_profile = session.execute(
+                    text("SELECT id FROM public.rider_profiles WHERE id = :id"),
+                    {"id": uid}
+                ).scalar()
+                if not existing_profile:
+                    session.execute(
+                        text("""
+                            INSERT INTO public.rider_profiles (id, operational_status, contact_phone, version, queue_version, created_at, updated_at)
+                            VALUES (:id, 'AVAILABLE', '+959421177832', 1, 0, NOW(), NOW())
+                        """),
+                        {"id": uid}
+                    )
+                    print(f"Inserted public.rider_profiles for {email}")
         users = session.execute(
             text("SELECT id, name, email, role FROM public.users ORDER BY created_at ASC")
         ).mappings().all()

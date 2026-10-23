@@ -34,7 +34,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     lastRoute=target;
     if(target.startsWith('track/')){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];await loadBuyer(decodeURIComponent(target.slice(6))).catch(()=>{});return;}
     if(target==='customer'){state.orders=[];state.routes=[];state.plans=[];state.riderPlans=[];state.riders=[];state.events=[];return;}
-    if(target.startsWith('ride')){
+    if(target==='ride'||target.startsWith('ride/')||target==='rider'){
       await connect('rider');const rider=api.connections.rider.actor;
       if(!Object.values(W.ACTORS).some(a=>a.role==='rider'&&a.id===rider.id)){
         Object.keys(W.ACTORS).filter(k=>W.ACTORS[k].role==='rider').forEach(k=>delete W.ACTORS[k]);

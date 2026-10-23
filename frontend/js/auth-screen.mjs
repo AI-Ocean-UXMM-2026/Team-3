@@ -30,8 +30,9 @@ export async function startAuthentication(runtime){
     const actor=await response.json();
     if(!['Admin','Dispatcher','Rider'].includes(actor.role))throw Error('This account does not have workspace access. Ask your hub for help.');
     service.actor=actor;
-    if(actor.role==='Rider'&&!location.hash.startsWith('#/ride'))location.hash='#/ride';
-    if(actor.role!=='Rider'&&location.hash.startsWith('#/ride'))location.hash='#/dispatch';
+    const isRiderRoute=h=>h==='#/ride'||h.startsWith('#/ride/')||h==='#/rider';
+    if(actor.role==='Rider'&&!isRiderRoute(location.hash))location.hash='#/ride';
+    if(actor.role!=='Rider'&&isRiderRoute(location.hash))location.hash='#/dispatch';
     return actor;
   };
   return new Promise((resolve,reject)=>{
@@ -40,13 +41,15 @@ export async function startAuthentication(runtime){
     function render(){
       document.body.classList.add('signed-out');
       const code=['verify','signupVerify','recoverVerify'].includes(mode),newPassword=['signup','password'].includes(mode),emailInput=['signin','signup','code','recover'].includes(mode);
-      const isRider=location.hash.startsWith('#/ride');
+      const isRider=location.hash==='#/ride'||location.hash.startsWith('#/ride/')||location.hash==='#/rider'||location.hash==='#/riders';
       const shell=document.createElement('div');
       shell.innerHTML=existingSignInView(isRider?'rider':'admin',mode==='signup'?'create':'signin');
       const existing=shell.firstElementChild;
       const originalForm=existing.querySelector('#signin-form');
       originalForm.id='auth-form';
       originalForm.setAttribute('aria-label','Sign in');
+      const roleSwitch=`<div class="auth-role-switch"><span>${isRider?'Rider Portal':'Dispatcher Portal'}</span><a href="${isRider?'#/dispatch':'#/ride'}" data-role-switch>${isRider?'Switch to Dispatcher →':'Switch to Rider →'}</a></div>`;
+      originalForm.insertAdjacentHTML('afterbegin',roleSwitch);
       originalForm.querySelector('.demo-hint')?.remove();
       originalForm.querySelectorAll('[data-action="signin-mode"]').forEach(button=>{button.removeAttribute('data-action');button.dataset.authMode=button.dataset.id==='create'?'signup':'signin';});
       let pane=originalForm.querySelector('.signin-pane') || originalForm;
@@ -106,6 +109,12 @@ export async function startAuthentication(runtime){
       requestAnimationFrame(()=>root.querySelector('.signin-brand')?.classList.add('play'));
       const form=root.querySelector('form'),error=root.querySelector('#auth-error');
       root.querySelectorAll('[data-auth-mode]').forEach(button=>button.onclick=()=>{if(loading)return;email=form.elements.email?.value.trim()||email;mode=button.dataset.authMode;message='';render();root.querySelector('input')?.focus();});
+      root.querySelector('[data-role-switch]')?.addEventListener('click',e=>{
+        e.preventDefault();
+        location.hash=isRider?'#/dispatch':'#/ride';
+        message='';
+        render();
+      });
       root.querySelector('[data-demo-fill]')?.addEventListener('click',()=>{
         email=demoEmail;
         const em=form.querySelector('#auth-email')||form.querySelector('[name="email"]');
@@ -152,6 +161,7 @@ export async function startAuthentication(runtime){
       };
     }
     async function boot(){
+      window.addEventListener('hashchange',()=>{if(!finished)render();});
       client.auth.onAuthStateChange(event=>{if(finished&&event==='SIGNED_OUT')location.reload();});
       try{const {data}=await client.auth.getSession();if(data.session){await finish();return;}}catch(e){message=e.message;mode='pending';}
       render();

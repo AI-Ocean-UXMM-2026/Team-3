@@ -108,6 +108,17 @@ def get_bound_actor(request: Request, session: Session = Depends(get_session)) -
                 )
                 session.add(actor)
                 session.commit()
+    if actor is not None and actor.role == UserRole.RIDER:
+        from app.db.rider_models import RiderProfile
+
+        profile = session.get(RiderProfile, actor.id)
+        if profile is None:
+            profile = RiderProfile(
+                id=actor.id,
+                operational_status="AVAILABLE",
+            )
+            session.add(profile)
+            session.commit()
     if actor is None:
         if request.app.state.settings.supabase_auth_enabled:
             raise OrderAPIError(
