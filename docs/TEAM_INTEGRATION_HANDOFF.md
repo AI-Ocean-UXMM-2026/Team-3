@@ -4,7 +4,7 @@ The review candidate is `integration/lannpya-final`, prepared in the integration
 Publication is pending owner approval. No push, PR creation, main merge, collaborator invite
 or deployment has occurred. The current site is local-only at http://127.0.0.1:8780.
 
-Read [branch synchronization](team-integration/BRANCH_SYNC.md), the [PR draft](team-integration/PR_DRAFT.md),
+Read [branch synchronization](team-integration/BRANCH_SYNC.md),
 [verification](team-integration/VERIFICATION.md) and [Phase 16](PHASE16_MVP_COMPLETION.md).
 
 ## Source of truth

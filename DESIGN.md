@@ -120,7 +120,7 @@ Working surfaces are flat with a single 1px hairline. Board card hover has a sma
 
 ## Shapes
 
-Panels and signs use `--r: 10px`; buttons, inputs and board cards use `--r-sm: 8px`. Status tags use pill shapes. Edges stay 1px, including strong edges. The earlier surface brief's 2px painted edge and 6px corner description is superseded by the built system and the hairline decision in `HANDOFF-UI.md`.
+Panels and signs use `--r: 10px`; buttons, inputs and board cards use `--r-sm: 8px`. Status tags use pill shapes. Edges stay 1px, including strong edges. The earlier surface brief's 2px painted edge and 6px corner description is superseded by the built system and the established hairline decision.
 
 ## Components
 
@@ -150,7 +150,7 @@ Use an action-specific title and save label. Rider title, key field labels and s
 
 Order-created confirmations offer Close and Back to service board. Dismissal leaves the saved order intact. These form refinements add no new motion; existing transitions and reduced-motion behavior remain in effect.
 
-The project owner approved the current Burmese UI inventory on 21 October 2026, recorded against source commit `6b800c48741ec3973378253a1b0b92ae573167d6` in `BURMESE-REVIEW.md`. Future Burmese wording changes need a new review; automated checks are not language approval.
+The project owner approved the Burmese UI inventory on 21 October 2026 against source commit `6b800c48741ec3973378253a1b0b92ae573167d6`. Future Burmese wording changes need a new review; automated checks are not language approval.
 
 ## Do's and Don'ts
 

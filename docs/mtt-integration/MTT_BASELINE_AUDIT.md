@@ -26,7 +26,7 @@ reviewed and adapted to MTT's relocated developer tool only after reproducing it
 | CI | Pinned Python/Node installs, pytest, Ruff, Node/TS/Chromium checks | Navigation race remained in relocated developer UI |
 
 The README's reference to the previous ZLH UI as the primary screen was stale.
-Current `PRODUCT.md`, `DESIGN.md` and `HANDOFF-UI.md` describe MTT's Signboard;
+Current `PRODUCT.md` and `DESIGN.md` describe MTT's Signboard;
 its design and standalone demo remain in place.
 
 ## Baseline checks actually executed
