@@ -10,7 +10,7 @@ Follow an order from the dispatcher to the buyer and rider, then back to the hub
 
 Open the live demo and use **Fill Demo Credentials** on the Dispatcher or Rider sign-in page. Use separate browser profiles or a private window to test different roles without replacing the dispatcher's session. Add sample orders and buyer details as needed; saved data persists in the connected Supabase database.
 
-If the site, sign-in, or database connection fails on your network, try a VPN and refresh. Real SMS delivery is not available yet. If a verification-code screen appears, **123456** or its displayed generated test code works for this judge demo. Dispatcher-shared links normally start with the order-reference and phone form.
+If the site, sign-in, or database connection fails on your network, try a VPN and refresh. When a verification-code screen appears, use **123456** or the generated test code shown on that screen. Dispatcher-shared links normally start with the order-reference and phone form.
 
 ## 1. Dispatcher: enter the buyer and parcel details
 

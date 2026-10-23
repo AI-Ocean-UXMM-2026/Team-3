@@ -4,7 +4,7 @@
 
 Open the [live demo](https://lannpya-ai.vercel.app). If the website, sign-in, or database connection does not work on your network, try using a VPN and refresh the page.
 
-SMS verification is not working yet: this deployment uses simulated buyer verification and does not send real text messages. When a verification-code screen appears, use **123456** or the generated test code shown on that screen.
+When a verification-code screen appears, use **123456** or the generated test code shown on that screen.
 
 Use **Fill Demo Credentials** on the Dispatcher or Rider sign-in page. You can add demo data, such as sample orders and buyer details, to test the full delivery flow. The demo uses a connected backend and Supabase database, so successfully saved demo data persists.
 

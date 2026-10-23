@@ -4,7 +4,7 @@ Live site: https://lannpya-ai.vercel.app
 
 If the site, sign-in, or database connection does not work on your network, try a VPN and refresh. Judges can use the sign-in page's **Fill Demo Credentials** button and add sample orders and buyer details to test the connected database.
 
-SMS verification is not available yet; no real SMS is sent. On a buyer verification-code screen, both **123456** and the displayed generated test code work in this judge deployment. Customer links shared by dispatchers first ask for the order ID and matching buyer phone number, then open the delivery edit page.
+When a buyer verification-code screen appears, use **123456** or the displayed generated test code for this judge demo. Customer links shared by dispatchers first ask for the order ID and matching buyer phone number, then open the delivery edit page.
 
 Vercel project: `lannpya-ai` in `minthanttunmmgmailcoms-projects`.
 The frontend and FastAPI backend deploy together through Vercel Services (beta).
@@ -27,8 +27,7 @@ Required project variables, configured for Production and Preview:
 - `LANNPYA_ENVIRONMENT=local` and `LANNPYA_BUYER_OTP_MODE=demo`
 
 This is a judge demonstration with real authentication and database persistence.
-Buyer SMS uses the existing demo OTP mode; it does not send real SMS. Full
-production SMS requires the Twilio settings enforced by `Settings`. Serverless
+Buyer SMS uses the existing demo OTP mode; it does not send real SMS. A future implementation phase can add real SMS delivery using the Twilio settings enforced by `Settings`. Serverless
 instances can suspend background timers; continuous reminder/recovery processing
 requires a separate durable worker or scheduler.
 
