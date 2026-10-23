@@ -88,11 +88,11 @@ export async function startAuthentication(runtime){
         loading=true;root.querySelector('.auth-submit').disabled=true;root.querySelector('.auth-submit').textContent='Please wait…';error.textContent='';
         try{
           if(mode==='signin'){await service.signIn(email,password);await finish();}
-          else if(mode==='signup'){await service.signUp(email,password,{shop:values.get('shop'),phone:values.get('phone')});mode='signupVerify';message='If the address can be registered, a verification email is on its way.';sendAfter=Date.now()+60000;}
+          else if(mode==='signup'){await service.signUp(email,password,{shop:values.get('shop'),phone:values.get('phone'),role:isRider?'Rider':'Dispatcher'});mode='signupVerify';message='If the address can be registered, a verification email is on its way.';sendAfter=Date.now()+60000;}
           else if(mode==='code'){cooldown();await service.sendCode(email);mode='verify';message='If this account exists, a code is on its way.';}
           else if(mode==='recover'){cooldown();await service.recover(email);mode='recoverVerify';message='If this account exists, a recovery code is on its way.';}
           else if(mode==='verify'){await service.verifyCode(email,String(values.get('code')));await finish();}
-          else if(mode==='signupVerify'){const result=await client.auth.verifyOtp({email,token:String(values.get('code')),type:'signup'});if(result.error)throw Error('That code is invalid or expired. Request a new one.');mode='pending';message='Your email is verified.';}
+          else if(mode==='signupVerify'){const result=await client.auth.verifyOtp({email,token:String(values.get('code')),type:'signup'});if(result.error)throw Error('That code is invalid or expired. Request a new one.');try{await finish();}catch(err){mode='pending';message=err.message||'Your email is verified.';}}
           else if(mode==='recoverVerify'){await service.verifyRecovery(email,String(values.get('code')));mode='password';message='Email verified. Set your new password.';}
           else if(mode==='password'){await service.updatePassword(password);await service.signOut();mode='signin';message='Password saved. Sign in with your new password.';}
           else await finish();

@@ -81,6 +81,33 @@ def get_bound_actor(request: Request, session: Session = Depends(get_session)) -
         else request.app.state.settings.dev_actor_id
     )
     actor = session.get(User, subject) if subject else None
+    if actor is None and request.app.state.settings.supabase_auth_enabled and subject:
+        settings = request.app.state.settings
+        if getattr(settings, "auto_provision_users", False):
+            auth_user = getattr(request.state, "auth_user", None)
+            if auth_user and auth_user.get("email_confirmed_at"):
+                meta = (
+                    auth_user.get("user_metadata")
+                    or auth_user.get("raw_user_meta_data")
+                    or {}
+                )
+                role_hint = str(meta.get("role") or meta.get("intended_role") or "").capitalize()
+                role = UserRole.RIDER if role_hint == "Rider" else UserRole.DISPATCHER
+                name = (
+                    meta.get("shop_name")
+                    or meta.get("shop")
+                    or meta.get("name")
+                    or (auth_user.get("email", "").split("@")[0] if auth_user.get("email") else "User")
+                )
+                email = auth_user.get("email") or f"{subject}@users.invalid"
+                actor = User(
+                    id=subject,
+                    name=str(name)[:200],
+                    email=str(email)[:254],
+                    role=role,
+                )
+                session.add(actor)
+                session.commit()
     if actor is None:
         if request.app.state.settings.supabase_auth_enabled:
             raise OrderAPIError(

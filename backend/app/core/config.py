@@ -45,6 +45,12 @@ class Settings(BaseSettings):
     supabase_url: str | None = None
     supabase_publishable_key: str | None = None
     buyer_rate_limit_secret: SecretStr | None = None
+    auto_provision_users: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "LANNPYA_AUTO_PROVISION_USERS", "AUTO_PROVISION_USERS", "LANNPYA_AUTO_PROVISION_DISPATCHERS"
+        ),
+    )
 
     @model_validator(mode="after")
     def auth_configuration(self):

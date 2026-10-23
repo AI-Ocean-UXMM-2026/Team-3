@@ -125,3 +125,27 @@ def test_private_supabase_keys_are_rejected_before_serving_them():
             supabase_url="https://example.supabase.co",
             supabase_publishable_key="sb_secret_never_public",
         )
+
+
+def test_auto_provision_verified_dispatcher(secure, monkeypatch):
+    client, _ = secure
+    new_uid = uuid4()
+
+    def fake_verify(settings, token, request=None):
+        if request is not None:
+            request.state.auth_user = {
+                "id": str(new_uid),
+                "email": "judge@example.com",
+                "email_confirmed_at": "2026-10-23T12:00:00Z",
+                "user_metadata": {"shop_name": "Judge Shop", "role": "Dispatcher"},
+            }
+        return new_uid
+
+    monkeypatch.setattr("app.core.supabase_auth.verify_user", fake_verify)
+    response = client.get("/api/session", headers={"Authorization": "Bearer judge-token"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == str(new_uid)
+    assert data["role"] == "Dispatcher"
+    assert data["name"] == "Judge Shop"
+

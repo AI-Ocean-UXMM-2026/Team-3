@@ -222,7 +222,7 @@ test('manual creation is admin-only, validated and atomic; no seeded records or 
  const reloaded=W.createStore(storage);assert.equal(reloaded.snapshot().orders.length,1);assert.equal(reloaded.snapshot().routes.length,0);assert.equal(reloaded.snapshot().orders[0].id,o.id);
 });
 test('customer without an anchor can submit a proposal but cannot clear the admin review hold',()=>{
- const s=W.createStore(memory());const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
+ const s=W.createStore(memory(),{now:()=>Date.parse('2026-10-21T06:00:00+06:30')});const id=command(s,'create_manual',{fields:manualFields(s),received:true}).value,o=s.order(id);verifyBuyer(s,o.link.token);s.confirm(o.link.token,{pin:{lat:16.8254,lng:96.1309},time:W.WINDOWS[0],answer:'At home',note:'Blue gate',expectedVersion:o.version});assert.equal(s.order(id).state,'held');assert.ok(s.order(id).proposedPin);assert.equal(s.order(id).anchor,null);
  assert.throws(()=>command(s,'approve_customer_location',{id,reason:'Unauthorised'},R),/Admin/);command(s,'approve_customer_location',{id,reason:'Checked delivery pin'});assert.equal(s.order(id).state,'ready');assert.equal(s.order(id).confirmation.note,'Blue gate');assert.equal(s.customer(o.link.token).available,true);
 });
 test('manual orders leave location unknown until the buyer submits a pin',()=>{

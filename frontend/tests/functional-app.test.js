@@ -129,6 +129,7 @@ test('empty workspace has exactly three app sides, manual entry and a useful cus
 });
 test('manual order → buyer reviews → dispatcher approval → accepted offer → departure and delivery',async()=>{
  const e=boot('#/manual',null,true);
+ e.store().execute('clock',{value:W.day(e.store().now())+'T08:00:00+06:30'},A);
  await e.submit('#manual-form',{name:'Test customer',phone:'09794339082',sender:'Sender office',item:'Document envelope',payment:'cod',expected:'100',areaId:'kamayut',received:true,prep:'ready_now',date:W.day(e.store().now())});
  let order=e.store().snapshot().orders[0];assert.ok(order);assert.equal(order.state,'held');assert.equal(order.time,W.ANY_TIME);assert.equal(order.pin,null);assert.equal(order.anchor,null);assert.equal(order.location,'unresolved');assert.ok(order.link.token);assert.match(e.ctx.location.hash,/manual/);assert.match(e.find('dialog').textContent,/Order LP-0001 created/);
  e.ctx.location.hash='#/customer';assert.match(e.root.textContent,/Document envelope/);
