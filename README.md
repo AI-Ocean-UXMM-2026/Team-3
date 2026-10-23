@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<h1 align="center">LannPya AI · လမ်းပြ</h1>
+<h1 align="center">LannPya · လမ်းပြ</h1>
 
 <p align="center">
   <strong>လိပ်စာလည်းမှန် အချိန်လည်းမှန်</strong><br>
@@ -21,6 +21,12 @@ When a verification-code screen appears, use **123456** or the generated test co
 Use **Fill Demo Credentials** on the Dispatcher or Rider sign-in page. You can add demo data, such as sample orders and buyer details, to test the full delivery flow. The demo uses a connected backend and Supabase database, so successfully saved demo data persists.
 
 Dispatcher-shared customer links open the order ID and phone-number page. Enter the matching buyer phone number from your demo order to open its delivery edit page.
+
+## Pitch video
+
+Watch or download the [full-size LannPya pitch video](pitch%20videos/LannPya-full-video-1080p.mp4) from the root [`pitch videos/` folder](pitch%20videos/).
+
+**Exact duration: 4 minutes 48.134 seconds (04:48.134).** Original 1080p MP4, **108,440,934 bytes**, preserved without compression using Git LFS. If GitHub does not preview the video, use its download button or see the [video download notes](pitch%20videos/README.md).
 
 ## Pitch deck
 
