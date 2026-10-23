@@ -53,6 +53,15 @@ body.signed-out .content{padding:0}
 .signin-pane{display:grid;gap:14px;animation:pane-in 220ms var(--ease-out)}
 @keyframes pane-in{from{opacity:0;transform:translateX(8px)}}
 .demo-hint{margin:0;font-size:.8rem;color:var(--ink-2)}
+.judge-demo-card{padding:12px 14px;background:var(--paper);border:var(--edge);border-left:3px solid var(--saffron);border-radius:var(--r-sm);display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.judge-demo-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.judge-demo-badge{display:inline-flex;align-items:center;gap:6px;font-weight:700;font-size:.82rem;color:var(--navy)}
+.judge-demo-badge .dot{width:7px;height:7px;border-radius:50%;background:var(--saffron);display:inline-block}
+.judge-demo-fill-btn{appearance:none;border:1px solid var(--line);background:var(--cream);color:var(--navy);font:700 .78rem var(--body);padding:5px 12px;border-radius:6px;cursor:pointer;transition:all 150ms var(--ease)}
+.judge-demo-fill-btn:hover{background:var(--saffron);border-color:var(--saffron);color:var(--navy)}
+.judge-demo-creds{display:flex;flex-direction:column;gap:4px;font-size:.82rem;color:var(--ink-2);line-height:1.4}
+.judge-demo-creds code{color:var(--navy);font-weight:600;user-select:all;background:rgba(22,38,58,.06);padding:2px 6px;border-radius:4px}
+.judge-demo-note{margin:0;font-size:.8rem;line-height:1.45;color:var(--ink-2)}
 /* Rider: Burmese first, English under it, roomy targets */
 .rider-signin{max-width:420px;grid-template-columns:1fr;margin:16px auto}
 .rider-signin .signin-brand{align-items:center;text-align:center;padding:28px 20px 24px}

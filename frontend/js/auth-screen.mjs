@@ -52,10 +52,11 @@ export async function startAuthentication(runtime){
       let pane=originalForm.querySelector('.signin-pane') || originalForm;
       const tabs=originalForm.querySelector('.signin-tabs');
       if(!['signin','signup'].includes(mode)){tabs?.remove();pane.innerHTML='<h1>'+title()+'</h1>';}
+      const demoEmail=isRider?'judge.rider@lannpya.dev':'judge.dispatch@lannpya.dev',demoPass='JudgeDemo2026!';
       if(mode==='signin'){
         const identifier=pane.querySelector('[name="phone"]')||pane.querySelector('[name="email"]');
         if(identifier){identifier.name='email';identifier.id='auth-email';identifier.value=email;identifier.required=true;identifier.autocomplete='username';}
-        const password=pane.querySelector('[name="password"]');if(password){password.id='auth-password';password.setAttribute('aria-label','Password');}
+        const password=pane.querySelector('[name="password"]');if(password){password.id='auth-password';password.setAttribute('aria-label','Password');if(email===demoEmail)password.value=demoPass;}
       }else if(mode==='signup'){
         const password=pane.querySelector('[name="password"]');password.id='auth-password';password.minLength=12;password.maxLength=128;password.setAttribute('aria-label','Password');
         password.parentElement.firstChild.textContent='Password, at least 12 characters';
@@ -71,11 +72,36 @@ export async function startAuthentication(runtime){
       const submit=originalForm.querySelector('.signin-go');submit.classList.add('auth-submit');submit.querySelector('.btn-label').textContent=loading?'Please wait…':mode==='signin'?'Sign in':mode==='signup'?'Create account':code?'Verify code':mode==='password'?'Save new password':mode==='pending'?'Check access again':'Send email code';submit.disabled=loading;
       originalForm.insertAdjacentHTML('beforeend',mode==='signin'?'<button type="button" class="btn quiet" data-auth-mode="code">Use an email code instead</button><button type="button" class="btn quiet" data-auth-mode="recover">Forgot password?</button>':code?'<button type="button" class="btn quiet" data-resend>Send a new code</button><button type="button" class="btn quiet" data-auth-mode="signin">Back to sign in</button>':mode==='signup'?'':'<button type="button" class="btn quiet" data-auth-mode="signin">Back to sign in</button>');
       originalForm.insertAdjacentHTML('beforeend','<button type="button" class="btn quiet" data-auth-logout hidden>Sign out of this account</button>');
+      if(mode==='signin'){
+        originalForm.insertAdjacentHTML('beforeend','<div class="judge-demo-card"><div class="judge-demo-head"><span class="judge-demo-badge"><span class="dot"></span>Judge / Demo Access</span><button type="button" class="judge-demo-fill-btn" data-demo-fill>Fill Demo Credentials</button></div><div class="judge-demo-creds"><div>Email: <code>'+demoEmail+'</code></div><div>Password: <code>'+demoPass+'</code></div></div></div>');
+      }else if(mode==='signup'){
+        originalForm.insertAdjacentHTML('beforeend','<div class="judge-demo-card"><div class="judge-demo-head"><span class="judge-demo-badge"><span class="dot"></span>Judge / Demo Access</span><button type="button" class="judge-demo-fill-btn" data-demo-switch>Switch to Demo Account</button></div><p class="judge-demo-note">Judges can test sign-up with any email (auto-enabled on OTP verify) or sign in directly with <code>'+demoEmail+'</code>.</p></div>');
+      }
       root.innerHTML='<div class="app-shell"><main class="main"><section class="content"></section></main></div>';
       root.querySelector('.content').append(existing);
       requestAnimationFrame(()=>root.querySelector('.signin-brand')?.classList.add('play'));
       const form=root.querySelector('form'),error=root.querySelector('#auth-error');
       root.querySelectorAll('[data-auth-mode]').forEach(button=>button.onclick=()=>{if(loading)return;email=form.elements.email?.value.trim()||email;mode=button.dataset.authMode;message='';render();root.querySelector('input')?.focus();});
+      root.querySelector('[data-demo-fill]')?.addEventListener('click',()=>{
+        email=demoEmail;
+        const em=form.querySelector('#auth-email')||form.querySelector('[name="email"]');
+        const pw=form.querySelector('#auth-password')||form.querySelector('[name="password"]');
+        if(em)em.value=demoEmail;
+        if(pw)pw.value=demoPass;
+        const btn=root.querySelector('[data-demo-fill]');
+        if(btn){btn.textContent='✓ Filled';setTimeout(()=>{if(btn.isConnected)btn.textContent='Fill Demo Credentials';},2000);}
+        form.querySelector('.auth-submit')?.focus();
+      });
+      root.querySelector('[data-demo-switch]')?.addEventListener('click',()=>{
+        email=demoEmail;
+        mode='signin';
+        render();
+        const em=root.querySelector('#auth-email')||root.querySelector('[name="email"]');
+        const pw=root.querySelector('#auth-password')||root.querySelector('[name="password"]');
+        if(em)em.value=demoEmail;
+        if(pw)pw.value=demoPass;
+        root.querySelector('.auth-submit')?.focus();
+      });
       const cooldown=()=>{if(Date.now()<sendAfter)throw Error('Wait a minute before requesting another code.');sendAfter=Date.now()+60000;};
       root.querySelector('[data-resend]')?.addEventListener('click',async()=>{if(loading)return;loading=true;render();try{cooldown();if(mode==='recoverVerify')await service.recover(email);else if(mode==='signupVerify'){const result=await client.auth.resend({type:'signup',email});if(result.error)throw Error('Could not resend. Try again later.');}else await service.sendCode(email);message='A new code has been requested. Use the newest email.';}catch(e){message=e.message;}finally{loading=false;render();}});
       const logout=root.querySelector('[data-auth-logout]');client.auth.getSession().then(({data})=>{if(logout.isConnected)logout.hidden=!data.session;});
