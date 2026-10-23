@@ -1,6 +1,6 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, timedelta, timezone
 from decimal import Decimal
 from uuid import UUID, uuid4
 
@@ -957,6 +957,50 @@ def atomic_body(start, **extra):
     }
 
 
+@pytest.mark.parametrize("stage", [OrderStatus.DRAFT, OrderStatus.NEEDS_REVIEW])
+@pytest.mark.parametrize("minutes_before_eta", [960, 90, 30, -180])
+def test_first_address_confirmation_ignores_edit_cutoff(
+    env, monkeypatch, stage, minutes_before_eta
+):
+    start = (utcnow() + timedelta(days=1)).astimezone(
+        timezone(timedelta(hours=6, minutes=30))
+    ).replace(hour=10, minute=0, second=0, microsecond=0).astimezone(UTC)
+    now = start - timedelta(minutes=minutes_before_eta)
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: now)
+    created = env["client"].post(
+        "/api/orders", headers=ADMIN,
+        json={"structured": {
+            "customer_name": "First confirmation buyer", "customer_phone": "09791234567",
+            "township": "Hlaing", "street": "Private street", "cod_amount": "0",
+        }, "parcel": {"item": "Test parcel", "delivery_day": start.date().isoformat()}},
+    )
+    assert created.status_code == 201, created.text
+    order_id = UUID(created.json()["id"])
+    with env["db"].sessions.begin() as session:
+        session.get(Order, order_id).status = stage
+    lookup = env["client"].post(
+        "/api/confirm/lookup", json={"tracking_id": str(order_id), "phone": "09791234567"}
+    )
+    assert lookup.status_code == 200, lookup.text
+    credentials = lookup.json()
+    path = "/api/confirm/" + credentials["token"]
+    auth = {"Authorization": "Bearer " + credentials["access_token"]}
+    initial_policy = env["client"].get(path + "/details", headers=auth).json()["policy"]
+    assert initial_policy["editable"] is True
+    first = env["client"].patch(path + "/request", headers=auth, json=atomic_body(start))
+    assert first.status_code == 200, first.text
+    assert first.json()["editing_policy"]["edit_count"] == 0
+    later = env["client"].patch(
+        path + "/request", headers=auth, json=atomic_body(start, instructions="Later edit")
+    )
+    if minutes_before_eta > 60:
+        assert later.status_code == 200, later.text
+        assert later.json()["editing_policy"]["edit_count"] == 1
+    else:
+        assert later.status_code == 409, later.text
+        assert later.json()["error"]["code"] == "BUYER_EDIT_CUTOFF_PASSED"
+
+
 def test_address_edits_remain_open_inside_two_hour_notice_and_noop_costs_nothing(linked, monkeypatch):
     auth = verified(linked)
     now = utcnow()
@@ -1410,6 +1454,30 @@ def test_cross_township_review_and_repeated_decision(linked):
     )
 
 
+@pytest.mark.parametrize("kind", ["LOCATION", "RESPONSE"])
+@pytest.mark.parametrize("decision", ["APPROVE", "REJECT"])
+@pytest.mark.parametrize("reason", [None, "", "ok"])
+def test_review_reason_is_optional(linked, kind, decision, reason):
+    auth = verified(linked)
+    linked["client"].patch(linked["path"] + "/location", headers=auth,
+                            json=pin(initial_pin_acknowledged=True))
+    current = saved(linked)
+    with linked["db"].sessions.begin() as session:
+        row = session.scalar(select(BuyerRequest).where(BuyerRequest.order_id == UUID(current["id"])))
+        if kind == "RESPONSE":
+            row.kind = kind
+            row.submitted_values = {"request_id": str(uuid4()), "action": "INSTRUCTIONS",
+                                    "instructions": "Ring at the gate"}
+        identifier = row.id
+    body = {"expected_version": current["version"], "decision": decision}
+    if reason is not None:
+        body["reason"] = reason
+    url = f"/api/orders/{current['id']}/buyer-requests/{identifier}"
+    result = linked["client"].patch(url, headers=ADMIN, json=body)
+    assert result.status_code == 200, result.text
+    assert linked["client"].patch(url, headers=ADMIN, json=body).status_code == 200
+
+
 def test_review_rejection_scope_and_stale_version(linked):
     auth = verified(linked)
     linked["client"].patch(
@@ -1537,24 +1605,34 @@ def test_failed_budget_never_resets_after_success(linked):
 
 
 def test_cutoff_boundary_exact_hour(linked, monkeypatch):
-    linked["settings"].buyer_rescheduling_enabled = True
-    now = utcnow().replace(hour=8, minute=29, second=0, microsecond=0)  # 14:59 Yangon.
-    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: now)
     auth = verified(linked)
-    body = {"request_id": str(uuid4()), "action": "RESCHEDULE", "time_window": window(now)}
-    assert (
-        linked["client"]
-        .patch(linked["path"] + "/response", headers=auth, json=body)
-        .json()["decision"]
-        == "APPLIED"
+    evening = (utcnow() + timedelta(days=1)).astimezone(
+        timezone(timedelta(hours=6, minutes=30))
+    ).replace(hour=18, minute=0, second=0, microsecond=0).astimezone(UTC)
+    start = evening + timedelta(hours=18)  # Noon on the following delivery day.
+    client, path = linked["client"], linked["path"]
+    first = client.patch(path + "/request", headers=auth, json=atomic_body(start))
+    assert first.status_code == 200, first.text
+    with linked["db"].sessions.begin() as session:
+        session.scalar(select(BuyerSession)).expires_at = start + timedelta(hours=1)
+    clock = [evening]
+    monkeypatch.setattr("app.services.buyer_confirmation.utcnow", lambda: clock[0])
+    # Evening clock times on earlier days must not close tomorrow's delivery edits.
+    previous_day = client.patch(
+        path + "/request", headers=auth, json=atomic_body(start, instructions="Previous day")
     )
-    monkeypatch.setattr(
-        "app.services.buyer_confirmation.utcnow", lambda: now + timedelta(minutes=1)
+    assert previous_day.status_code == 200, previous_day.text
+    clock[0] = start - timedelta(minutes=61)
+    before = client.patch(
+        path + "/request", headers=auth, json=atomic_body(start, instructions="Before cutoff")
     )
-    response = linked["client"].patch(
-        linked["path"] + "/response", headers=auth, json={**body, "request_id": str(uuid4())}
+    assert before.status_code == 200, before.text
+    clock[0] = start - timedelta(hours=1)
+    closed = client.patch(
+        path + "/request", headers=auth, json=atomic_body(start, instructions="At cutoff")
     )
-    assert "COURIER_CUTOFF_REVIEW_REQUIRED" in response.json()["reason_codes"]
+    assert closed.status_code == 409, closed.text
+    assert closed.json()["error"]["code"] == "BUYER_EDIT_CUTOFF_PASSED"
 
 
 def test_unexpected_failures_never_emit_private_exception_text(linked, monkeypatch, caplog):
@@ -1639,6 +1717,11 @@ def test_buyer_lookup_by_tracking_id_and_phone(linked):
     assert data["token_type"] == "Bearer"
     assert "access_token" in data
     assert "token" in data
+    details = linked["client"].get(
+        f"/api/confirm/{data['token']}/details",
+        headers={"Authorization": "Bearer " + data["access_token"]},
+    )
+    assert details.status_code == 200, details.text
 
     # Lookup by full UUID with formatted +959 phone
     res2 = linked["client"].post(
@@ -1647,6 +1730,12 @@ def test_buyer_lookup_by_tracking_id_and_phone(linked):
     )
     assert res2.status_code == 200, res2.text
     assert res2.json()["order_reference"] == order_id
+    second = res2.json()
+    details = linked["client"].get(
+        f"/api/confirm/{second['token']}/details",
+        headers={"Authorization": "Bearer " + second["access_token"]},
+    )
+    assert details.status_code == 200, details.text
 
     # Lookup with wrong phone fails with 404
     res_wrong = linked["client"].post(

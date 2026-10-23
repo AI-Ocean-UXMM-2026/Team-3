@@ -6,7 +6,7 @@ const windowLabel=value=>{if(!value||!value.includes('/'))return value||'Any tim
 const states={DRAFT:'held',NEEDS_REVIEW:'held',AWAITING_CONFIRMATION:'awaiting_customer',CONFIRMED:'ready',READY_FOR_DISPATCH:'ready',ASSIGNED:'assigned',OUT_FOR_DELIVERY:'out_for_delivery',DELIVERED:'delivered',FAILED:'return_pending',CANCELLED:'cancelled'};
 export function projectOrder(row){
   const p=row.parsing_metadata?.parcel||{},pin=point(row.latitude,row.longitude);
-  return {id:row.id,version:row.version,name:row.customer_name||'',phone:row.customer_phone||'',raw:row.original_message||'',normalized:row.normalized_message||'',areaId:row.township,street:row.street||'',landmark:row.landmark||'',floor:row.building_floor_unit||row.floor||'',item:p.item||'',sender:p.sender||'',reference:p.reference||'',date:p.delivery_day||'',time:row.delivery_time_window||'Any time',payment:row.cod_amount==null?'unknown':Number(row.cod_amount)===0?'prepaid':'cod',expected:row.cod_amount==null?null:Number(row.cod_amount),note:row.delivery_instructions||'',state:p.return_received_at?'returned':states[row.status]||'held',location:pin?(row.field_sources?.latitude?.method==='buyer_confirmation'?'buyer_confirmed':'manual_unverified'):'unknown',anchor:null,pin,routeId:p.route_id||null,received:!!p.hub_received_at,collection:p.collection?{...p.collection,discrepancy:p.collection.actual!==p.collection.expected}:null,incident:p.incident||null,attempts:[],encodingReview:false,confidence:row.confidence_level,reasons:(row.confidence_reasons||[]).map(x=>x.message),fieldSources:row.field_sources,ai:row.ai_availability_status};
+  return {id:row.id,version:row.version,name:row.customer_name||'',phone:row.customer_phone||'',raw:row.original_message||'',normalized:row.normalized_message||'',areaId:row.township,street:row.street||'',landmark:row.landmark||'',floor:row.building_floor_unit||row.floor||'',item:p.item||'',sender:p.sender||'',reference:p.reference||'',date:p.delivery_day||'',time:row.delivery_time_window||'Any time',payment:row.cod_amount==null?'unknown':Number(row.cod_amount)===0?'prepaid':'cod',expected:row.cod_amount==null?null:Number(row.cod_amount),note:row.delivery_instructions||'',boardDeletedAt:p.dispatcher_deleted_at||null,state:p.return_received_at?'returned':states[row.status]||'held',location:pin?(row.field_sources?.latitude?.method==='buyer_confirmation'?'buyer_confirmed':'manual_unverified'):'unknown',anchor:null,pin,routeId:p.route_id||null,received:!!p.hub_received_at,collection:p.collection?{...p.collection,discrepancy:p.collection.actual!==p.collection.expected}:null,incident:p.incident||null,attempts:[],encodingReview:false,confidence:row.confidence_level,reasons:(row.confidence_reasons||[]).map(x=>x.message),fieldSources:row.field_sources,ai:row.ai_availability_status};
 }
 export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=location.origin,route=location.hash.slice(2)}={}){
   const loadLinks=()=>{try{const raw=sessionStorage.getItem('lannpya.live.links');return raw?new Map(Object.entries(JSON.parse(raw))):new Map();}catch{return new Map();}};
@@ -26,8 +26,20 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
   async function connect(side,id){if(!api.connections[side]||id&&api.connections[side].actor.id!==id)await api.connect(side,origin,id||'');}
   async function loadBuyer(token,initialAuth){
     if(activeBuyer!==token||initialAuth){api.openBuyer(origin,token,initialAuth);activeBuyer=token;}
-    try{const card=await api.buyer.card();const prior=buyerStates.get(token);buyerStates.set(token,{...prior,card,status:card.state==='LOCKED'?'locked':'active',available:card.state!=='LOCKED'});}
+    const client=api.buyer;
+    try{const card=await client.card();const prior=buyerStates.get(token);buyerStates.set(token,{...prior,card,status:card.state==='LOCKED'?'locked':'active',available:card.state!=='LOCKED'});return client;}
     catch(e){buyerStates.set(token,{available:false,status:e.code||'unavailable'});throw e;}
+  }
+  async function buyerRequest(token,client,operation){
+    try{return await operation();}
+    catch(error){
+      if(error.code==='BUYER_AUTHORIZATION_REQUIRED'||error.status===401){
+        const state=buyerStates.get(token);
+        if(state){state.details=null;state.verified=false;state.challenge=null;state.otpPreview=null;}
+        client.clear?.();
+      }
+      throw error;
+    }
   }
   async function sync(target=lastRoute){
     target=(target||'').replace(/^#\/?/,'').split('?')[0];
@@ -133,6 +145,7 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
       if(value?.allocation_status==='WAITING_FOR_RIDER')allocationStates.set(p.id,{status:value.allocation_status,reason:value.reason||''});else allocationStates.delete(p.id);
     }else if(type==='unassign'){await call(`/api/orders/${p.id}/unassign`,'POST',{expected_version:row(p.id).version});
     }else if(type==='dispatch'){await api.routeAction('admin',routeRows.get(p.routeId),'DISPATCH');
+    }else if(type==='delete'){await api.operation(row(p.id),'REMOVE_FROM_BOARD');
     }else if(type==='cancel'){await api.status(row(p.id),'CANCELLED');
     }else if(type==='start'||type==='complete'||type==='fail'){
       await connect('rider',actor.id);const q=queueRows.find(q=>q.order_id===p.id);if(!q)throw Error('This order is not in the selected rider queue. Refresh.');
@@ -154,6 +167,12 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     return {value,pending:false,allocationStatus:type==='assign'?allocationStates.get(p.id)?.status:undefined};
   }
   const store={live:true,now:()=>Date.now(),persistent:()=>true,snapshot:()=>copy(state),refresh:()=>{},sync,loadBuyer,execute,order,checkBuyerReviews,
+    async riderTracking(id,position){
+      const rider=api.connections.rider?.actor;
+      if(!rider)throw Error('Open your rider workspace first.');
+      return call(`/api/riders/${rider.id}/deliveries/${id}/tracking`,position?'POST':'GET',position,'rider');
+    },
+    async buyerTracking(token){const client=await loadBuyer(token);return buyerRequest(token,client,()=>client.tracking());},
     routingStatus:()=>call('/api/routes/provider-status'),
     calculateRoute:body=>call('/api/routes/calculate','POST',body),
     googleEstimateStatus:(side='admin')=>call('/api/routes/google-demo/status','GET',undefined,side),
@@ -164,14 +183,14 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     riderActor:()=>({...api.connections.rider?.actor,role:'rider'}),
     requests:()=>copy(requests.filter(r=>r.decision==='REVIEW_REQUIRED'&&!r.resolution)),
     async selectRider(id){await connect('rider',id);await sync('ride');},
-    async verifyRefresh(token){await loadBuyer(token);const b=buyerStates.get(token);if(b.details)b.details=await api.buyer.details();},
-    async requestOtp(token){await loadBuyer(token);const b=buyerStates.get(token),challenge=await api.buyer.requestOtp();b.challenge=challenge;b.otpPreview=challenge.mode==='DEMO'?(await api.buyer.demoCode?.()):null;return copy(challenge);},
+    async verifyRefresh(token){const client=await loadBuyer(token),b=buyerStates.get(token);if(b.details)b.details=await buyerRequest(token,client,()=>client.details());},
+    async requestOtp(token){const client=await loadBuyer(token),b=buyerStates.get(token),challenge=await client.requestOtp();b.details=null;b.verified=false;b.challenge=challenge;b.otpPreview=challenge.mode==='DEMO'?(await client.demoCode?.()):null;return copy(challenge);},
     async lookupBuyer(trackingId,phone){
       if(!api.lookupBuyer)throw Error('Buyer lookup is unavailable.');
       const res=await api.lookupBuyer(trackingId,phone);
-      await loadBuyer(res.token,res.access_token);
+      const client=await loadBuyer(res.token,res.access_token);
       const b=buyerStates.get(res.token);
-      b.details=await api.buyer.details();
+      b.details=await buyerRequest(res.token,client,()=>client.details());
       b.verified=true;
       return res;
     },
@@ -184,15 +203,16 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     queue:actor=>actor.id===api.connections.rider?.actor.id?copy(queueRows.map(q=>state.orders.find(o=>o.id===q.order_id)).filter(Boolean)):[],
     closeoutBlockers:id=>routeRows.get(id)?.blockers||[],
     customer:token=>{const b=buyerStates.get(token);if(!b)return {available:false,status:'unavailable'};const d=b.details,policy=d?.policy||{};const o=d?{id:d.order_reference,version:1,state:states[d.status],street:d.street||'',landmark:d.landmark||'',pin:point(d.latitude,d.longitude)||point(d.proposed_latitude,d.proposed_longitude),anchor:null,location:d.initial_pin_requires_review?'unknown':'buyer_selected',time:windowLabel(d.delivery_time_window),note:d.delivery_instructions||'',date:policy.delivery_day||W.day(Date.now()),confirmation:b.confirmation||null}:{};return {...b,editingPolicy:policy,simulationOnly:b.otpPreview?.simulation===true,order:o,verified:!!d,state:states[b.card?.delivery_status],sender:b.card?.shop_display_name||'LannPya',reference:b.card?.order_reference,item:'Delivery confirmation',payment:'unknown',expected:null,remaining:policy.remaining_edits??3,editable:!!d&&policy.editable===true,dates:[W.day(Date.now()),W.addDays(W.day(Date.now()),1),W.addDays(W.day(Date.now()),2)]};},
-    async verify(token,digits){await loadBuyer(token);try{await api.buyer.verify(digits);const b=buyerStates.get(token);b.details=await api.buyer.details();b.challenge=null;b.otpPreview=null;return store.customer(token);}catch(e){await loadBuyer(token).catch(()=>{});throw e;}},
+    async verify(token,digits){const client=await loadBuyer(token);try{await client.verify(digits);const b=buyerStates.get(token);b.details=await buyerRequest(token,client,()=>client.details());b.challenge=null;b.otpPreview=null;return store.customer(token);}catch(e){await loadBuyer(token).catch(()=>{});throw e;}},
     async confirm(token,p){
       if(!p.pin||!Number.isFinite(p.pin.lat)||!Number.isFinite(p.pin.lng))throw Error('Select a valid map pin first.');
       if(!p.date||!p.time||p.time===W.ANY_TIME)throw Error('Choose a specific delivery day and time window so we can show the edit cutoff.');
       const action={'At home':'AVAILABLE','Reschedule':'RESCHEDULE','Leave with security':'LEAVE_WITH_SECURITY'}[p.answer]||'AVAILABLE';
       const [start,end]=p.time.split('–');
       const body={request_id:crypto.randomUUID(),latitude:p.pin.lat.toFixed(7),longitude:p.pin.lng.toFixed(7),initial_pin_acknowledged:!!p.acknowledged,action,time_window:{start:`${p.date}T${start}:00+06:30`,end:`${p.date}T${end}:00+06:30`},...(p.note?{instructions:p.note}:{})};
-      await api.buyer.request(body);
-      const buyer=buyerStates.get(token);buyer.details=await api.buyer.details();
+      const client=await loadBuyer(token);
+      await buyerRequest(token,client,()=>client.request(body));
+      const buyer=buyerStates.get(token);buyer.details=await buyerRequest(token,client,()=>client.details());
       buyer.confirmation={answer:p.answer,time:p.time,date:p.date,note:p.note||'',pin:{...p.pin}};return store.customer(token);
     },
     replay:()=>{throw Error('Offline replay is simulation-only. Live requests must be explicitly retried.');},

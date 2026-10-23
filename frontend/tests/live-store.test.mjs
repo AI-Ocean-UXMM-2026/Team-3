@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createLiveStore,projectOrder} from '../js/live-store.mjs';
+import {AuthenticatedWorkspaceApi} from '../js/authenticated-api.mjs';
 const original={id:'synthetic-order',version:1,customer_name:'Fictional buyer',customer_phone:'09790000000',status:'DRAFT',confidence_level:'AMBER',confidence_reasons:[{message:'Location not verified'}],latitude:null,longitude:null,cod_amount:'25000',ai_availability_status:'mock',parsing_metadata:{parcel:{item:'Test shirt',delivery_day:'2026-10-23'}},field_sources:{}};
 const W=()=>({ACTORS:{admin:{id:'dispatch',role:'admin'},rider:{id:'old-demo-id',role:'rider'}},PLACES:[],ANY_TIME:'Any time',WINDOWS:['10:00–12:00','12:00–14:00','14:00–16:00','16:00–18:00'],day:()=> '2026-10-23',addDays:()=> '2026-10-24'});
 function apiFixture(){
@@ -9,6 +10,49 @@ function apiFixture(){
   return {api,calls};
 }
 const setup=async(route='dispatch')=>{const f=apiFixture();const dictionary=W();return {...f,dictionary,store:await createLiveStore(dictionary,{api:f.api,origin:'http://127.0.0.1:8780',route})};};
+test('live board deletion persists through operations and refresh without cancelling delivery',async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
+ const {store,api,calls}=await setup();
+ let persisted={...structuredClone(original),status:'DELIVERED'};
+ const all=api.all;api.all=async(side,path)=>path==='/api/orders'?[structuredClone(persisted)]:all(side,path);
+ api.operation=async(order,action)=>{calls.push({action,id:order.id});persisted.parsing_metadata.parcel.dispatcher_deleted_at='2026-10-23T04:00:00Z';};
+ await store.sync();await store.execute('delete',{id:original.id});
+ assert.ok(calls.some(c=>c.action==='REMOVE_FROM_BOARD'&&c.id===original.id));
+ assert.equal(store.order(original.id).state,'delivered');assert.ok(store.order(original.id).boardDeletedAt);
+ await store.sync();assert.ok(store.order(original.id).boardDeletedAt);
+});
+
+async function nativeBuyer(t){
+ const token='a'.repeat(43),credential='c'.repeat(43);let expired=false;
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
+ t.mock.method(globalThis,'fetch',async(url,options)=>{
+   const path=new URL(url).pathname;
+   const reply=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json'}});
+   if(path.endsWith('/lookup'))return reply({token,access_token:credential});
+   if(path.endsWith('/details')||path.endsWith('/request')){
+     if(expired||options.headers.Authorization!=='Bearer '+credential)return reply({error:{code:'BUYER_AUTHORIZATION_REQUIRED',message:'Valid buyer authorization is required.'}},401);
+     return reply(path.endsWith('/request')?{decision:'APPLIED'}:{order_reference:'native-order',status:'DRAFT',policy:{editable:true}});
+   }
+   return reply({state:'VERIFICATION_REQUIRED',delivery_status:'DRAFT'});
+ });
+ const store=await createLiveStore(W(),{api:new AuthenticatedWorkspaceApi(null,'http://127.0.0.1:8782'),origin:'http://127.0.0.1:8782',route:'customer'});
+ await store.lookupBuyer('QA-NEW','09790000000');
+ return {store,token,expire:()=>{expired=true;},request:{pin:{lat:16.8,lng:96.1},date:'2026-10-23',time:'10:00–12:00',answer:'At home',acknowledged:true}};
+}
+
+test('returning to a newly looked-up delivery preserves its own buyer authorization',async t=>{
+ const {store,token,request}=await nativeBuyer(t);
+ await store.sync('track/'+'b'.repeat(43));await store.sync('track/'+token);
+ await store.confirm(token,request);
+ assert.equal(store.customer(token).order.confirmation.answer,'At home');
+});
+
+test('expired buyer authorization clears the stale verified form state',async t=>{
+ const {store,token,request,expire}=await nativeBuyer(t);
+ expire();await assert.rejects(store.confirm(token,request),{code:'BUYER_AUTHORIZATION_REQUIRED'});
+ assert.equal(store.customer(token).verified,false);assert.equal(store.customer(token).editable,false);
+});
+
 test('live projection never manufactures coordinates, anchors or GREEN',()=>{
  const o=projectOrder(original);assert.equal(o.pin,null);assert.equal(o.anchor,null);assert.equal(o.confidence,'AMBER');assert.equal(o.expected,25000);
  const p=projectOrder({...original,latitude:'0',longitude:'0'});assert.deepEqual(p.pin,{lat:0,lng:0});assert.equal(p.location,'manual_unverified');

@@ -22,7 +22,7 @@ async function buyerLink(page){
 }
 async function buyer(page,link){
   const token=new URL(link,page.url()).hash.split('/').at(-1);
-  await page.goto('/#/track/'+encodeURIComponent(token));
+  await page.goto(link);
   await expect(page.locator('[data-action=request-otp]')).toBeVisible();
   await page.locator('[data-action=request-otp]').click();
   await expect(page.locator('#verify-form')).toBeVisible();
@@ -84,7 +84,10 @@ test('MTT browser creates persistent order, buyer pin, dispatcher review, rider 
   await page.mouse.move(box.x+15,box.y+15);await page.mouse.down();await page.mouse.move(box.x+65,box.y+45,{steps:8});await page.mouse.up();
   await expect(page.locator('[name=longitude]')).not.toHaveValue(first);
   const latitude=await page.locator('[name=latitude]').inputValue();
-  await page.locator('[name=initial_pin_acknowledged]').check();
+  await page.locator('[name=initial_pin_acknowledged]').focus();await page.locator('[name=initial_pin_acknowledged]').press('Space');
+  const minute=new Date(Date.now()+23400000).getUTCHours()*60+new Date(Date.now()+23400000).getUTCMinutes();
+  const window=await page.locator('[name=time] option').evaluateAll((options,minute)=>options.map(o=>o.value).find(v=>{const m=v.match(/^(\d+):(\d+)–(\d+):(\d+)$/);return m&&+m[1]*60+(+m[2])<=minute&&minute<+m[3]*60+(+m[4]);}),minute);
+  if(window)await page.locator('[name=time]').selectOption(window);
   await page.locator('[name=note]').fill('စမ်းသပ်မှတ်ချက် — call at fictional gate');
   await page.locator('#customer-form .customer-primary').click();
   await expect(page.locator('.delivery-request-confirmed')).toBeVisible();
@@ -121,14 +124,14 @@ test('MTT browser creates persistent order, buyer pin, dispatcher review, rider 
   await expect(page.locator('[data-action=accept]')).toBeVisible();
   await expect(page.locator('[data-action=delivered]')).toHaveCount(0);
   await page.locator('[data-action=accept]').click();
-  await expect(page.locator('.stop-actions')).toContainText('Offer accepted');
-  await expect(page.locator('[data-action=delivered]')).toHaveCount(0);
+  await expect(page.locator('#toast')).toContainText('route is now in progress');
+  await expect(page.locator('[data-action=delivered]')).toBeVisible();
   await page.setViewportSize({width:390,height:844});await screenshot(page,'mtt-rider-accepted-mobile');
   const routes=(await inspect(page,'/api/routes')).items;
-  const route=routes.find(r=>r.items.some(o=>o.id===id));expect(route).toBeTruthy();expect(route.state).toBe('draft');
+  const route=routes.find(r=>r.items.some(o=>o.id===id));expect(route).toBeTruthy();expect(route.state).toBe('dispatched');
   await page.setViewportSize({width:1440,height:900});await page.goto('/#/routes/'+route.id);
-  await page.locator('[data-action=dispatch-route]').click();
-  await page.locator('dialog button[type=submit]').click();await expect(page.locator('dialog')).toHaveCount(0);
+  await expect(page.locator('[data-action=dispatch-route]')).toHaveCount(0);
+  await expect(page.locator('#app-sheet')).toContainText('Delivery in progress');
   expect((await inspect(page,'/api/orders/'+id)).status).toBe('OUT_FOR_DELIVERY');
   await selectRider(page,replacement.rider_id);
   await expect(page.locator('[data-action=delivered]')).toBeVisible();

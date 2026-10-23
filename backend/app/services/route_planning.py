@@ -20,7 +20,9 @@ from app.routing.factory import provider_for
 from app.routing.optimizer import optimize
 from app.schemas.routing import Coordinate, Geometry, MatrixQuery, RouteQuery, TimeWindow
 from app.services.buyer_confirmation import YANGON, lock_order
+from app.services.order_management import OrderManagementService
 from app.services.workflow import parcel, prepare_assignment, route_row, set_parcel
+from app.services.workspace_scope import order_scope
 
 
 def dispatcher(actor):
@@ -113,8 +115,24 @@ def output(session, plan, settings, rider_id=None):
     }
 
 
-def load_plan(session, identifier):
-    plan = session.get(RoutingPlan, identifier)
+def scoped_plans(session, actor):
+    query = select(RoutingPlan).where(RoutingPlan.actor_id == actor.id)
+    own_orders = {str(i) for i in session.scalars(select(Order.id).where(order_scope(actor)))}
+    allowed = []
+    for plan in session.scalars(query):
+        # Historical previews could include another hub's orders. Withhold the
+        # whole plan, including geometry, rather than leaking its other stops.
+        ids = set(plan.data["basis"]["orders"])
+        ids.update(o["order_id"] for o in plan.data["query"].get("orders", []))
+        ids.update(s["order_id"] for v in plan.data["result"]["vehicles"] for s in v["stops"])
+        ids.update(o["order_id"] for o in plan.data["result"].get("unassigned", []))
+        if ids.issubset(own_orders):
+            allowed.append(plan.id)
+    return query.where(RoutingPlan.id.in_(allowed))
+
+
+def load_plan(session, identifier, actor):
+    plan = session.scalar(scoped_plans(session, actor).where(RoutingPlan.id == identifier))
     if plan is None:
         raise OrderAPIError(404, "ROUTE_PLAN_NOT_FOUND", "Route plan not found.")
     return plan
@@ -138,9 +156,7 @@ def preview(session, actor, settings, query, provider=None):
         if p.operational_status == "AVAILABLE":
             profiles.append(rider)
     for selected in query.orders:
-        order = session.get(Order, selected.order_id)
-        if order is None:
-            raise OrderAPIError(404, "ORDER_NOT_FOUND", "Selected order not found.")
+        order = OrderManagementService(session, actor, None).get(selected.order_id)
         reason = None
         context = parcel(order)
         if order.status in {OrderStatus.DELIVERED, OrderStatus.FAILED, OrderStatus.CANCELLED}:
@@ -308,7 +324,7 @@ def commit(session, actor, settings, identifier, body, catalog):
     session.execute(
         update(RoutingPlan).where(RoutingPlan.id == identifier).values(version=RoutingPlan.version)
     )
-    plan = load_plan(session, identifier)
+    plan = load_plan(session, identifier, actor)
     session.refresh(plan)
     if plan.state == "COMMITTED":
         if body.expected_version not in {plan.version, plan.version - 1}:
@@ -363,7 +379,7 @@ def commit(session, actor, settings, identifier, body, catalog):
             )
         route = route_row(session, UUID(next(iter(route_ids))), actor, True) if route_ids else None
         for stop in vehicle["stops"]:
-            order = session.get(Order, UUID(stop["order_id"]))
+            order = OrderManagementService(session, actor, catalog).get(UUID(stop["order_id"]))
             assignment = session.scalar(
                 select(DeliveryAssignment).where(
                     DeliveryAssignment.order_id == order.id, DeliveryAssignment.status == "ACTIVE"

@@ -112,9 +112,10 @@ def plans(
     page_size: PageSize = 20,
 ):
     planning.dispatcher(actor)
-    total = session.scalar(select(func.count()).select_from(RoutingPlan))
+    query = planning.scoped_plans(session, actor)
+    total = session.scalar(select(func.count()).select_from(query.subquery()))
     records = session.scalars(
-        select(RoutingPlan)
+        query
         .order_by(RoutingPlan.created_at.desc(), RoutingPlan.id)
         .offset((page - 1) * page_size)
         .limit(page_size)
@@ -131,7 +132,7 @@ def plans(
 def get_plan(plan_id: UUID, request: Request, session: SessionDep, actor: RiderActor):
     planning.dispatcher(actor)
     return planning.output(
-        session, planning.load_plan(session, plan_id), request.app.state.settings
+        session, planning.load_plan(session, plan_id, actor), request.app.state.settings
     )
 
 
@@ -158,10 +159,13 @@ def rider_plans(rider_id: UUID, request: Request, session: SessionDep, actor: Ri
         RoutingPlan.state == "COMMITTED",
         RoutingPlan.data["routes"][str(rider_id)].as_string().is_not(None),
     )
-    total = session.scalar(select(func.count()).select_from(RoutingPlan).where(*own))
+    if actor.role != UserRole.RIDER:
+        own += (RoutingPlan.actor_id == actor.id,)
+    query = (select(RoutingPlan) if actor.role == UserRole.RIDER
+             else planning.scoped_plans(session, actor)).where(*own)
+    total = session.scalar(select(func.count()).select_from(query.subquery()))
     records = session.scalars(
-        select(RoutingPlan)
-        .where(*own)
+        query
         .order_by(RoutingPlan.created_at.desc(), RoutingPlan.id)
         .limit(20)
     )

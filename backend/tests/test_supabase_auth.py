@@ -149,3 +149,25 @@ def test_auto_provision_verified_dispatcher(secure, monkeypatch):
     assert data["role"] == "Dispatcher"
     assert data["name"] == "Judge Shop"
 
+
+@pytest.mark.parametrize("requested,expected", [("Rider", "Rider"), ("Admin", "Dispatcher")])
+def test_public_signup_role_and_rider_profile(secure, monkeypatch, requested, expected):
+    from app.db.rider_models import RiderProfile
+
+    client, _ = secure
+    identifier = uuid4()
+
+    def verified(settings, token, request=None):
+        request.state.auth_user = {
+            "email": f"{identifier}@example.test", "email_confirmed_at": "verified",
+            "user_metadata": {"role": requested},
+        }
+        return identifier
+
+    monkeypatch.setattr("app.core.supabase_auth.verify_user", verified)
+    result = client.get("/api/session", headers={"Authorization": "Bearer synthetic"})
+    assert result.status_code == 200, result.text
+    assert result.json()["role"] == expected
+    with client.app.state.database.sessions() as session:
+        assert (session.get(RiderProfile, identifier) is not None) == (expected == "Rider")
+

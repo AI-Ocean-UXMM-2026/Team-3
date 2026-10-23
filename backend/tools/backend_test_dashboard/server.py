@@ -39,6 +39,7 @@ ALLOWED = {
         RIDER,
         RIDER + r"/queue",
         RIDER + r"/route-plans",
+        RIDER + rf"/deliveries/{UUID_PATTERN}/tracking",
     ],
     "POST": [
         r"/api/routes",
@@ -47,6 +48,7 @@ ALLOWED = {
         rf"/api/routes/plans/{UUID_PATTERN}/commit",
         rf"/api/routes/{UUID_PATTERN}/actions",
         ORDER + r"/(operations|auto-assignment)",
+        RIDER + rf"/deliveries/{UUID_PATTERN}/tracking",
         r"/api/orders/parse",
         r"/api/orders",
         r"/api/riders",
@@ -68,6 +70,7 @@ BUYER_METHODS = {
     "/location": "PATCH",
     "/response": "PATCH",
     "/request": "PATCH",
+    "/tracking": "GET",
 }
 PRIVATE_KEYS = {
     "access_token",
@@ -413,6 +416,7 @@ def create_dashboard(origin="http://127.0.0.1:8765", *, sandbox_factory=Sandbox,
                 )
             if body.actor == "rider":
                 permitted = body.rider_id and (
+                    (body.method in {"GET", "POST"} and re.fullmatch(rf"/api/riders/{body.rider_id}/deliveries/{UUID_PATTERN}/tracking", path)) or
                     (
                         body.method == "GET"
                         and path

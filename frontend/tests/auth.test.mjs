@@ -34,3 +34,9 @@ test('failed login uses a generic error and recovery checks passwords before sen
   await assert.rejects(service.signIn('a@example.com','bad'),/Email or password/);
   await assert.rejects(service.updatePassword('weak'),/12/);assert.equal(updated,false);
 });
+
+test('signup sends the selected public role and never requests admin access',async()=>{
+  const calls=[],service=createAuthService({auth:{signUp:async body=>{calls.push(body);return {data:{},error:null};}}});
+  for(const role of ['Rider','Dispatcher','Admin'])await service.signUp('new@example.test','Three quiet rivers 47!',{role});
+  assert.deepEqual(calls.map(body=>body.options.data.role),['Rider','Dispatcher','Dispatcher']);
+});

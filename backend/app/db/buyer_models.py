@@ -4,7 +4,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
-from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, Numeric, String, Uuid
+from sqlalchemy import CheckConstraint, ForeignKey, Index, Integer, Numeric, String, UniqueConstraint, Uuid
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.models import JSON_VALUE, Base, UTCDateTime, utcnow
@@ -144,7 +144,9 @@ class BuyerEditPolicy(Base):
 
 class BuyerSubmissionReceipt(Base):
     __tablename__ = "buyer_submission_receipts"
-    __table_args__ = (Index("ux_buyer_receipt_order_request", "order_id", "request_id", unique=True),)
+    __table_args__ = (
+        UniqueConstraint("order_id", "request_id", name="ux_buyer_receipt_order_request"),
+    )
     order_id: Mapped[UUID] = mapped_column(ForeignKey("orders.id", ondelete="RESTRICT"), primary_key=True)
     request_id: Mapped[UUID] = mapped_column(Uuid, primary_key=True)
     link_id: Mapped[UUID] = mapped_column(ForeignKey("confirmation_links.id", ondelete="RESTRICT"))

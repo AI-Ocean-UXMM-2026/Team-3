@@ -189,6 +189,7 @@ class Sandbox:
                 or link.locked_at is not None
                 or link.expires_at <= now
                 or order.status not in {
+                    OrderStatus.DRAFT,
                     OrderStatus.NEEDS_REVIEW,
                     OrderStatus.AWAITING_CONFIRMATION,
                     OrderStatus.CONFIRMED,

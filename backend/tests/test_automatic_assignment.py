@@ -82,7 +82,7 @@ def test_real_response_required_and_role_guard(workspace):
     assert response.status_code == 403
 
 
-def test_pending_offer_requires_consent_and_dispatcher_departure(workspace):
+def test_acceptance_starts_delivery_and_preserves_dispatcher_closeout(workspace):
     result = save(auto(workspace, confirmed(workspace)))
     assert result["allocation_status"] == "ASSIGNED"
     assert result["assignment"]["response_status"] == "PENDING"
@@ -95,13 +95,12 @@ def test_pending_offer_requires_consent_and_dispatcher_departure(workspace):
     assert respond(workspace, result, "START").status_code == 409
     accepted = save(respond(workspace, result, "ACCEPT"))
     assert accepted["response_status"] == "ACCEPTED"
-    assert accepted["status"] == "ASSIGNED"
+    assert accepted["status"] == "OUT_FOR_DELIVERY"
     result["order"]["version"] = accepted["order_version"]
-    assert (
-        respond(workspace, result, "DELIVERED", cod_collected=True, actual_amount=25000).status_code
-        == 409
-    )
-    route = save(action(workspace[0]["admin"], result["route"], "DISPATCH"))
+    route = next(r for r in save(workspace[0]["admin"].get("/api/routes"))["items"]
+                 if r["id"] == result["route"]["id"])
+    assert route["state"] == "dispatched"
+    assert route["items"][0]["status"] == "OUT_FOR_DELIVERY"
     current = save(workspace[0]["admin"].get(f"/api/orders/{result['order']['id']}"))
     result["order"] = current
     assert (
@@ -111,6 +110,12 @@ def test_pending_offer_requires_consent_and_dispatcher_departure(workspace):
         == "DELIVERED"
     )
     assert route["state"] == "dispatched"
+    rider_key = next(k for k, v in workspace[1].items()
+                     if str(v) == result["assignment"]["rider_id"])
+    handed = save(action(workspace[0][rider_key], route, "HANDOVER",
+                         amount=25000, recorded_total=25000))
+    closed = save(action(workspace[0]["admin"], handed, "RECEIVE_CLOSE", amount=25000))
+    assert closed["state"] == "closed"
 
 
 def test_decline_reassigns_excludes_and_replays_before_stale_checks(workspace):
@@ -258,7 +263,6 @@ def test_delivery_completion_drains_waiting_order(workspace):
     waiting = save(auto(workspace, confirmed(workspace)))
     assert waiting["allocation_status"] == "WAITING_FOR_RIDER"
     save(respond(workspace, first, "ACCEPT"))
-    save(action(workspace[0]["admin"], first["route"], "DISPATCH"))
     first["order"] = save(workspace[0]["admin"].get(f"/api/orders/{first['order']['id']}"))
     save(respond(workspace, first, "DELIVERED", actual_amount=25000, cod_collected=True))
     queue = save(workspace[0]["rider"].get(f"/api/riders/{workspace[1]['rider']}/queue"))

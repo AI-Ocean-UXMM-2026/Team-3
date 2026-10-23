@@ -141,7 +141,7 @@ class BuyerConfirmationService:
             valid_phone = EditableOrderFields.valid_mobile(order.customer_phone)
         except ValueError:
             valid_phone = None
-        if order.status not in PRE_DISPATCH or not valid_phone:
+        if order.status not in PRE_DISPATCH | {OrderStatus.DRAFT} or not valid_phone:
             raise OrderAPIError(
                 409,
                 "CONFIRMATION_NOT_ELIGIBLE",
@@ -270,31 +270,19 @@ class BuyerConfirmationService:
             raise OrderAPIError(410, "DELIVERY_CANCELLED", "This delivery was cancelled. Contact the shop.")
 
         now = utcnow()
-        link = self.session.scalar(
-            select(ConfirmationLink)
-            .where(
-                ConfirmationLink.order_id == matched_order.id,
-                ConfirmationLink.revoked_at.is_(None),
-                ConfirmationLink.expires_at > now,
-            )
-            .order_by(ConfirmationLink.created_at.desc())
-            .limit(1)
+        # Only hashes are stored, so an existing link's raw token cannot be
+        # recovered. Issue a separate portal link without invalidating shared links.
+        token = secrets.token_urlsafe(32)
+        token_hash = digest(token)
+        link = ConfirmationLink(
+            order_id=matched_order.id,
+            token_hash=token_hash,
+            phone_binding=phone_binding(token_hash, matched_order.customer_phone),
+            expires_at=now + timedelta(hours=self.settings.buyer_link_hours),
+            verified_at=now,
         )
-        if link is None:
-            token = secrets.token_urlsafe(32)
-            token_hash = digest(token)
-            link = ConfirmationLink(
-                order_id=matched_order.id,
-                token_hash=token_hash,
-                phone_binding=phone_binding(token_hash, matched_order.customer_phone),
-                expires_at=now + timedelta(hours=self.settings.buyer_link_hours),
-                verified_at=now,
-            )
-            self.session.add(link)
-            self.session.flush()
-        else:
-            token = secrets.token_urlsafe(32)
-            link.verified_at = now
+        self.session.add(link)
+        self.session.flush()
 
         credential = secrets.token_urlsafe(32)
         expires = min(link.expires_at, now + timedelta(minutes=self.settings.buyer_session_minutes))
@@ -394,16 +382,23 @@ class BuyerConfirmationService:
             raise OrderAPIError(
                 423, "CONFIRMATION_LOCKED", "Confirmation is locked; contact the shop."
             )
-        if order.status not in PRE_DISPATCH | {OrderStatus.READY_FOR_DISPATCH, OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY}:
+        mutable_statuses = PRE_DISPATCH | {
+            OrderStatus.DRAFT, OrderStatus.READY_FOR_DISPATCH,
+            OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY,
+        }
+        if order.status not in mutable_statuses:
             raise OrderAPIError(
                 409, "BUYER_CHANGES_CLOSED", "Delivery details cannot be changed at this stage."
             )
         policy = self.session.get(BuyerEditPolicy, order.id)
-        if order.status in {OrderStatus.READY_FOR_DISPATCH, OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY} and (
+        if order.status in {
+            OrderStatus.READY_FOR_DISPATCH, OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY
+        } and (
             policy is None or policy.initial_submitted_at is None or policy.cutoff_at is None
         ):
             raise OrderAPIError(409, "CONCRETE_WINDOW_REQUIRED", "A confirmed delivery window is required before assigned-order edits.")
-        if policy is not None:
+        # The cutoff limits amendments, never the buyer's first address confirmation.
+        if policy is not None and policy.initial_submitted_at is not None:
             now = utcnow()
             if policy.closed_at is not None or policy.edit_count >= 3:
                 raise OrderAPIError(409, "BUYER_EDITS_EXHAUSTED", "The three allowed edits have been used.")
@@ -517,7 +512,9 @@ class BuyerConfirmationService:
             "ORDER_TERMINAL" if terminal else
             "EDITS_EXHAUSTED" if used >= 3 else
             "NO_CONCRETE_WINDOW" if initial_submitted and cutoff is None else
-            "CUTOFF_PASSED" if (policy and policy.closed_at) or cutoff is not None and now >= cutoff else None
+            "CUTOFF_PASSED" if initial_submitted and (
+                (policy and policy.closed_at) or cutoff is not None and now >= cutoff
+            ) else None
         )
         return {
             "editable": reason is None,
@@ -546,17 +543,18 @@ class BuyerConfirmationService:
 
         now = utcnow()
         self.mutable(link, order)
+        policy = self.session.get(BuyerEditPolicy, order.id)
+        initial = policy is None or policy.initial_submitted_at is None
         start, end = body.time_window.start.astimezone(UTC), body.time_window.end.astimezone(UTC)
         window = f"{start.isoformat()}/{end.isoformat()}"
         window_changed = window != order.delivery_time_window
         if (
-            window_changed and start < now + timedelta(minutes=self.settings.buyer_min_notice_minutes)
+            not initial and window_changed and start <= now + timedelta(hours=1)
+            or start.astimezone(YANGON).date() < now.astimezone(YANGON).date()
             or end > now + timedelta(days=self.settings.buyer_max_schedule_days)
             or start.astimezone(YANGON).date() != end.astimezone(YANGON).date()
         ):
             raise OrderAPIError(422, "INVALID_DELIVERY_WINDOW", "Time window must satisfy notice, scheduling, and Yangon-day limits.")
-        policy = self.session.get(BuyerEditPolicy, order.id)
-        initial = policy is None or policy.initial_submitted_at is None
         if policy is not None and not initial:
             if policy.closed_at or policy.edit_count >= 3:
                 raise OrderAPIError(409, "BUYER_EDITS_EXHAUSTED", "The three allowed edits have been used.")

@@ -28,7 +28,7 @@ export function createAuthService(client){
       const identity=value.includes('@')?{email:value}:{phone:value.startsWith('09')?'+95'+value.slice(1).replace(/\s/g,''):value.replace(/\s/g,'')};
       return checked(client.auth.signInWithPassword({...identity,password}),'Email or password is incorrect, or the email still needs verification.');
     },
-    signUp:async(email,password,profile={})=>{const problem=passwordProblem(password);if(problem)throw Error(problem);return checked(client.auth.signUp({email,password,options:{data:{shop_name:String(profile.shop||'').trim().slice(0,200),contact_phone:String(profile.phone||'').trim().slice(0,32)}}}),'Could not create the account. Try again later.');},
+    signUp:async(email,password,profile={})=>{const problem=passwordProblem(password);if(problem)throw Error(problem);return checked(client.auth.signUp({email,password,options:{data:{shop_name:String(profile.shop||'').trim().slice(0,200),contact_phone:String(profile.phone||'').trim().slice(0,32),role:profile.role==='Rider'?'Rider':'Dispatcher'}}}),'Could not create the account. Try again later.');},
     sendCode:email=>checked(client.auth.signInWithOtp({email,options:{shouldCreateUser:false}}),'Could not send a code. Check your email and try again later.'),
     verifyCode:(email,token)=>checked(client.auth.verifyOtp({email,token,type:'email'}),'That code is invalid or expired. Request a new one.'),
     recover:email=>checked(client.auth.resetPasswordForEmail(email),'Could not send a recovery code. Try again later.'),

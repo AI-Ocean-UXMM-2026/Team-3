@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400..900&family=Manrope:wght@400..800&family=Noto+Sans+Myanmar:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/loader.css?v=0.1.0" />
   <link rel="stylesheet" href="css/signboard.css?v=0.9.3" />
   <link rel="stylesheet" href="vendor/leaflet/leaflet.css" />
   <link rel="stylesheet" href="css/live.css?v=0.9.3" />
@@ -16,6 +17,26 @@
 </head>
 <body>
   <div id="app"></div>
+  <div class="lp-loader" id="lp-loader" role="status" aria-live="polite">
+    <svg viewBox="40 100 500 380" aria-hidden="true">
+      <g transform="translate(256 256) scale(1.1167) translate(-303.5 -291.5)">
+        <g class="lp-bike">
+          <path d="M176.8 421.3Q134.9 421.3 111.3 396.7Q87.7 372.1 87.7 327.9Q87.7 301.5 98.9 280.4Q110.1 259.3 130.4 246.9Q150.7 234.5 178.5 234.5Q216.7 234.5 239.3 253.7Q261.9 272.8 276.1 312.1Q285.4 337.8 294.1 352.3Q302.9 366.9 312.8 373Q322.7 379.1 335.2 379.1Q353.4 379.1 363.9 364.9Q374.5 350.7 374.5 327.9Q374.5 306.1 362.9 291.3Q351.4 276.4 329.9 276.4Q321.7 276.4 316.2 277.8Q310.8 279.1 303.9 281.7L286.7 245.1Q296.3 239.5 309.6 237Q323 234.5 335.2 234.5Q377.4 234.5 400.9 258.9Q424.3 283.4 424.3 327.9Q424.3 354 413.2 375.1Q402.2 396.2 382.1 408.6Q361.9 421 333.9 421Q295.6 421 272.2 401.2Q248.7 381.4 235.9 343.1Q227.3 317.4 218.4 303Q209.5 288.6 199.4 282.7Q189.3 276.8 176.8 276.8Q157.7 276.8 147.8 291.3Q137.9 305.8 137.9 327.9Q137.9 351.7 149.9 365.5Q162 379.4 182.1 379.4Q190.3 379.4 195.8 377.9Q201.2 376.4 208.5 374.1L225.3 410.7Q216.1 416.4 202.7 418.8Q189.3 421.3 176.8 421.3Z" fill="#16263A"/>
+          <path d="M340 239L330 173L378 163" fill="none" stroke="#16263A" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="177" cy="328" r="18" fill="#F0A032"/><circle cx="334" cy="328" r="18" fill="#F0A032"/>
+          <rect x="115" y="123" width="124" height="96" rx="12" fill="#D23F2E"/><rect x="166" y="123" width="22" height="96" fill="#FFF5E4"/>
+        </g>
+        <g class="lp-dots"><circle cx="98" cy="460" r="10"/><circle cx="160" cy="460" r="10"/><circle cx="222" cy="460" r="10"/><circle cx="284" cy="460" r="10"/><circle cx="346" cy="460" r="10"/><circle cx="408" cy="460" r="10"/></g>
+      </g>
+    </svg>
+    <p><span lang="my">ခဏစောင့်ပါ…</span><br><span class="lp-en">Getting LannPya ready…</span></p>
+  </div>
+  <script>
+    /* Hide the loader as soon as the app has drawn something, or when the page has fully loaded. */
+    (function(){var l=document.getElementById('lp-loader'),done=function(){if(!l||l.classList.contains('gone'))return;l.classList.add('gone');setTimeout(function(){l.remove()},320)};
+    var app=document.getElementById('app');if(app&&window.MutationObserver){new MutationObserver(function(m,o){if(app.children.length){o.disconnect();done()}}).observe(app,{childList:true})}
+    window.addEventListener('load',function(){setTimeout(done,100)});setTimeout(done,15000);})();
+  </script>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="vendor/lannpya-order-parser.js?v=0.1.0"></script>
   <script src="js/workflow-domain.js?v=0.9.3"></script>

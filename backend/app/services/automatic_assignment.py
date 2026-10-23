@@ -208,6 +208,14 @@ def attempt(session, order, allocation, actor, settings, catalog):
     from app.services.riders import active_assignment, lock_profile
     from app.services.workflow import parcel
 
+    owner = session.get(User, allocation.dispatcher_id)
+    if owner is None or not session.scalar(
+        OrderManagementService(session, owner, catalog).scoped().where(Order.id == order.id)
+    ):
+        allocation.status = "CANCELLED"
+        allocation.reason = "The owning hub must reconfirm this order."
+        project(order, allocation)
+        return None
     buyer, issue = customer_response(session, order)
     if (
         issue
@@ -306,6 +314,7 @@ def attempt(session, order, allocation, actor, settings, catalog):
         id=uuid4(),
         rider_id=chosen.id,
         data={
+            "hub_account_id": str(allocation.dispatcher_id),
             "day": context["delivery_day"],
             "state": "draft",
             "order_ids": [],
@@ -365,6 +374,7 @@ def reconfirm(session, actor, identifier, body, settings, catalog):
 
     admin(actor)
     lock_allocator(session)
+    OrderManagementService(session, actor, catalog).get(identifier)
     lock_order(session, identifier)
     fingerprint = digest({"order_id": str(identifier), **body.model_dump(mode="json")})
     receipt = session.scalar(

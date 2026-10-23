@@ -1,0 +1,14 @@
+/* LannPya page loader. Shows only if loading takes longer than 300ms. */
+.lp-loader{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#FFF5E4;color:#16263A;font:500 15px/1.6 'Manrope','Noto Sans Myanmar',system-ui,sans-serif;opacity:0;animation:lp-in 240ms cubic-bezier(.23,1,.32,1) 300ms forwards;transition:opacity 300ms cubic-bezier(.23,1,.32,1)}
+.lp-loader.gone{opacity:0!important;animation:none;pointer-events:none}
+.lp-loader svg{width:96px;height:96px;overflow:visible}
+.lp-loader .lp-bike{animation:lp-ride 1.2s cubic-bezier(.77,0,.175,1) infinite alternate}
+.lp-loader .lp-dots circle{fill:#F0A032;animation:lp-dot 1.2s ease-in-out infinite}
+.lp-loader .lp-dots circle:nth-child(2){animation-delay:.1s}.lp-loader .lp-dots circle:nth-child(3){animation-delay:.2s}.lp-loader .lp-dots circle:nth-child(4){animation-delay:.3s}.lp-loader .lp-dots circle:nth-child(5){animation-delay:.4s}.lp-loader .lp-dots circle:nth-child(6){animation-delay:.5s}
+.lp-loader p{margin:0;text-align:center}
+.lp-loader [lang="my"]{font-family:'Noto Sans Myanmar',sans-serif;line-height:1.8}
+.lp-loader .lp-en{color:#4A5A70;font-size:13px}
+@keyframes lp-in{to{opacity:1}}
+@keyframes lp-ride{from{transform:translateX(-10px)}to{transform:translateX(10px)}}
+@keyframes lp-dot{0%,100%{opacity:.25}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.lp-loader .lp-bike,.lp-loader .lp-dots circle{animation:none}.lp-loader .lp-dots circle{opacity:.7}}

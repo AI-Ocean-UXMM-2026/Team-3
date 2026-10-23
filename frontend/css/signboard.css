@@ -287,12 +287,18 @@ dialog h2{margin:0}
 .route-map.rider-osm-route-map{height:255px;border-bottom:2px solid var(--line);border-radius:0 0 var(--r-sm) var(--r-sm);overflow:hidden}
 .rider-map-canvas{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .route-map-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:#ECE2CF;color:var(--navy);font-weight:700;font-size:.9rem;z-index:2}
-.rider-map-overlay-top{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:center;z-index:500;pointer-events:none}
+.rider-map-overlay-top{position:absolute;top:10px;left:10px;right:10px;display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:flex-start;z-index:500;pointer-events:none}
 .rider-map-overlay-top *{pointer-events:auto}
 .route-chip-title{background:rgba(22,38,58,.92);backdrop-filter:blur(8px);color:#FFFDF8;padding:5px 12px;border-radius:18px;font-size:.82rem;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.2);max-width:62%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:inline-flex;align-items:center;gap:5px}
-.route-map-btn-group{display:flex;gap:6px}
-.locate-rider-btn,.toggle-map-size-btn{background:rgba(255,255,255,.94);backdrop-filter:blur(8px);color:#16263A;border:1px solid rgba(0,0,0,.15);border-radius:18px;padding:5px 12px;font-size:.78rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:transform .15s,background .15s}
-.locate-rider-btn:hover,.toggle-map-size-btn:hover{background:#FFF;transform:translateY(-1px)}
+.route-map-btn-group{display:flex;gap:8px;margin-inline-start:auto;flex-shrink:0}
+.locate-rider-btn,.toggle-map-size-btn{background:var(--paper);color:var(--navy);border:1px solid var(--ink-2);border-radius:8px;padding:10px 12px;min-height:48px;font:700 14px/1.2 var(--body);white-space:nowrap;text-decoration:none;cursor:pointer;display:inline-flex;justify-content:center;align-items:center;gap:8px}
+.toggle-map-size-btn{background:var(--navy);color:var(--paper);border-color:var(--navy)}
+.locate-rider-btn:hover{background:var(--cream-2)}
+.toggle-map-size-btn:hover{background:var(--navy-2,#24384F)}
+.route-map .route-map-btn-group svg{position:static;inset:auto;display:block;width:20px;height:20px;flex:0 0 20px}
+.ride-map-canvas.route-map{height:auto;min-height:240px;flex:1;align-self:stretch}
+.route-map-btn-group button:focus-visible{outline:3px solid var(--saffron);outline-offset:3px}
+@media(max-width:540px){.rider-map-overlay-top .route-chip-title{max-width:100%}}
 .rider-map-overlay-bottom{position:absolute;bottom:10px;left:10px;z-index:500;pointer-events:none;max-width:calc(100% - 90px)}
 .rider-map-overlay-bottom *{pointer-events:auto}
 .route-info-badge{background:rgba(22,38,58,.92);backdrop-filter:blur(8px);color:#FFFDF8;padding:6px 14px;border-radius:18px;font-size:.8rem;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,.25);display:inline-flex;align-items:center;gap:6px}
@@ -329,7 +335,7 @@ body.night .modal-route-stat{color:var(--cream,#FFFDF8)}
 .dest-marker-number{transform:rotate(45deg);color:#FFF;font-weight:800;font-size:13px;line-height:1}
 .queue-route-tag{margin-left:auto;font-size:.74rem;font-weight:700;color:var(--ink-2);padding:3px 8px;border-radius:12px;background:rgba(0,0,0,.04);align-self:center;white-space:nowrap}
 .queue-route-tag.active{background:var(--saffron);color:var(--navy);font-weight:800}
-.route-map svg{position:absolute;inset:0;width:100%;height:100%}
+.route-map>svg{position:absolute;inset:0;width:100%;height:100%}
 .map-chip{position:absolute;left:12px;top:12px;background:var(--paper);border-radius:4px;padding:3px 8px;font-size:.8rem;font-weight:800}
 .map-disclaimer{position:absolute;right:12px;bottom:10px;background:var(--paper);border-radius:4px;padding:2px 8px;font-size:.72rem;font-weight:700;color:var(--ink-2)}
 

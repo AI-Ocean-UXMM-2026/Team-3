@@ -174,6 +174,43 @@ def deliver(workspace, stop, actual=25000, reason=None):
     )
 
 
+@pytest.mark.parametrize("stage", ["with_rider", "delivered", "closed"])
+def test_remove_order_from_dispatcher_board_preserves_delivery_and_cash(workspace, stage):
+    c, ids, db = workspace
+    route, stop = departed(workspace)
+    if stage != "with_rider":
+        save(deliver(workspace, stop))
+    if stage == "closed":
+        route = save(c["admin"].get("/api/routes"))["items"][0]
+        route = save(action(c["rider"], route, "HANDOVER", amount=25000, recorded_total=25000))
+        save(action(c["admin"], route, "RECEIVE_CLOSE", amount=25000))
+    path = f"/api/orders/{stop['order_id']}"
+    before = save(c["admin"].get(path))
+    routes_before = save(c["admin"].get("/api/routes"))
+    queue_path = f"/api/riders/{ids['rider']}/queue"
+    queue_before = save(c["rider"].get(queue_path))
+    body = {"action": "REMOVE_FROM_BOARD", "expected_version": before["version"]}
+    assert c["rider"].post(path + "/operations", json=body).status_code == 403
+    removed = save(c["admin"].post(path + "/operations", json=body))
+    assert removed["parsing_metadata"]["parcel"]["dispatcher_deleted_at"]
+    assert removed["status"] == before["status"]
+    assert removed["parsing_metadata"]["parcel"].get("collection") == (
+        before["parsing_metadata"]["parcel"].get("collection")
+    )
+    assert save(c["admin"].get("/api/routes")) == routes_before
+    queue_after = save(c["rider"].get(queue_path))
+    assert [q["order_id"] for q in queue_after["items"]] == [
+        q["order_id"] for q in queue_before["items"]
+    ]
+    assert save(c["admin"].get(path))["parsing_metadata"]["parcel"]["dispatcher_deleted_at"]
+    assert c["admin"].post(path + "/operations", json=body).status_code == 409
+    events = save(c["admin"].get(path + "/events"))["items"]
+    assert events[-1]["event_type"] == "ORDER_CORRECTED"
+    assert events[-1]["metadata"]["action"] == "REMOVE_FROM_BOARD"
+    if stage == "with_rider":
+        save(deliver(workspace, queue_after["items"][0]))
+
+
 def test_full_manual_customer_review_rider_and_short_cash_closeout(workspace):
     c, ids, db = workspace
     order = manual(workspace, coordinates=False)

@@ -149,7 +149,7 @@
     const activeLink=o=>{if(!o.link)return 'not_created';if(['revoked','locked'].includes(o.link.status))return o.link.status;return o.link.expires<=now()?'expired':'active';};
     const editable=o=>!['delivered','returned','return_pending','cancelled'].includes(o.state)&&(!o.routeId||route(o.routeId).state==='draft');
     const buyerCutoff=o=>{if(o.buyerCutoffAt)return Date.parse(o.buyerCutoffAt);if(!o.confirmation||!validWindow(o.time)||o.time===ANY_TIME)return null;const n=startMinute(o.time),h=String(Math.floor(n/60)).padStart(2,'0'),m=String(n%60).padStart(2,'0');return Date.parse(`${o.date}T${h}:${m}:00+06:30`)-60*60*1000;};
-    const deadline=o=>{const d=day(now()),cutoff=buyerCutoff(o);if(cutoff!==null&&now()>=cutoff&&!o.buyerClosedAt){o.buyerClosedAt=now();write();}if(['delivered','returned','return_pending','cancelled'].includes(o.state)||o.buyerClosedAt||d>o.date||o.buyerEditsUsed>=3)return false;if(o.confirmation)return cutoff!==null&&now()<cutoff;return !state.policy.enforceCutoff||d<o.date||minute(now())<state.policy.cutoff;};
+    const deadline=o=>{const d=day(now()),cutoff=buyerCutoff(o);if(cutoff!==null&&now()>=cutoff&&!o.buyerClosedAt){o.buyerClosedAt=now();write();}if(['delivered','returned','return_pending','cancelled'].includes(o.state)||o.buyerClosedAt||d>o.date||o.buyerEditsUsed>=3)return false;if(o.confirmation)return cutoff!==null&&now()<cutoff;return true;};
     const triageFor=o=>!(state.policy.areas||PLACES.map(p=>p.id)).includes(o.areaId)?{level:'red',reasons:['Township not enabled in current hub policy']}:triage(o);
     const readiness=o=>[...new Set([...blockers(o),...(!(state.policy.areas||PLACES.map(p=>p.id)).includes(o.areaId)?['Township disabled by hub policy']:[])])];
     const recalc=o=>{if(['held','ready'].includes(o.state))o.state=readiness(o).length?'held':'ready';};
@@ -174,6 +174,7 @@
       if(!riders.length){o.allocationStatus='WAITING_FOR_RIDER';event('rider_allocation_waiting',o.id,'No available rider without an active assignment',actor);return null;}
       const rider=riders[0],id=`RT-${uid().slice(-8)}`,r={id,riderId:rider.id,date:o.date,state:'draft',orderIds:[o.id],active:null,handover:null};state.routes.push(r);o.routeId=id;o.state='assigned';o.responseStatus='PENDING';o.offerVersion=(o.offerVersion||0)+1;o.allocationStatus='ASSIGNED';o.accepted=null;event('rider_offer_sent',o.id,`Offer ${o.offerVersion} sent to ${rider.name}`,actor);return r;
     }
+    function startAcceptedDelivery(o,r,actor){r.state='dispatched';r.departedAt=now();r.policyVersion=state.policy.version;o.state='out_for_delivery';event('rider_offer_accepted',o.id,r.id,actor);}
     function apply(type,p,actor,operationId,override=false) {
       let o=p.id?get(p.id):null;
       if(o && p.expectedVersion!=null && p.expectedVersion!==o.version && !override)throw Error('Conflict: order changed. Review the latest record.');
@@ -217,6 +218,8 @@
         r.pickedUpAt=now();r.pickedUp=r.orderIds.slice();event('route_picked_up',null,`${r.id}: ${r.orderIds.length} parcels collected`,actor);return;
       }
       if(type==='restore'){
+        admin(actor);const kept=state.orders.find(o=>o.id===p.orderId&&o.boardDeletedAt);
+        if(kept){delete kept.boardDeletedAt;event('order_restored',kept.id,'Restored to the service board',actor);return kept.id;}
         admin(actor);const t=(state.trash||[]).find(x=>x.order.id===p.orderId);if(!t)throw Error('This order can no longer be restored.');state.trash=state.trash.filter(x=>x!==t);state.orders.push(t.order);event('order_restored',t.order.id,'Restored after delete',actor);return t.order.id;
       }
       if(type==='add_rider'){
@@ -262,7 +265,7 @@
         if(o.routeId&&(readiness(o).length||o.date!==route(o.routeId).date))throw Error('Unassign this draft route order before introducing a hold or changing its delivery day.');
         o.corrections.push({at:now(),actor:actor.id,reason:p.reason,changes:edits});event('field_corrected',o.id,`${changed.join(', ')} · ${p.reason}`,actor);
       }else if(type==='approve_customer_location'){
-        admin(actor);if(['delivered','returned','return_pending','cancelled'].includes(o.state)||!o.proposedPin)throw Error('No editable customer location is awaiting review.');const area=PLACES.find(a=>a.id===o.areaId);if(!area||!inside(o.proposedPin,area)||!p.reason?.trim())throw Error('Review the point and record location evidence.');if(!o.anchor)o.anchor=copy(o.proposedPin);o.pin=copy(o.proposedPin);o.proposedPin=null;if(o.buyerProposal){o.note=o.buyerProposal.note;o.confirmation=o.buyerProposal.confirmation;delete o.buyerProposal;}o.location='dispatcher_verified';o.provenance.anchor={source:'manual',actor:actor.id,evidence:p.reason};event('customer_location_approved',o.id,p.reason,actor);
+        admin(actor);if(['delivered','returned','return_pending','cancelled'].includes(o.state)||!o.proposedPin)throw Error('No editable customer location is awaiting review.');const area=PLACES.find(a=>a.id===o.areaId);if(!area||!inside(o.proposedPin,area))throw Error('Review the delivery point inside the supported township.');if(!o.anchor)o.anchor=copy(o.proposedPin);o.pin=copy(o.proposedPin);o.proposedPin=null;if(o.buyerProposal){o.note=o.buyerProposal.note;o.confirmation=o.buyerProposal.confirmation;delete o.buyerProposal;}o.location='dispatcher_verified';o.provenance.anchor={source:'manual',actor:actor.id,evidence:p.reason};event('customer_location_approved',o.id,p.reason,actor);
       }else if(type==='verify_location'){
         staff(actor,o);if(!editable(o))throw Error('Location frozen after departure.');const area=PLACES.find(a=>a.id===o.areaId);if(!area||!inside(p.pin,area)||!p.reason?.trim())throw Error('Choose coordinates inside the demo township and provide location evidence.');o.anchor=copy(p.pin);o.pin=copy(p.pin);o.location='dispatcher_verified';o.confirmation=null;if(o.link)o.link.status='revoked';o.provenance.anchor={source:'manual',actor:actor.id,evidence:p.reason};event('location_verified',o.id,p.reason,actor);
       }else if(type==='receive'){admin(actor);if(!editable(o)||o.received)throw Error('Parcel already received or unavailable.');o.received=true;event('parcel_received',o.id,'Physical hub receipt recorded',actor);
@@ -276,17 +279,21 @@
         allocate(o,actor);
       }else if(type==='offer_response'){
         if(actor?.role!=='rider'||!o.routeId||route(o.routeId).riderId!==actor.id)throw Error('Assigned rider access required.');if(!['ACCEPT','DECLINE'].includes(p.action)||o.responseStatus!=='PENDING'||p.offerVersion!==o.offerVersion)throw Error('This rider offer is no longer current. Refresh the queue.');
-        const old=route(o.routeId);if(p.action==='ACCEPT'){o.responseStatus='ACCEPTED';o.accepted={at:now(),riderId:actor.id};event('rider_offer_accepted',o.id,old.id,actor);}
+        const old=route(o.routeId);if(p.action==='ACCEPT'){o.responseStatus='ACCEPTED';o.accepted={at:now(),riderId:actor.id};startAcceptedDelivery(o,old,actor);}
         else{old.orderIds=old.orderIds.filter(id=>id!==o.id);o.routeId=null;o.responseStatus='DECLINED';o.accepted=null;o.declinedRiders=[...new Set([...(o.declinedRiders||[]),actor.id])];o.state='ready';event('rider_offer_declined',o.id,old.id,actor);allocate(o,ACTORS.admin);}
       }else if(type==='unassign'){
         admin(actor);if(!o.routeId||route(o.routeId).state!=='draft')throw Error('Only draft assignments can be removed.');const r=route(o.routeId);r.orderIds=r.orderIds.filter(id=>id!==o.id);o.routeId=null;o.state='ready';event('rider_unassigned',o.id,p.reason||'Draft assignment removed',actor);
       }else if(type==='delete'){
+        admin(actor);
+        if(['out_for_delivery','retry_pending','delivered','returned','cancelled'].includes(o.state)){
+          o.boardDeletedAt=new Date(now()).toISOString();event('order_deleted',o.id,'Removed from dispatcher board; delivery records retained',actor);return o.id;
+        }
         admin(actor);if(o.routeId||['out_for_delivery','delivered','returned','retry_pending','return_pending'].includes(o.state))throw Error('Only orders not yet on a route can be deleted. Take it off the route first.');
         state.orders=state.orders.filter(x=>x.id!==o.id);state.trash=[{order:o,at:now()},...(state.trash||[])].slice(0,20);event('order_deleted',o.id,'Deleted from the service board',actor);return o.id;
       }else if(type==='cancel'){
         staff(actor,o);if(!p.reason?.trim()||['delivered','returned','cancelled'].includes(o.state))throw Error('Cancellation needs a reason and an open order.');if(!editable(o)){if(actor.role!=='admin')throw Error('Contact admin to coordinate a departed parcel return.');if(!p.acknowledged)throw Error('Confirm the rider has acknowledged return instructions.');o.state='return_pending';}else{if(o.routeId){const r=route(o.routeId);r.orderIds=r.orderIds.filter(id=>id!==o.id);o.routeId=null;}o.state='cancelled';}if(o.link)o.link.status='revoked';event('order_cancel_requested',o.id,p.reason,actor);
       }else if(type==='accept'){
-        if(o.responseStatus==='PENDING'){if(actor?.role!=='rider'||!o.routeId||route(o.routeId).riderId!==actor.id)throw Error('Assigned rider access required.');if(p.offerVersion!==o.offerVersion)throw Error('This rider offer is no longer current. Refresh the queue.');o.responseStatus='ACCEPTED';o.accepted={at:now(),riderId:actor.id};event('rider_offer_accepted',o.id,route(o.routeId).id,actor);}
+        if(o.responseStatus==='PENDING'){if(actor?.role!=='rider'||!o.routeId||route(o.routeId).riderId!==actor.id)throw Error('Assigned rider access required.');if(p.offerVersion!==o.offerVersion)throw Error('This rider offer is no longer current. Refresh the queue.');o.responseStatus='ACCEPTED';o.accepted={at:now(),riderId:actor.id};startAcceptedDelivery(o,route(o.routeId),actor);}
         else{rider(actor,o,override);if(!['out_for_delivery','retry_pending'].includes(o.state))throw Error('This stop is not open.');o.accepted={at:now(),riderId:actor.id};o.responseStatus='ACCEPTED';event('stop_accepted',o.id,'Rider accepted the stop',actor);}
       }else if(type==='complete'){
         if(o.proposedPin)throw Error('Dispatcher must review the buyer amendment before delivery.');
@@ -347,7 +354,7 @@
         const area=PLACES.find(a=>a.id===o.areaId);
         if(!area||!inside(p.pin,area)||o.anchor&&distance(o.anchor,p.pin)>state.policy.radius)throw Error('Keep the pin within 500 m of the original anchor AND inside the original demo township.');
         const date=p.date||o.date;if(o.routeId&&(date!==o.date||p.time!==o.time))throw Error('The delivery date and window cannot change after assignment.');if(!buyerDates(o).includes(date))throw Error('Choose one of the delivery days shown.');
-        if(p.time===ANY_TIME||!validWindow(p.time)||date<day(now())||date===day(now())&&endMinute(p.time)<=minute(now()))throw Error('Choose an available delivery window.');
+        if(p.time===ANY_TIME||!validWindow(p.time)||date<day(now())||o.confirmation&&date===day(now())&&endMinute(p.time)<=minute(now()))throw Error('Choose an available delivery window.');
         if(!['At home','Reschedule','Leave with security'].includes(p.answer))throw Error('Choose how to receive the parcel.');
         if(p.answer==='Leave with security'&&o.payment==='cod'&&!p.securityPays)throw Error('Confirm the security recipient can pay COD, or choose another option.');
         if(String(p.note||'').length>state.policy.noteLimit)throw Error('Rider note exceeds 300 characters.');

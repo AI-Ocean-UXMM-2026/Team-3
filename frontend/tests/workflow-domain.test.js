@@ -46,7 +46,7 @@ test('free automatic assignment sends a pending offer; decline replaces it; acce
  assert.equal(o.responseStatus,'PENDING');assert.equal(o.state,'assigned');assert.throws(()=>command(s,'dispatch',{routeId:route.id}),/accept/);
  command(s,'offer_response',{id,action:'DECLINE',offerVersion:o.offerVersion},first);o=s.order(id);assert.equal(o.responseStatus,'PENDING');assert.notEqual(o.routeId,route.id);assert.equal(s.snapshot().routes.find(r=>r.id===o.routeId).riderId,W.ACTORS.rider2.id);
  const replacement=s.snapshot().routes.find(r=>r.id===o.routeId);command(s,'offer_response',{id,action:'ACCEPT',offerVersion:o.offerVersion},W.ACTORS.rider2);
- o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'assigned');command(s,'dispatch',{routeId:replacement.id});assert.equal(s.order(id).state,'out_for_delivery');
+ o=s.order(id);assert.equal(o.responseStatus,'ACCEPTED');assert.equal(o.state,'out_for_delivery');assert.equal(s.snapshot().routes.find(r=>r.id===replacement.id).state,'dispatched');
 });
 test('prototype automatic assignment excludes riders unless availability is exactly AVAILABLE',()=>{
  const prior=[W.ACTORS.rider.availability,W.ACTORS.rider2.availability];
@@ -96,8 +96,15 @@ test('security COD requires explicit ability to pay and stale versions reject sa
  command(s,'incident',{id:o.id,reason:'Record changed'});
  assert.throws(()=>s.confirm(o.link.token,{expectedVersion:o.version,pin:o.anchor,time:o.time,answer:'At home'}),/Conflict/);
 });
-test('customer self service closes at cutoff and departed amendments require review',()=>{
- const s=make();clock(s,'09:00');assert.throws(()=>confirm(s),/cutoff/);
+test('first address confirmation is allowed after cutoff; only later changes close',()=>{
+ const s=make();clock(s,'16:00');confirm(s,{time:W.WINDOWS.at(-1)});
+ assert.equal(s.order('LP-2045').confirmation.answer,'At home');
+ assert.equal(s.customer(s.order('LP-2045').link.token).editingPolicy.edit_count,0);
+ assert.throws(()=>confirm(s,{time:W.WINDOWS.at(-1),note:'Later change'}),/cutoff/);
+});
+
+test('customer self service closes later edits at cutoff and departed amendments require review',()=>{
+ const s=make();confirm(s);clock(s,'09:00');assert.throws(()=>confirm(s,{note:'Later change'}),/cutoff/);
  const b=make();confirm(b);command(b,'assign',{id:'LP-2045',routeId:'RT-001'});command(b,'dispatch',{routeId:'RT-001'});confirm(b,{note:'Changed gate after departure'});
  assert.equal(b.order('LP-2045').state,'out_for_delivery');assert.ok(b.order('LP-2045').proposedPin);assert.equal(b.order('LP-2045').note,'Blue gate');
  clock(b,'10:00');assert.throws(()=>command(b,'complete',{id:'LP-2045',amount:28000},R),/review/);

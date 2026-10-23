@@ -230,11 +230,13 @@ class ReviewBuyerRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     expected_version: int = Field(ge=1, strict=True)
     decision: Literal["APPROVE", "REJECT"]
-    reason: str = Field(min_length=5, max_length=500, strict=True)
+    reason: str | None = Field(default=None, max_length=500, strict=True)
 
     @field_validator("reason")
     @classmethod
-    def nonblank_reason(cls, value):
-        if len(value.strip()) < 5 or "\x00" in value:
-            raise ValueError("Review reason needs at least five nonblank characters")
-        return value.strip()
+    def optional_reason(cls, value):
+        if value is None:
+            return None
+        if "\x00" in value:
+            raise ValueError("Review reason cannot contain NUL characters")
+        return value.strip() or None

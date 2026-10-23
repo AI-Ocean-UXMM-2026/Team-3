@@ -25,6 +25,7 @@ from app.schemas.management import (
     OrderResponse,
 )
 from app.schemas.orders import AddressFields, FieldSource, NormalizationInfo, ParseResponse
+from app.services.workspace_scope import order_scope
 
 PARSER_TO_ORDER = {
     "customer_name": "customer_name",
@@ -122,10 +123,7 @@ class OrderManagementService:
         self.commit = commit
 
     def scoped(self):
-        query = select(Order)
-        if self.actor.role == UserRole.MERCHANT:
-            query = query.where(Order.merchant_id == self.actor.id)
-        return query
+        return select(Order).where(order_scope(self.actor))
 
     def get(self, order_id) -> Order:
         row = self.session.scalar(self.scoped().where(Order.id == order_id))

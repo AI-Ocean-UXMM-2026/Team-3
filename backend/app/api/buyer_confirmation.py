@@ -12,12 +12,12 @@ from app.schemas.buyer import (
     BuyerCardResult,
     BuyerDetailsResult,
     BuyerHistoryPage,
-    BuyerOtpChallengeResult,
     BuyerLocation,
     BuyerLookup,
     BuyerLookupResult,
-    BuyerResponse,
+    BuyerOtpChallengeResult,
     BuyerRequestSubmission,
+    BuyerResponse,
     BuyerReviewResult,
     LinkResult,
     LocationReferenceResult,
@@ -136,6 +136,16 @@ def details(
     token: str, request: Request, session: PublicSession, authorization: Authorization = None
 ):
     return service(request, session).details(token, credential(authorization))
+
+
+@public_router.get("/{token}/tracking")
+def tracking(
+    token: str, request: Request, session: PublicSession, authorization: Authorization = None
+):
+    from app.services.delivery_tracking import snapshot
+
+    _, order = service(request, session).authorize(token, credential(authorization))
+    return snapshot(session, order)
 
 
 @public_router.patch("/{token}/location", response_model=BuyerActionResult)

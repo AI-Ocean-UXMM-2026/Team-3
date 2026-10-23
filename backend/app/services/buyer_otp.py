@@ -111,6 +111,7 @@ class BuyerOtpService:
         if link.locked_at or link.failed_attempts >= 3:
             raise OrderAPIError(423, "CONFIRMATION_LOCKED", "Confirmation is locked; contact the shop.")
         if order.status not in {
+            OrderStatus.DRAFT,
             OrderStatus.NEEDS_REVIEW, OrderStatus.AWAITING_CONFIRMATION, OrderStatus.CONFIRMED,
             OrderStatus.READY_FOR_DISPATCH, OrderStatus.ASSIGNED, OrderStatus.OUT_FOR_DELIVERY, OrderStatus.DELIVERED,
         }:

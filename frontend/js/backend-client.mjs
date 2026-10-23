@@ -92,6 +92,7 @@ export function createBuyerApi({ baseUrl, linkToken, initialAuthorization }) {
       return { token_type: result.token_type, expires_at: result.expires_at };
     },
     details: (signal) => call("/details", { signal }),
+    tracking: () => call("/tracking"),
     location: (body) => call("/location", { method: "PATCH", body }),
     respond: (body) => call("/response", { method: "PATCH", body }),
     request: (body) => call("/request", { method: "PATCH", body }),
