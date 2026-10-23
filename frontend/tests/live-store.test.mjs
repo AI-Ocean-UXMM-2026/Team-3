@@ -10,6 +10,20 @@ function apiFixture(){
   return {api,calls};
 }
 const setup=async(route='dispatch')=>{const f=apiFixture();const dictionary=W();return {...f,dictionary,store:await createLiveStore(dictionary,{api:f.api,origin:'http://127.0.0.1:8780',route})};};
+
+for(const status of [404,410,423])test(`owner cannot reuse a cached buyer link after ${status}`,async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
+ const f=apiFixture(),token='s'.repeat(43);
+ f.api.all=async(_side,path)=>path==='/api/orders'?[{...structuredClone(original),status:'NEEDS_REVIEW'}]:[];
+ f.api.call=async()=>({buyer_handle:token,expires_at:new Date(Date.now()+3600000).toISOString()});
+ f.api.openBuyer=()=>{f.api.buyer={card:async()=>{throw Object.assign(new Error('Link unavailable'),{status});}};};
+ const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'dispatch'});
+ await store.execute('issue_link',{id:original.id});
+ assert.equal(store.linkStatus(original.id),'active');
+ assert.equal(await store.validateBuyerLink(original.id),false);
+ assert.equal(store.order(original.id).link,undefined);
+ assert.notEqual(store.linkStatus(original.id),'active');
+});
 test('live board deletion persists through operations and refresh without cancelling delivery',async t=>{
  t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
  const {store,api,calls}=await setup();
@@ -190,4 +204,18 @@ test('buyer confirmation uses one atomic request with a concrete ETA window',asy
  failResponse=false;await store.confirm(token,request);
  assert.equal(submitted.action,'AVAILABLE');assert.equal(submitted.time_window.start,'2026-10-23T'+request.time.split('–')[0]+':00+06:30');assert.equal(submitted.instructions,'Call at the gate');
  assert.equal(store.customer(token).order.confirmation.note,'Call at the gate');assert.deepEqual(store.customer(token).order.confirmation.pin,request.pin);assert.equal(store.customer(token).order.confirmation.date,request.date);
+});
+
+
+for(const status of [200,503])test(`buyer link validation preserves the current link on ${status}`,async t=>{
+ t.mock.getter(globalThis,'navigator',()=>({onLine:true}));
+ const f=apiFixture(),token='v'.repeat(43);
+ f.api.all=async(_side,path)=>path==='/api/orders'?[{...structuredClone(original),status:'NEEDS_REVIEW'}]:[];
+ f.api.call=async()=>({buyer_handle:token,expires_at:new Date(Date.now()+3600000).toISOString()});
+ f.api.openBuyer=()=>{f.api.buyer={card:async()=>{if(status===503)throw Object.assign(new Error('Temporary outage'),{status});return {state:'VERIFICATION_REQUIRED'};}};};
+ const store=await createLiveStore(W(),{api:f.api,origin:'http://127.0.0.1:8780',route:'dispatch'});
+ await store.execute('issue_link',{id:original.id});
+ if(status===503)await assert.rejects(store.validateBuyerLink(original.id),{status});
+ else assert.equal(await store.validateBuyerLink(original.id),true);
+ assert.equal(store.order(original.id).link.token,token);assert.equal(store.linkStatus(original.id),'active');
 });

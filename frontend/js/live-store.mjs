@@ -199,6 +199,15 @@ export async function createLiveStore(W,{api=new LocalWorkspaceApi(),origin=loca
     blockers:id=>{const o=order(id);return [...(o.confidence==='RED'?['Correct critical address validation failures']:[]),...(!o.pin?['Location needed']:[]),...(o.pendingBuyerReviewCount?[`${o.pendingBuyerReviewCount} buyer requests awaiting review`]:[]),...(!o.received?['Physical hub receipt required']:[])];},
     canEdit:id=>!['assigned','out_for_delivery','delivered','return_pending','returned','cancelled'].includes(order(id).state),
     duplicate:f=>state.orders.filter(o=>f.phone&&o.phone===f.phone).map(o=>o.id),
+    async validateBuyerLink(id){
+      const link=links.get(id);if(!link)return false;
+      try{await loadBuyer(link.token);return buyerStates.get(link.token)?.available===true;}
+      catch(error){
+        if(![404,410,423].includes(error.status))throw error;
+        if(links.get(id)?.token===link.token){links.delete(id);linkStates.set(id,error.status===410?'expired':'unavailable');saveLinks();const o=state.orders.find(o=>o.id===id);if(o)delete o.link;}
+        return false;
+      }
+    },
     linkStatus:id=>links.has(id)?Date.now()<links.get(id).expires?'active':'expired':linkStates.get(id)||'not_loaded',
     queue:actor=>actor.id===api.connections.rider?.actor.id?copy(queueRows.map(q=>state.orders.find(o=>o.id===q.order_id)).filter(Boolean)):[],
     closeoutBlockers:id=>routeRows.get(id)?.blockers||[],

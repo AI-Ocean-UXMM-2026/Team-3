@@ -232,3 +232,17 @@ test('opening #/customer?id=LP-4B5EDA pre-fills tracking id and renders customer
  assert.ok(!e.find('.board-head'),'Dispatcher board must not be rendered on customer route');
 });
 
+
+
+test('making a replacement buyer link automatically copies the new URL',async()=>{
+ const e=boot('#/order/LP-2045');let copied='';e.ctx.navigator.clipboard.writeText=async value=>{copied=value;};
+ await e.action('issue','LP-2045');
+ const token=e.store().order('LP-2045').link.token;
+ assert.notEqual(token,'demo-2045');assert.ok(copied.endsWith('#/track/'+encodeURIComponent(token)));
+});
+
+test('unavailable buyer links offer reference and phone recovery',()=>{
+ const e=boot('#/track/invalid');
+ assert.match(e.root.textContent,/newest link/);
+ assert.ok(e.all('a').some(a=>a.attributes.href==='#/customer'&&a.textContent==='Find my delivery'));
+});
